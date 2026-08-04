@@ -216,7 +216,7 @@ async function processFile(file) {
   const formData = new FormData();
   formData.append('file', file);
   try {
-    const resp = await fetch('http://127.0.0.1:5001/analyze', {method:'POST', body:formData});
+    const resp = await fetch('https://bankanalyzer-61ai.onrender.com/analyze', {method:'POST', body:formData});
     const data = await resp.json();
     if(data.error) throw new Error(data.error);
     renderResult(data);
