@@ -9,158 +9,139 @@ app = Flask(__name__)
 CORS(app)
 
 def extract_text_from_pdf(file_bytes):
-    text = ""
+    text = ''
     reader = pypdf.PdfReader(io.BytesIO(file_bytes))
     for page in reader.pages:
         t = page.extract_text()
         if t:
-            text += t + "\n"
+            text += t + chr(10)
     return text
 
 def extract_text_from_csv(file_bytes):
-    return file_bytes.decode("utf-8", errors="ignore")
+    return file_bytes.decode('utf-8', errors='ignore')
 
 def extract_text_from_excel(file_bytes):
     wb = openpyxl.load_workbook(io.BytesIO(file_bytes))
     ws = wb.active
     lines = []
     for row in ws.iter_rows(values_only=True):
-        lines.append(" | ".join([str(c) if c else "" for c in row]))
-    return "\n".join(lines)
+        lines.append(' | '.join([str(c) if c else '' for c in row]))
+    return chr(10).join(lines)
 
-def analyse_chunk(client, chunk, idx, total):
-    prompt = (
-        "Tu es un expert-comptable. Extrait toutes les transactions de ce bloc "
-        f"({idx}/{total}) d'un releve bancaire. "
-        "Retourne UNIQUEMENT ce JSON sans markdown:\n"
-        '{"recettes":[{"label":"cat","montant":0}],'
-        '"depenses":[{"label":"cat","montant":0}]}\n'
-        "Regle: regroupe par categorie logique, montants entiers positifs, "
-        "ignore virements entre comptes du meme titulaire.\n\n"
-        "Bloc:\n" + chunk
-    )
+def get_periode(text):
+    mois = r'(janvier|fevrier|mars|avril|mai|juin|juillet|aout|septembre|octobre|novembre|decembre)'
+    import re
+    m = re.search(mois + r'\s*\d{4}', text.lower())
+    if m:
+        return m.group(0).capitalize()
+    m2 = re.search(r'(\d{1,2})[/-](\d{4})', text)
+    if m2:
+        return m2.group(0)
+    return 'Periode inconnue'
+
+def analyse_releve(client, text, nom_banque):
+    prompt = ('Tu es un expert-comptable francais. Analyse ce releve bancaire (' + nom_banque + ').\n'
+        'Retourne UNIQUEMENT ce JSON sans markdown:\n'
+        '{"totalRecettes":0,"totalDepenses":0,"recettes":[{"label":"cat","montant":0}],'
+        '"depenses":[{"label":"cat","montant":0}],"score":7,"score_detail":"phrase"}\n'
+        'IMPORTANT: Utilise les totaux recapitulatifs si disponibles. '
+        'Sinon additionne toutes les transactions. Montants entiers positifs, max 5 recettes, max 7 depenses.\n\n'
+        'Releve:\n' + text[:20000])
     msg = client.messages.create(
-        model="claude-sonnet-4-6",
-        max_tokens=1500,
-        messages=[{"role": "user", "content": prompt}]
+        model='claude-sonnet-4-6',
+        max_tokens=1000,
+        messages=[{'role': 'user', 'content': prompt}]
     )
-    raw = msg.content[0].text.replace("```json","").replace("```","").strip()
+    raw = msg.content[0].text.replace('```json','').replace('```','').strip()
     return json.loads(raw)
 
-def consolide(chunks_data, periode):
-    recettes = {}
-    depenses = {}
-    for d in chunks_data:
-        for r in d.get("recettes", []):
-            recettes[r["label"]] = recettes.get(r["label"], 0) + r["montant"]
-        for d2 in d.get("depenses", []):
-            depenses[d2["label"]] = depenses.get(d2["label"], 0) + d2["montant"]
-    rec = sorted([{"label":k,"montant":v} for k,v in recettes.items()], key=lambda x:-x["montant"])[:5]
-    dep = sorted([{"label":k,"montant":v} for k,v in depenses.items()], key=lambda x:-x["montant"])[:7]
-    total_r = sum(r["montant"] for r in rec)
-    total_d = sum(d["montant"] for d in dep)
-    return rec, dep, total_r, total_d
-
-def get_conseil(client, total_r, total_d, periode):
+def get_conseil_global(client, comptes, total_r, total_d, periode):
+    comptes_str = chr(10).join(['- ' + c['nom'] + ': recettes ' + str(c['totalRecettes']) + 'EUR, depenses ' + str(c['totalDepenses']) + 'EUR' for c in comptes])
     net = total_r - total_d
     taux = round(net/total_r*100) if total_r else 0
-    prompt = (
-        f"Releve bancaire - periode: {periode}, recettes: {total_r}EUR, "
-        f"depenses: {total_d}EUR, resultat net: {net}EUR, taux epargne: {taux}%.\n"
-        "Retourne UNIQUEMENT ce JSON sans markdown:\n"
+    prompt = ('Tu es un expert-comptable. Situation consolidee de ' + str(len(comptes)) + ' compte(s) pour ' + periode + ':\n'
+        + comptes_str + '\n'
+        'TOTAL: recettes ' + str(total_r) + 'EUR, depenses ' + str(total_d) + 'EUR, net ' + str(net) + 'EUR, taux epargne ' + str(taux) + '%\n\n'
+        'Retourne UNIQUEMENT ce JSON sans markdown:\n'
         '{"score":7,"score_detail":"phrase","actions":['
-        '{"priorite":1,"titre":"titre","detail":"detail"},'
-        '{"priorite":2,"titre":"titre","detail":"detail"},'
-        '{"priorite":3,"titre":"titre","detail":"detail"}],'
-        '"commentaire":"2 phrases analyse."}'
-    )
+        '{"priorite":1,"titre":"titre","detail":"detail concret et chiffre"},'
+        '{"priorite":2,"titre":"titre","detail":"detail concret et chiffre"},'
+        '{"priorite":3,"titre":"titre","detail":"detail concret et chiffre"}],'
+        '"commentaire":"2 phrases analyse globale."}')
     msg = client.messages.create(
-        model="claude-sonnet-4-6",
+        model='claude-sonnet-4-6',
         max_tokens=800,
-        messages=[{"role": "user", "content": prompt}]
+        messages=[{'role': 'user', 'content': prompt}]
     )
-    raw = msg.content[0].text.replace("```json","").replace("```","").strip()
+    raw = msg.content[0].text.replace('```json','').replace('```','').strip()
     return json.loads(raw)
 
-@app.route("/analyze", methods=["POST"])
+@app.route('/analyze', methods=['POST'])
 def analyze():
-    files = request.files.getlist("files")
+    files = request.files.getlist('files')
     if not files:
-        files_single = request.files.get("file")
-        if files_single:
-            files = [files_single]
+        f = request.files.get('file')
+        if f:
+            files = [f]
         else:
-            return jsonify({"error": "Aucun fichier recu"}), 400
-
-    text = ""
-    banques = []
-    for file in files[:3]:
+            return jsonify({'error': 'Aucun fichier recu'}), 400
+    files = files[:5]
+    client = anthropic.Anthropic()
+    comptes = []
+    periode = 'Periode inconnue'
+    for i, file in enumerate(files):
         filename = file.filename.lower()
         file_bytes = file.read()
-        if filename.endswith(".pdf"):
-            t = extract_text_from_pdf(file_bytes)
-        elif filename.endswith(".csv"):
-            t = extract_text_from_csv(file_bytes)
-        elif filename.endswith((".xlsx",".xls")):
-            t = extract_text_from_excel(file_bytes)
+        if filename.endswith('.pdf'):
+            text = extract_text_from_pdf(file_bytes)
+        elif filename.endswith('.csv'):
+            text = extract_text_from_csv(file_bytes)
+        elif filename.endswith(('.xlsx','.xls')):
+            text = extract_text_from_excel(file_bytes)
         else:
             continue
-        if t.strip():
-            text += f"\n--- RELEVE {len(banques)+1} ---\n" + t
-            banques.append(file.filename)
-
-    if not text.strip():
-        return jsonify({"error": "Impossible de lire les fichiers"}), 400
-
-    # Detection periode
-    periode = "Periode inconnue"
-    m = re.search(r'(janvier|fevrier|mars|avril|mai|juin|juillet|aout|septembre|octobre|novembre|decembre|june|july)\s*\d{4}', text.lower())
-    if m:
-        periode = m.group(0).capitalize()
-    else:
-        m2 = re.search(r'\d{1,2}/\d{4}|\d{4}', text)
-        if m2:
-            periode = m2.group(0)
-
-    # Decoupage en chunks de 5000 chars
-    chunk_size = 5000
-    chunks = [text[i:i+chunk_size] for i in range(0, min(len(text), 60000), chunk_size)]
-
-    client = anthropic.Anthropic()
-
-    # Analyse de chaque chunk
-    chunks_data = []
-    for i, chunk in enumerate(chunks):
-        try:
-            data = analyse_chunk(client, chunk, i+1, len(chunks))
-            chunks_data.append(data)
-        except:
+        if not text.strip():
             continue
-
-    if not chunks_data:
-        return jsonify({"error": "Aucune transaction extraite"}), 500
-
-    # Consolidation
-    rec, dep, total_r, total_d = consolide(chunks_data, periode)
-
-    # Score et conseils
+        if i == 0:
+            periode = get_periode(text)
+        nom_banque = file.filename.replace('.pdf','').replace('.csv','').replace('.xlsx','')[:30]
+        try:
+            data = analyse_releve(client, text, nom_banque)
+            data['nom'] = nom_banque
+            data['periode'] = get_periode(text)
+            comptes.append(data)
+        except Exception as e:
+            continue
+    if not comptes:
+        return jsonify({'error': 'Aucun releve analyse'}), 500
+    total_r = sum(c.get('totalRecettes', 0) for c in comptes)
+    total_d = sum(c.get('totalDepenses', 0) for c in comptes)
+    all_rec = {}
+    all_dep = {}
+    for c in comptes:
+        for r in c.get('recettes', []):
+            all_rec[r['label']] = all_rec.get(r['label'], 0) + r['montant']
+        for d in c.get('depenses', []):
+            all_dep[d['label']] = all_dep.get(d['label'], 0) + d['montant']
+    rec_global = sorted([{'label':k,'montant':v} for k,v in all_rec.items()], key=lambda x:-x['montant'])[:5]
+    dep_global = sorted([{'label':k,'montant':v} for k,v in all_dep.items()], key=lambda x:-x['montant'])[:7]
     try:
-        conseil = get_conseil(client, total_r, total_d, periode)
+        conseil = get_conseil_global(client, comptes, total_r, total_d, periode)
     except:
-        conseil = {"score":5,"score_detail":"Analyse partielle","actions":[],"commentaire":"Analyse disponible."}
-
+        conseil = {'score':5,'score_detail':'Analyse partielle','actions':[],'commentaire':'Analyse disponible.'}
     result = {
-        "periode": periode,
-        "totalRecettes": total_r,
-        "totalDepenses": total_d,
-        "recettes": rec,
-        "depenses": dep,
-        "score": conseil.get("score", 5),
-        "score_detail": conseil.get("score_detail", ""),
-        "actions": conseil.get("actions", []),
-        "commentaire": conseil.get("commentaire", "")
+        'periode': periode,
+        'totalRecettes': total_r,
+        'totalDepenses': total_d,
+        'recettes': rec_global,
+        'depenses': dep_global,
+        'score': conseil.get('score', 5),
+        'score_detail': conseil.get('score_detail', ''),
+        'actions': conseil.get('actions', []),
+        'commentaire': conseil.get('commentaire', ''),
+        'comptes': comptes
     }
     return jsonify(result)
 
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=int(__import__("os").environ.get("PORT", 5001)))
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5001)))
