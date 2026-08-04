@@ -60,15 +60,15 @@
   <div class="card" id="upload-card">
     <div class="drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
       <div style="font-size:40px;margin-bottom:12px;">📂</div>
-      <h2>Déposez votre relevé bancaire</h2>
-      <p>Glissez-déposez ou cliquez pour sélectionner</p>
+      <h2>Déposez jusqu'à 3 relevés bancaires</h2>
+      <p>Plusieurs banques ? Déposez tous vos relevés ensemble</p>
       <div class="badges">
         <span class="badge">PDF</span>
         <span class="badge">CSV</span>
         <span class="badge">Excel</span>
       </div>
     </div>
-    <input type="file" id="fileInput" accept=".pdf,.csv,.xls,.xlsx" style="display:none">
+    <input type="file" id="fileInput" accept=".pdf,.csv,.xls,.xlsx" multiple style="display:none">
     <p style="font-size:13px;color:#aaa;margin-top:1rem;text-align:center;">Vos données restent sur votre appareil et ne sont jamais stockées.</p>
   </div>
 
@@ -211,10 +211,12 @@ function renderResult(data) {
   buildTable(data.depenses, COLORS_D, 'tbl-d');
 }
 
-async function processFile(file) {
+async function processFile(files) {
   showLoading("L'IA analyse votre relevé...");
   const formData = new FormData();
-  formData.append('file', file);
+  for (let i = 0; i < files.length; i++) {
+    formData.append('files', files[i]);
+  }
   try {
     const resp = await fetch('https://bankanalyzer-production.up.railway.app/analyze', {method:'POST', body:formData});
     const data = await resp.json();
@@ -226,11 +228,11 @@ async function processFile(file) {
   }
 }
 
-document.getElementById('fileInput').addEventListener('change', e => { if(e.target.files[0]) processFile(e.target.files[0]); });
+document.getElementById('fileInput').addEventListener('change', e => { if(e.target.files.length > 0) processFile(e.target.files); });
 const dz = document.getElementById('dropZone');
 dz.addEventListener('dragover', e => { e.preventDefault(); dz.style.borderColor='#0071e3'; });
 dz.addEventListener('dragleave', () => { dz.style.borderColor='#d0d0d0'; });
-dz.addEventListener('drop', e => { e.preventDefault(); dz.style.borderColor='#d0d0d0'; if(e.dataTransfer.files[0]) processFile(e.dataTransfer.files[0]); });
+dz.addEventListener('drop', e => { e.preventDefault(); dz.style.borderColor='#d0d0d0'; if(e.dataTransfer.files.length > 0) processFile(e.dataTransfer.files); });
 </script>
 </body>
 </html>

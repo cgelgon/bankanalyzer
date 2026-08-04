@@ -84,21 +84,33 @@ def get_conseil(client, total_r, total_d, periode):
 
 @app.route("/analyze", methods=["POST"])
 def analyze():
-    file = request.files.get("file")
-    if not file:
-        return jsonify({"error": "Aucun fichier recu"}), 400
-    filename = file.filename.lower()
-    file_bytes = file.read()
-    if filename.endswith(".pdf"):
-        text = extract_text_from_pdf(file_bytes)
-    elif filename.endswith(".csv"):
-        text = extract_text_from_csv(file_bytes)
-    elif filename.endswith((".xlsx",".xls")):
-        text = extract_text_from_excel(file_bytes)
-    else:
-        return jsonify({"error": "Format non supporte"}), 400
+    files = request.files.getlist("files")
+    if not files:
+        files_single = request.files.get("file")
+        if files_single:
+            files = [files_single]
+        else:
+            return jsonify({"error": "Aucun fichier recu"}), 400
+
+    text = ""
+    banques = []
+    for file in files[:3]:
+        filename = file.filename.lower()
+        file_bytes = file.read()
+        if filename.endswith(".pdf"):
+            t = extract_text_from_pdf(file_bytes)
+        elif filename.endswith(".csv"):
+            t = extract_text_from_csv(file_bytes)
+        elif filename.endswith((".xlsx",".xls")):
+            t = extract_text_from_excel(file_bytes)
+        else:
+            continue
+        if t.strip():
+            text += f"\n--- RELEVE {len(banques)+1} ---\n" + t
+            banques.append(file.filename)
+
     if not text.strip():
-        return jsonify({"error": "Impossible de lire le fichier"}), 400
+        return jsonify({"error": "Impossible de lire les fichiers"}), 400
 
     # Detection periode
     periode = "Periode inconnue"
