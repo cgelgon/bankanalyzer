@@ -1,7 +1,7 @@
 import os, io, json, re
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-import pdfplumber
+import pypdf
 import anthropic
 import openpyxl
 
@@ -10,11 +10,11 @@ CORS(app)
 
 def extract_text_from_pdf(file_bytes):
     text = ""
-    with pdfplumber.open(io.BytesIO(file_bytes)) as pdf:
-        for page in pdf.pages:
-            t = page.extract_text()
-            if t:
-                text += t + "\n"
+    reader = pypdf.PdfReader(io.BytesIO(file_bytes))
+    for page in reader.pages:
+        t = page.extract_text()
+        if t:
+            text += t + "\n"
     return text
 
 def extract_text_from_csv(file_bytes):
