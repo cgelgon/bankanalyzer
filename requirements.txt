@@ -3,4 +3,3 @@ flask-cors
 pypdf
 anthropic
 openpyxl
-gunicorn
