@@ -8,6 +8,12 @@ import openpyxl
 app = Flask(__name__)
 CORS(app)
 
+MOIS_MAP = {
+    'janvier': 1, 'fevrier': 2, 'mars': 3, 'avril': 4, 'mai': 5, 'juin': 6,
+    'juillet': 7, 'aout': 8, 'septembre': 9, 'octobre': 10, 'novembre': 11, 'decembre': 12
+}
+
+
 def extract_text_from_pdf(file_bytes):
     text = ''
     reader = pypdf.PdfReader(io.BytesIO(file_bytes))
@@ -17,8 +23,10 @@ def extract_text_from_pdf(file_bytes):
             text += t + chr(10)
     return text
 
+
 def extract_text_from_csv(file_bytes):
     return file_bytes.decode('utf-8', errors='ignore')
+
 
 def extract_text_from_excel(file_bytes):
     wb = openpyxl.load_workbook(io.BytesIO(file_bytes))
@@ -28,9 +36,9 @@ def extract_text_from_excel(file_bytes):
         lines.append(' | '.join([str(c) if c else '' for c in row]))
     return chr(10).join(lines)
 
+
 def get_periode(text):
     mois = r'(janvier|fevrier|mars|avril|mai|juin|juillet|aout|septembre|octobre|novembre|decembre)'
-    import re
     m = re.search(mois + r'\s*\d{4}', text.lower())
     if m:
         return m.group(0).capitalize()
@@ -38,6 +46,22 @@ def get_periode(text):
     if m2:
         return m2.group(0)
     return 'Periode inconnue'
+
+
+def periode_sort_key(periode):
+    """Retourne une cle (annee, mois) triable a partir d'une chaine periode. (0,0) si non reconnue."""
+    if not periode:
+        return (0, 0)
+    p_low = periode.lower()
+    for nom, num in MOIS_MAP.items():
+        m = re.search(nom + r'\s*(\d{4})', p_low)
+        if m:
+            return (int(m.group(1)), num)
+    m2 = re.search(r'(\d{1,2})[/-](\d{4})', periode)
+    if m2:
+        return (int(m2.group(2)), int(m2.group(1)))
+    return (0, 0)
+
 
 def analyse_releve(client, text, nom_banque, langue='français'):
     prompt = (
@@ -62,15 +86,16 @@ def analyse_releve(client, text, nom_banque, langue='français'):
         system='Tu es un expert-comptable. Tu reponds UNIQUEMENT avec du JSON valide, sans aucun texte avant ou apres, sans markdown. IMPORTANT: toutes les valeurs textuelles du JSON (labels de categories, commentaire, score_detail, titres et details des actions) doivent etre redigees dans la langue specifiee dans le prompt utilisateur.',
         messages=[{'role': 'user', 'content': prompt}]
     )
-    raw = msg.content[0].text.replace('```json','').replace('```','').strip()
+    raw = msg.content[0].text.replace('```json', '').replace('```', '').strip()
     print('CLAUDE RESPONSE:', raw[:200])
     return json.loads(raw)
+
 
 def get_conseil_global(client, comptes, total_r, total_d, periode, langue='francais'):
     comptes_str = chr(10).join(['- ' + c['nom'] + ': recettes ' + str(c['totalRecettes']) + 'EUR, depenses ' + str(c['totalDepenses']) + 'EUR' for c in comptes])
     net = total_r - total_d
-    taux = round(net/total_r*100) if total_r else 0
-    langue_map = {'francais':'French','english':'English','espanol':'Spanish','deutsch':'German','italiano':'Italian','portugues':'Portuguese','chinese':'Chinese','arabic':'Arabic'}
+    taux = round(net / total_r * 100) if total_r else 0
+    langue_map = {'francais': 'French', 'english': 'English', 'espanol': 'Spanish', 'deutsch': 'German', 'italiano': 'Italian', 'portugues': 'Portuguese', 'chinese': 'Chinese', 'arabic': 'Arabic'}
     langue_name = langue_map.get(langue, 'French')
     prompt = (
         'You are a senior financial expert. Write ALL text EXCLUSIVELY in ' + langue_name + '.' + chr(10) +
@@ -102,8 +127,9 @@ def get_conseil_global(client, comptes, total_r, total_d, periode, langue='franc
         max_tokens=1000,
         messages=[{'role': 'user', 'content': prompt}]
     )
-    raw = msg.content[0].text.replace('```json','').replace('```','').strip()
+    raw = msg.content[0].text.replace('```json', '').replace('```', '').strip()
     return json.loads(raw)
+
 
 @app.route('/analyze', methods=['POST'])
 def analyze():
@@ -116,60 +142,97 @@ def analyze():
         else:
             return jsonify({'error': 'Aucun fichier recu'}), 400
     files = files[:5]
+
     client = anthropic.Anthropic()
     comptes = []
-    periode = 'Periode inconnue'
-    for i, file in enumerate(files):
+
+    for file in files:
         filename = file.filename.lower()
         file_bytes = file.read()
         if filename.endswith('.pdf'):
             text = extract_text_from_pdf(file_bytes)
         elif filename.endswith('.csv'):
             text = extract_text_from_csv(file_bytes)
-        elif filename.endswith(('.xlsx','.xls')):
+        elif filename.endswith(('.xlsx', '.xls')):
             text = extract_text_from_excel(file_bytes)
         else:
             continue
         if not text.strip():
             continue
-        if i == 0:
-            periode = get_periode(text)
-        nom_banque = file.filename.replace('.pdf','').replace('.csv','').replace('.xlsx','')[:30]
+
+        nom_banque = file.filename.replace('.pdf', '').replace('.csv', '').replace('.xlsx', '')[:30]
+        periode = get_periode(text)
         try:
             data = analyse_releve(client, text, nom_banque, langue)
             data['nom'] = nom_banque
-            data['periode'] = get_periode(text)
+            data['periode'] = periode
             comptes.append(data)
         except Exception as e:
             print('ERREUR releve', nom_banque, str(e))
             continue
+
     if not comptes:
         return jsonify({'error': 'Aucun releve analyse'}), 500
-    total_r = sum(c.get('totalRecettes', 0) for c in comptes)
-    total_d = sum(c.get('totalDepenses', 0) for c in comptes)
+
+    # --- Detection automatique multi-mois vs multi-comptes ---
+    periodes_uniques = sorted(
+        set(c.get('periode', 'Periode inconnue') for c in comptes),
+        key=periode_sort_key
+    )
+    is_multi_mois = len(periodes_uniques) > 1
+
+    evolution = []
+    if is_multi_mois:
+        for p in periodes_uniques:
+            comptes_p = [c for c in comptes if c.get('periode', 'Periode inconnue') == p]
+            tr_p = sum(c.get('totalRecettes', 0) for c in comptes_p)
+            td_p = sum(c.get('totalDepenses', 0) for c in comptes_p)
+            sa_p = sum(c.get('soldeArrivee', 0) for c in comptes_p)
+            evolution.append({
+                'periode': p,
+                'totalRecettes': tr_p,
+                'totalDepenses': td_p,
+                'net': tr_p - td_p,
+                'soldeArrivee': sa_p
+            })
+        derniere_periode = periodes_uniques[-1]
+        comptes_display = [c for c in comptes if c.get('periode', 'Periode inconnue') == derniere_periode]
+        periode_label = periodes_uniques[0] + ' -> ' + periodes_uniques[-1]
+    else:
+        comptes_display = comptes
+        periode_label = periodes_uniques[0] if periodes_uniques else 'Periode inconnue'
+
+    total_r = sum(c.get('totalRecettes', 0) for c in comptes_display)
+    total_d = sum(c.get('totalDepenses', 0) for c in comptes_display)
+
     all_rec = {}
     all_dep = {}
-    for c in comptes:
+    for c in comptes_display:
         for r in c.get('recettes', []):
             all_rec[r['label']] = all_rec.get(r['label'], 0) + r['montant']
         for d in c.get('depenses', []):
             all_dep[d['label']] = all_dep.get(d['label'], 0) + d['montant']
-    rec_global = sorted([{'label':k,'montant':v} for k,v in all_rec.items()], key=lambda x:-x['montant'])[:5]
-    dep_global = sorted([{'label':k,'montant':v} for k,v in all_dep.items()], key=lambda x:-x['montant'])[:7]
+
+    rec_global = sorted([{'label': k, 'montant': v} for k, v in all_rec.items()], key=lambda x: -x['montant'])[:5]
+    dep_global = sorted([{'label': k, 'montant': v} for k, v in all_dep.items()], key=lambda x: -x['montant'])[:7]
+
     try:
-        conseil = get_conseil_global(client, comptes, total_r, total_d, periode, langue)
-    except:
-        conseil = {'score':5,'score_detail':'Analyse partielle','actions':[],'commentaire':'Analyse disponible.'}
-    # Soldes : somme des soldes de depart et arrivee de tous les comptes
-    solde_depart = sum(c.get('soldeDepart', 0) for c in comptes)
-    solde_arrivee = sum(c.get('soldeArrivee', 0) for c in comptes)
-    # Top5 : fusionner et prendre les 5 plus grosses
+        conseil = get_conseil_global(client, comptes_display, total_r, total_d, periode_label, langue)
+    except Exception:
+        conseil = {'score': 5, 'score_detail': 'Analyse partielle', 'actions': [], 'commentaire': 'Analyse disponible.'}
+
+    solde_depart = sum(c.get('soldeDepart', 0) for c in comptes_display)
+    solde_arrivee = sum(c.get('soldeArrivee', 0) for c in comptes_display)
+
     all_top5 = []
-    for c in comptes:
+    for c in comptes_display:
         all_top5.extend(c.get('top5depenses', []))
     all_top5 = sorted(all_top5, key=lambda x: -x.get('montant', 0))[:5]
+
     result = {
-        'periode': periode,
+        'periode': periode_label,
+        'isMultiMois': is_multi_mois,
+        'evolution': evolution,
         'totalRecettes': total_r,
         'totalDepenses': total_d,
         'soldeDepart': solde_depart,
@@ -182,10 +245,11 @@ def analyze():
         'score_detail': conseil.get('score_detail', ''),
         'actions': conseil.get('actions', []),
         'commentaire': conseil.get('commentaire', ''),
-        'comptes': comptes
+        'comptes': comptes_display
     }
-    print('PHRASE_CHOC:', result.get('phrase_choc','VIDE'))
+    print('PHRASE_CHOC:', result.get('phrase_choc', 'VIDE'))
     return jsonify(result)
+
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5001)))

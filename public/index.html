@@ -84,6 +84,7 @@ tr:last-child td{border-bottom:none}
 .period-badge{display:inline-flex;align-items:center;background:#e8f1fc;color:var(--blue);font-size:13px;font-weight:500;padding:4px 12px;border-radius:20px;margin-bottom:1rem}
 .reset-btn{background:none;border:1px solid var(--border);color:var(--text2);padding:6px 14px;border-radius:20px;font-size:13px;cursor:pointer;float:right}
 .perso-wrap{text-align:center;margin:1rem 0}
+.evo-empty{font-size:13px;color:var(--text3);text-align:center;padding:1.5rem 0}
 @keyframes tremble{0%,100%{transform:translateX(0) rotate(0deg)}20%{transform:translateX(-4px) rotate(-3deg)}40%{transform:translateX(4px) rotate(3deg)}60%{transform:translateX(-3px) rotate(-2deg)}80%{transform:translateX(3px) rotate(2deg)}}
 @keyframes transpire{0%,100%{opacity:0}50%{opacity:1}}
 @keyframes hausser{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
@@ -180,18 +181,18 @@ tr:last-child td{border-bottom:none}
 
 <script>
 const TR = {
-  francais:{ov:'Vue d\'ensemble',rec:'Recettes',dep:'Dépenses',net:'Résultat net',ep:'Taux d\'épargne',sd:'Solde départ',sa:'Solde arrivée',sc:'Score de gestion',ac:'3 actions prioritaires',dr:'Détail recettes',dd:'Détail dépenses',t5:'Top 5 dépenses',ai:'✦ Analyse IA',cat:'Catégorie',mt:'Montant',nf:'↩ Nouveau fichier',nd:'Non disponible',ex:'🌟 Excellente gestion',bon:'✅ Bonne gestion',am:'⚠️ À améliorer',cr:'🔴 Situation critique'},
-  english:{ov:'Overview',rec:'Income',dep:'Expenses',net:'Net result',ep:'Savings rate',sd:'Opening balance',sa:'Closing balance',sc:'Financial score',ac:'3 priority actions',dr:'Income breakdown',dd:'Expense breakdown',t5:'Top 5 expenses',ai:'✦ AI Analysis',cat:'Category',mt:'Amount',nf:'↩ New file',nd:'Not available',ex:'🌟 Excellent',bon:'✅ Good',am:'⚠️ Needs work',cr:'🔴 Critical'},
-  espanol:{ov:'Resumen',rec:'Ingresos',dep:'Gastos',net:'Resultado neto',ep:'Tasa de ahorro',sd:'Saldo inicial',sa:'Saldo final',sc:'Puntuación',ac:'3 acciones prioritarias',dr:'Detalle ingresos',dd:'Detalle gastos',t5:'Top 5 gastos',ai:'✦ Análisis IA',cat:'Categoría',mt:'Importe',nf:'↩ Nuevo',nd:'No disponible',ex:'🌟 Excelente',bon:'✅ Bien',am:'⚠️ Mejorable',cr:'🔴 Crítico'},
-  deutsch:{ov:'Überblick',rec:'Einnahmen',dep:'Ausgaben',net:'Nettoresultat',ep:'Sparquote',sd:'Anfangssaldo',sa:'Endsaldo',sc:'Finanzbewertung',ac:'3 Maßnahmen',dr:'Einnahmen',dd:'Ausgaben Details',t5:'Top 5 Ausgaben',ai:'✦ KI-Analyse',cat:'Kategorie',mt:'Betrag',nf:'↩ Neue Datei',nd:'Nicht verfügbar',ex:'🌟 Ausgezeichnet',bon:'✅ Gut',am:'⚠️ Verbesserung',cr:'🔴 Kritisch'},
-  italiano:{ov:'Panoramica',rec:'Entrate',dep:'Uscite',net:'Risultato netto',ep:'Tasso risparmio',sd:'Saldo iniziale',sa:'Saldo finale',sc:'Punteggio',ac:'3 azioni prioritarie',dr:'Dettaglio entrate',dd:'Dettaglio uscite',t5:'Top 5 spese',ai:'✦ Analisi IA',cat:'Categoria',mt:'Importo',nf:'↩ Nuovo',nd:'Non disponibile',ex:'🌟 Eccellente',bon:'✅ Buono',am:'⚠️ Da migliorare',cr:'🔴 Critico'},
-  portugues:{ov:'Visão geral',rec:'Receitas',dep:'Despesas',net:'Resultado',ep:'Taxa poupança',sd:'Saldo inicial',sa:'Saldo final',sc:'Pontuação',ac:'3 ações prioritárias',dr:'Detalhe receitas',dd:'Detalhe despesas',t5:'Top 5 despesas',ai:'✦ Análise IA',cat:'Categoria',mt:'Valor',nf:'↩ Novo',nd:'Não disponível',ex:'🌟 Excelente',bon:'✅ Bom',am:'⚠️ A melhorar',cr:'🔴 Crítico'},
-  chinese:{ov:'总览',rec:'收入',dep:'支出',net:'净结果',ep:'储蓄率',sd:'期初余额',sa:'期末余额',sc:'财务评分',ac:'3项优先行动',dr:'收入明细',dd:'支出明细',t5:'月度前5大支出',ai:'✦ AI分析',cat:'类别',mt:'金额',nf:'↩ 新文件',nd:'不适用',ex:'🌟 优秀',bon:'✅ 良好',am:'⚠️ 需改进',cr:'🔴 危急'},
-  arabic:{ov:'نظرة عامة',rec:'الإيرادات',dep:'المصروفات',net:'الصافي',ep:'معدل الادخار',sd:'الرصيد الافتتاحي',sa:'الرصيد الختامي',sc:'التقييم',ac:'3 إجراءات',dr:'تفاصيل الإيرادات',dd:'تفاصيل المصروفات',t5:'أعلى 5 مصروفات',ai:'✦ تحليل ذكاء اصطناعي',cat:'الفئة',mt:'المبلغ',nf:'↩ ملف جديد',nd:'غير متوفر',ex:'🌟 ممتاز',bon:'✅ جيد',am:'⚠️ يحتاج تحسين',cr:'🔴 وضع حرج'}
+  francais:{ov:'Vue d\'ensemble',rec:'Recettes',dep:'Dépenses',net:'Résultat net',ep:'Taux d\'épargne',sd:'Solde départ',sa:'Solde arrivée',sc:'Score de gestion',ac:'3 actions prioritaires',dr:'Détail recettes',dd:'Détail dépenses',t5:'Top 5 dépenses',ai:'✦ Analyse IA',cat:'Catégorie',mt:'Montant',nf:'↩ Nouveau fichier',nd:'Non disponible',ex:'🌟 Excellente gestion',bon:'✅ Bonne gestion',am:'⚠️ À améliorer',cr:'🔴 Situation critique',evo:'Évolution du solde',evoWait:'Déposez plusieurs mois du même compte (ex : mai, juin, juillet) pour voir votre évolution.'},
+  english:{ov:'Overview',rec:'Income',dep:'Expenses',net:'Net result',ep:'Savings rate',sd:'Opening balance',sa:'Closing balance',sc:'Financial score',ac:'3 priority actions',dr:'Income breakdown',dd:'Expense breakdown',t5:'Top 5 expenses',ai:'✦ AI Analysis',cat:'Category',mt:'Amount',nf:'↩ New file',nd:'Not available',ex:'🌟 Excellent',bon:'✅ Good',am:'⚠️ Needs work',cr:'🔴 Critical',evo:'Balance evolution',evoWait:'Upload several months of the same account (e.g. May, June, July) to see your trend.'},
+  espanol:{ov:'Resumen',rec:'Ingresos',dep:'Gastos',net:'Resultado neto',ep:'Tasa de ahorro',sd:'Saldo inicial',sa:'Saldo final',sc:'Puntuación',ac:'3 acciones prioritarias',dr:'Detalle ingresos',dd:'Detalle gastos',t5:'Top 5 gastos',ai:'✦ Análisis IA',cat:'Categoría',mt:'Importe',nf:'↩ Nuevo',nd:'No disponible',ex:'🌟 Excelente',bon:'✅ Bien',am:'⚠️ Mejorable',cr:'🔴 Crítico',evo:'Evolución del saldo',evoWait:'Sube varios meses de la misma cuenta (ej: mayo, junio, julio) para ver tu evolución.'},
+  deutsch:{ov:'Überblick',rec:'Einnahmen',dep:'Ausgaben',net:'Nettoresultat',ep:'Sparquote',sd:'Anfangssaldo',sa:'Endsaldo',sc:'Finanzbewertung',ac:'3 Maßnahmen',dr:'Einnahmen',dd:'Ausgaben Details',t5:'Top 5 Ausgaben',ai:'✦ KI-Analyse',cat:'Kategorie',mt:'Betrag',nf:'↩ Neue Datei',nd:'Nicht verfügbar',ex:'🌟 Ausgezeichnet',bon:'✅ Gut',am:'⚠️ Verbesserung',cr:'🔴 Kritisch',evo:'Saldoentwicklung',evoWait:'Lade mehrere Monate desselben Kontos hoch (z.B. Mai, Juni, Juli), um deinen Verlauf zu sehen.'},
+  italiano:{ov:'Panoramica',rec:'Entrate',dep:'Uscite',net:'Risultato netto',ep:'Tasso risparmio',sd:'Saldo iniziale',sa:'Saldo finale',sc:'Punteggio',ac:'3 azioni prioritarie',dr:'Dettaglio entrate',dd:'Dettaglio uscite',t5:'Top 5 spese',ai:'✦ Analisi IA',cat:'Categoria',mt:'Importo',nf:'↩ Nuovo',nd:'Non disponibile',ex:'🌟 Eccellente',bon:'✅ Buono',am:'⚠️ Da migliorare',cr:'🔴 Critico',evo:'Evoluzione del saldo',evoWait:'Carica più mesi dello stesso conto (es: maggio, giugno, luglio) per vedere il tuo andamento.'},
+  portugues:{ov:'Visão geral',rec:'Receitas',dep:'Despesas',net:'Resultado',ep:'Taxa poupança',sd:'Saldo inicial',sa:'Saldo final',sc:'Pontuação',ac:'3 ações prioritárias',dr:'Detalhe receitas',dd:'Detalhe despesas',t5:'Top 5 despesas',ai:'✦ Análise IA',cat:'Categoria',mt:'Valor',nf:'↩ Novo',nd:'Não disponível',ex:'🌟 Excelente',bon:'✅ Bom',am:'⚠️ A melhorar',cr:'🔴 Crítico',evo:'Evolução do saldo',evoWait:'Envie vários meses da mesma conta (ex: maio, junho, julho) para ver sua evolução.'},
+  chinese:{ov:'总览',rec:'收入',dep:'支出',net:'净结果',ep:'储蓄率',sd:'期初余额',sa:'期末余额',sc:'财务评分',ac:'3项优先行动',dr:'收入明细',dd:'支出明细',t5:'月度前5大支出',ai:'✦ AI分析',cat:'类别',mt:'金额',nf:'↩ 新文件',nd:'不适用',ex:'🌟 优秀',bon:'✅ 良好',am:'⚠️ 需改进',cr:'🔴 危急',evo:'余额变化趋势',evoWait:'上传同一账户多个月份的对账单（如5月、6月、7月）以查看变化趋势。'},
+  arabic:{ov:'نظرة عامة',rec:'الإيرادات',dep:'المصروفات',net:'الصافي',ep:'معدل الادخار',sd:'الرصيد الافتتاحي',sa:'الرصيد الختامي',sc:'التقييم',ac:'3 إجراءات',dr:'تفاصيل الإيرادات',dd:'تفاصيل المصروفات',t5:'أعلى 5 مصروفات',ai:'✦ تحليل ذكاء اصطناعي',cat:'الفئة',mt:'المبلغ',nf:'↩ ملف جديد',nd:'غير متوفر',ex:'🌟 ممتاز',bon:'✅ جيد',am:'⚠️ يحتاج تحسين',cr:'🔴 وضع حرج',evo:'تطور الرصيد',evoWait:'قم برفع عدة أشهر لنفس الحساب (مثال: مايو، يونيو، يوليو) لرؤية تطورك.'}
 };
 const CR=['#2a78d6','#1baf7a','#eda100','#4a3aa7','#34c759'];
 const CD=['#e34948','#eb6834','#e87ba4','#898781','#4a3aa7','#eda100','#1baf7a'];
-let cR,cD;
+let cR,cD,cS,cT;
 
 function fmt(n){if(!n&&n!==0)return'—';return new Intl.NumberFormat('fr-FR',{style:'currency',currency:'EUR',maximumFractionDigits:0}).format(n)}
 function scolor(s){return s>=8?'#1baf7a':s>=5?'#f5a623':'#e34948'}
@@ -203,6 +204,8 @@ function reset(){
   document.getElementById('result').innerHTML='';
   if(cR){cR.destroy();cR=null}
   if(cD){cD.destroy();cD=null}
+  if(cS){cS.destroy();cS=null}
+  if(cT){cT.destroy();cT=null}
 }
 
 function showLoading(){
@@ -299,6 +302,8 @@ function renderResult(data){
   const score=data.score||0;
   const color=scolor(score);
   const circ=2*Math.PI*30;
+  const evolution=data.evolution||[];
+  const showEvo=data.isMultiMois&&evolution.length>=2;
 
   document.getElementById('result').innerHTML=
     '<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:1rem;">'+
@@ -315,6 +320,11 @@ function renderResult(data){
     '<div class="metric"><div class="metric-label">'+T.sd+'</div><div class="metric-value" style="color:#6e6e73">'+fmt(data.soldeDepart)+'</div></div>'+
     '<div class="metric"><div class="metric-label">'+T.sa+'</div><div class="metric-value" style="color:#6e6e73">'+fmt(data.soldeArrivee)+'</div></div>'+
     '</div></div>'+
+
+    '<div class="card anim">'+
+    '<div class="card-title">'+T.evo+'</div>'+
+    (showEvo?'<canvas id="chartS" height="90"></canvas>':'<div class="evo-empty">'+T.evoWait+'</div>')+
+    '</div>'+
 
     '<div class="card anim">'+
     (data.phrase_choc ? '<div style="background:linear-gradient(135deg,#1d1d1f,#2d2d2f);color:white;border-radius:14px;padding:1.25rem 1.5rem;margin-bottom:1rem;font-size:16px;font-weight:600;line-height:1.4;letter-spacing:-0.3px;"><span style="font-size:20px;margin-right:8px;">⚡</span>'+data.phrase_choc+'</div>' : '')+
@@ -340,6 +350,7 @@ function renderResult(data){
 
     '<div class="card anim">'+
     '<div class="card-title">'+T.t5+'</div>'+
+    ((data.top5depenses||[]).length>0?'<canvas id="chartT5" height="140" style="margin-bottom:1rem"></canvas>':'')+
     '<div id="top5">'+
     ((data.top5depenses||[]).length===0?'<p style="color:#aeaeb2;font-size:13px">'+T.nd+'</p>':
     (data.top5depenses||[]).map((t,i)=>'<div class="top5-item"><div class="top5-rank">'+(i+1)+'</div><div class="top5-label">'+t.libelle+'<span class="top5-date">'+(t.date||'')+'</span></div><div class="top5-amount">-'+fmt(t.montant)+'</div></div>').join(''))+
@@ -359,8 +370,19 @@ function renderResult(data){
 
   if(cR)cR.destroy();
   if(cD)cD.destroy();
+  if(cS)cS.destroy();
+  if(cT)cT.destroy();
+
   cR=new Chart(document.getElementById('chartR'),{type:'doughnut',data:{labels:data.recettes.map(r=>r.label),datasets:[{data:data.recettes.map(r=>r.montant),backgroundColor:CR.slice(0,data.recettes.length),borderWidth:3,borderColor:'#fff'}]},options:{responsive:true,plugins:{legend:{position:'bottom',labels:{font:{size:11},padding:12}}},animation:{duration:1000}}});
   cD=new Chart(document.getElementById('chartD'),{type:'doughnut',data:{labels:data.depenses.map(d=>d.label),datasets:[{data:data.depenses.map(d=>d.montant),backgroundColor:CD.slice(0,data.depenses.length),borderWidth:3,borderColor:'#fff'}]},options:{responsive:true,plugins:{legend:{position:'bottom',labels:{font:{size:11},padding:12}}},animation:{duration:1000}}});
+
+  if(showEvo){
+    cS=new Chart(document.getElementById('chartS'),{type:'line',data:{labels:evolution.map(e=>e.periode),datasets:[{label:T.sa,data:evolution.map(e=>e.soldeArrivee),borderColor:'#0071e3',backgroundColor:'rgba(0,113,227,0.12)',fill:true,tension:0.35,pointBackgroundColor:'#0071e3',pointRadius:4}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{ticks:{callback:v=>fmt(v)}}}}});
+  }
+
+  if((data.top5depenses||[]).length>0){
+    cT=new Chart(document.getElementById('chartT5'),{type:'bar',data:{labels:data.top5depenses.map(t=>t.libelle),datasets:[{data:data.top5depenses.map(t=>t.montant),backgroundColor:'#e34948',borderRadius:6}]},options:{indexAxis:'y',responsive:true,plugins:{legend:{display:false}},scales:{x:{ticks:{callback:v=>fmt(v)}}}}});
+  }
 
   buildTable(data.recettes,CR,'tbl-r',T);
   buildTable(data.depenses,CD,'tbl-d',T);
