@@ -262,7 +262,7 @@
 
 <script>
 const T_ALL = {
-  francais: {ov:'Vue d\'ensemble',rec:'Recettes',dep:'Depenses',net:'Resultat net',ep:'Taux d\'epargne',sd:'Solde depart',sa:'Solde arrivee',sc:'${T.sc}',ac:'${T.ac}',dr:'Detail recettes',dd:'Detail depenses',t5:'Top 5 depenses',ai:'Analyse IA',cat:'Categorie',mt:'Montant',nf:'Nouveau fichier',nd:'${T.nd}',ex:'Excellente gestion',bon:'Bonne gestion',am:'A ameliorer',cr:'Situation critique'},
+  francais: {ov:'Vue d\'ensemble',rec:'Recettes',dep:'Depenses',net:'Resultat net',ep:'Taux d\'epargne',sd:'Solde depart',sa:'Solde arrivee',sc:''+T.sc+'',ac:''+T.ac+'',dr:'Detail recettes',dd:'Detail depenses',t5:'Top 5 depenses',ai:'Analyse IA',cat:'Categorie',mt:'Montant',nf:'Nouveau fichier',nd:''+T.nd+'',ex:'Excellente gestion',bon:'Bonne gestion',am:'A ameliorer',cr:'Situation critique'},
   english: {ov:'Overview',rec:'Income',dep:'Expenses',net:'Net result',ep:'Savings rate',sd:'Opening balance',sa:'Closing balance',sc:'Financial score',ac:'3 priority actions',dr:'Income breakdown',dd:'Expense breakdown',t5:'Top 5 expenses',ai:'AI Analysis',cat:'Category',mt:'Amount',nf:'New file',nd:'Not available',ex:'Excellent',bon:'Good',am:'Needs improvement',cr:'Critical'},
   espanol: {ov:'Resumen',rec:'Ingresos',dep:'Gastos',net:'Resultado neto',ep:'Tasa de ahorro',sd:'Saldo inicial',sa:'Saldo final',sc:'Puntuacion financiera',ac:'3 acciones prioritarias',dr:'Detalle ingresos',dd:'Detalle gastos',t5:'Top 5 gastos',ai:'Analisis IA',cat:'Categoria',mt:'Importe',nf:'Nuevo archivo',nd:'No disponible',ex:'Excelente',bon:'Buena gestion',am:'Mejorable',cr:'Critico'},
   deutsch: {ov:'Uberblick',rec:'Einnahmen',dep:'Ausgaben',net:'Nettoresultat',ep:'Sparquote',sd:'Anfangssaldo',sa:'Endsaldo',sc:'Finanzbewertung',ac:'3 Massnahmen',dr:'Einnahmen',dd:'Ausgaben Details',t5:'Top 5 Ausgaben',ai:'KI-Analyse',cat:'Kategorie',mt:'Betrag',nf:'Neue Datei',nd:'Nicht verfugbar',ex:'Ausgezeichnet',bon:'Gut',am:'Verbesserungsbedarf',cr:'Kritisch'},
@@ -356,41 +356,41 @@ function renderResult(data) {
   const html = `
   <div style="margin-bottom:1rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
     <span class="period-badge">📅 ${data.periode || ''}</span>
-    <button class="reset-btn" onclick="reset()">${T.nf}</button>
+    <button class="reset-btn" onclick="reset()">'+T.nf+'</button>
   </div>
 
   <div class="card animate-in">
-    <div class="card-title">${T.ov}</div>
+    <div class="card-title">'+T.ov+'</div>
     <div class="metrics-grid">
       <div class="metric">
-        <div class="metric-label">${T.rec}</div>
+        <div class="metric-label">'+T.rec+'</div>
         <div class="metric-value" id="m-recettes" style="color:#1baf7a;">—</div>
       </div>
       <div class="metric">
-        <div class="metric-label">${T.dep}</div>
+        <div class="metric-label">'+T.dep+'</div>
         <div class="metric-value" id="m-depenses" style="color:#e34948;">—</div>
       </div>
       <div class="metric">
-        <div class="metric-label">${T.net}</div>
+        <div class="metric-label">'+T.net+'</div>
         <div class="metric-value" id="m-net" style="color:${net >= 0 ? '#1baf7a' : '#e34948'};">—</div>
       </div>
       <div class="metric">
-        <div class="metric-label">${T.ep}</div>
+        <div class="metric-label">'+T.ep+'</div>
         <div class="metric-value" style="color:#0071e3;">${taux}%</div>
       </div>
       <div class="metric">
-        <div class="metric-label">${T.sd}</div>
+        <div class="metric-label">'+T.sd+'</div>
         <div class="metric-value" style="color:#6e6e73;">${fmt(data.soldeDepart)}</div>
       </div>
       <div class="metric">
-        <div class="metric-label">${T.sa}</div>
+        <div class="metric-label">'+T.sa+'</div>
         <div class="metric-value" style="color:#6e6e73;">${fmt(data.soldeArrivee)}</div>
       </div>
     </div>
   </div>
 
   <div class="card animate-in">
-    <div class="card-title">${T.sc}</div>
+    <div class="card-title">'+T.sc+'</div>
     <div class="perso-wrap"><div id="perso-svg"></div></div>
     <div class="score-wrap">
       <div class="score-ring">
@@ -407,7 +407,7 @@ function renderResult(data) {
         <p>${data.score_detail || ''}</p>
       </div>
     </div>
-    <div class="card-title">${T.ac}</div>
+    <div class="card-title">'+T.ac+'</div>
     <div class="actions">
       ${(data.actions || []).map(a => `
         <div class="action">
@@ -422,30 +422,30 @@ function renderResult(data) {
 
   <div class="charts-grid animate-in">
     <div class="chart-card">
-      <div class="chart-label">${T.rec}</div>
+      <div class="chart-label">'+T.rec+'</div>
       <canvas id="chartR" role="img" aria-label="Répartition des recettes"></canvas>
     </div>
     <div class="chart-card">
-      <div class="chart-label">${T.dep}</div>
+      <div class="chart-label">'+T.dep+'</div>
       <canvas id="chartD" role="img" aria-label="Répartition des dépenses"></canvas>
     </div>
   </div>
 
   <div class="tables-grid animate-in">
     <div class="card">
-      <div class="card-title">${T.dr}</div>
+      <div class="card-title">'+T.dr+'</div>
       <div id="tbl-r"></div>
     </div>
     <div class="card">
-      <div class="card-title">${T.dd}</div>
+      <div class="card-title">'+T.dd+'</div>
       <div id="tbl-d"></div>
     </div>
   </div>
 
   <div class="card animate-in">
-    <div class="card-title">${T.t5}</div>
+    <div class="card-title">'+T.t5+'</div>
     <div id="top5-list">
-      ${(data.top5depenses || []).length === 0 ? '<p style="color:#aeaeb2;font-size:13px;">${T.nd}</p>' :
+      ${(data.top5depenses || []).length === 0 ? '<p style="color:#aeaeb2;font-size:13px;">'+T.nd+'</p>' :
         (data.top5depenses || []).map((t,i) => `
           <div class="top5-item">
             <div class="top5-rank">${i+1}</div>
@@ -457,7 +457,7 @@ function renderResult(data) {
 
   <div class="card animate-in">
     <div class="ai-box">
-      <div class="ai-label">${T.ai}</div>
+      <div class="ai-label">'+T.ai+'</div>
       <p>${data.commentaire || ''}</p>
     </div>
   </div>`;
@@ -491,7 +491,7 @@ function renderResult(data) {
 
   function buildTable(items, colors, id) {
     const total = items.reduce((s,i)=>s+i.montant,0);
-    let h = '<table><thead><tr><th>${T.cat}</th><th style="text-align:right">${T.mt}</th><th style="text-align:right">%</th></tr></thead><tbody>';
+    let h = '<table><thead><tr><th>'+T.cat+'</th><th style="text-align:right">'+T.mt+'</th><th style="text-align:right">%</th></tr></thead><tbody>';
     items.forEach((item,i) => {
       const drillId = 'drill-'+id+'-'+i;
       const hasDrill = item.transactions && item.transactions.length > 0;
