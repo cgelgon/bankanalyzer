@@ -346,7 +346,7 @@ function renderResult(data){
 
     '<div class="card anim"><div class="ai-box"><div class="ai-label">'+T.ai+'</div><p>'+(data.commentaire||'')+'</p></div></div>';
 
-  document.getElementById('result').style.display='block';
+  document.getElementById('loading').style.display='none';document.getElementById('result').style.display='block';
 
   setTimeout(()=>{
     animVal(document.getElementById('mr'),data.totalRecettes);
