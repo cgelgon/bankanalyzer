@@ -62,6 +62,7 @@ def analyse_releve(client, text, nom_banque):
         messages=[{'role': 'user', 'content': prompt}]
     )
     raw = msg.content[0].text.replace('```json','').replace('```','').strip()
+    print('CLAUDE RESPONSE:', raw[:200])
     return json.loads(raw)
 
 def get_conseil_global(client, comptes, total_r, total_d, periode):
