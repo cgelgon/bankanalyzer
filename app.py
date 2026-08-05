@@ -140,10 +140,21 @@ def analyze():
         conseil = get_conseil_global(client, comptes, total_r, total_d, periode)
     except:
         conseil = {'score':5,'score_detail':'Analyse partielle','actions':[],'commentaire':'Analyse disponible.'}
+    # Soldes : somme des soldes de depart et arrivee de tous les comptes
+    solde_depart = sum(c.get('soldeDepart', 0) for c in comptes)
+    solde_arrivee = sum(c.get('soldeArrivee', 0) for c in comptes)
+    # Top5 : fusionner et prendre les 5 plus grosses
+    all_top5 = []
+    for c in comptes:
+        all_top5.extend(c.get('top5depenses', []))
+    all_top5 = sorted(all_top5, key=lambda x: -x.get('montant', 0))[:5]
     result = {
         'periode': periode,
         'totalRecettes': total_r,
         'totalDepenses': total_d,
+        'soldeDepart': solde_depart,
+        'soldeArrivee': solde_arrivee,
+        'top5depenses': all_top5,
         'recettes': rec_global,
         'depenses': dep_global,
         'score': conseil.get('score', 5),
