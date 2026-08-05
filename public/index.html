@@ -266,7 +266,9 @@ function renderResult(data) {
 
 async function processFile(files) {
   showLoading("L'IA analyse votre relevé...");
+  const langue = document.getElementById('langue').value;
   const formData = new FormData();
+  formData.append('langue', langue);
   for (let i = 0; i < files.length; i++) {
     formData.append('files', files[i]);
   }

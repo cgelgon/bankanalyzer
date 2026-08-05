@@ -39,9 +39,9 @@ def get_periode(text):
         return m2.group(0)
     return 'Periode inconnue'
 
-def analyse_releve(client, text, nom_banque):
+def analyse_releve(client, text, nom_banque, langue='français'):
     prompt = (
-        'Tu es un expert-comptable francais. Analyse ce releve bancaire (' + nom_banque + ').' + chr(10) +
+        'Tu es un expert-comptable. Reponds UNIQUEMENT en ' + langue + '. Analyse ce releve bancaire (' + nom_banque + ').' + chr(10) +
         'Retourne UNIQUEMENT ce JSON sans markdown:' + chr(10) +
         '{"totalRecettes":0,"totalDepenses":0,"soldeDepart":0,"soldeArrivee":0,' +
         '"recettes":[{"label":"cat","montant":0}],' +
@@ -66,7 +66,7 @@ def analyse_releve(client, text, nom_banque):
     print('CLAUDE RESPONSE:', raw[:200])
     return json.loads(raw)
 
-def get_conseil_global(client, comptes, total_r, total_d, periode):
+def get_conseil_global(client, comptes, total_r, total_d, periode, langue='français'):
     comptes_str = chr(10).join(['- ' + c['nom'] + ': recettes ' + str(c['totalRecettes']) + 'EUR, depenses ' + str(c['totalDepenses']) + 'EUR' for c in comptes])
     net = total_r - total_d
     taux = round(net/total_r*100) if total_r else 0
@@ -89,6 +89,7 @@ def get_conseil_global(client, comptes, total_r, total_d, periode):
 
 @app.route('/analyze', methods=['POST'])
 def analyze():
+    langue = request.form.get('langue', 'français')
     files = request.files.getlist('files')
     if not files:
         f = request.files.get('file')
@@ -117,7 +118,7 @@ def analyze():
             periode = get_periode(text)
         nom_banque = file.filename.replace('.pdf','').replace('.csv','').replace('.xlsx','')[:30]
         try:
-            data = analyse_releve(client, text, nom_banque)
+            data = analyse_releve(client, text, nom_banque, langue)
             data['nom'] = nom_banque
             data['periode'] = get_periode(text)
             comptes.append(data)
@@ -138,7 +139,7 @@ def analyze():
     rec_global = sorted([{'label':k,'montant':v} for k,v in all_rec.items()], key=lambda x:-x['montant'])[:5]
     dep_global = sorted([{'label':k,'montant':v} for k,v in all_dep.items()], key=lambda x:-x['montant'])[:7]
     try:
-        conseil = get_conseil_global(client, comptes, total_r, total_d, periode)
+        conseil = get_conseil_global(client, comptes, total_r, total_d, periode, langue)
     except:
         conseil = {'score':5,'score_detail':'Analyse partielle','actions':[],'commentaire':'Analyse disponible.'}
     # Soldes : somme des soldes de depart et arrivee de tous les comptes
