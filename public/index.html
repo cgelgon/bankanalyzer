@@ -221,6 +221,8 @@ const T_ALL = {
   espanol: {ov:'Resumen',rec:'Ingresos',dep:'Gastos',net:'Resultado neto',ep:'Tasa de ahorro',sd:'Saldo inicial',sa:'Saldo final',sc:'Puntuacion financiera',ac:'3 acciones prioritarias',dr:'Detalle ingresos',dd:'Detalle gastos',t5:'Top 5 gastos',ai:'Analisis IA',cat:'Categoria',mt:'Importe',nf:'Nuevo archivo',nd:'No disponible',ex:'Excelente',bon:'Buena gestion',am:'Mejorable',cr:'Critico'},
   deutsch: {ov:'Uberblick',rec:'Einnahmen',dep:'Ausgaben',net:'Nettoresultat',ep:'Sparquote',sd:'Anfangssaldo',sa:'Endsaldo',sc:'Finanzbewertung',ac:'3 Massnahmen',dr:'Einnahmen',dd:'Ausgaben Details',t5:'Top 5 Ausgaben',ai:'KI-Analyse',cat:'Kategorie',mt:'Betrag',nf:'Neue Datei',nd:'Nicht verfugbar',ex:'Ausgezeichnet',bon:'Gut',am:'Verbesserungsbedarf',cr:'Kritisch'},
   italiano: {ov:'Panoramica',rec:'Entrate',dep:'Uscite',net:'Risultato netto',ep:'Tasso di risparmio',sd:'Saldo iniziale',sa:'Saldo finale',sc:'Punteggio finanziario',ac:'3 azioni prioritarie',dr:'Dettaglio entrate',dd:'Dettaglio uscite',t5:'Top 5 spese',ai:'Analisi IA',cat:'Categoria',mt:'Importo',nf:'Nuovo file',nd:'Non disponibile',ex:'Eccellente',bon:'Buona gestione',am:'Da migliorare',cr:'Critico'},
+  chinese: {ov:'总览',rec:'收入',dep:'支出',net:'净结果',ep:'储蓄率',sd:'期初余额',sa:'期末余额',sc:'财务评分',ac:'3项优先行动',dr:'收入明细',dd:'支出明细',t5:'月度前5大支出',ai:'AI分析',cat:'类别',mt:'金额',nf:'新文件',nd:'不适用',ex:'优秀管理',bon:'良好管理',am:'需要改进',cr:'情况危急'},
+  arabic: {ov:'نظرة عامة',rec:'الإيرادات',dep:'المصروفات',net:'النتيجة الصافية',ep:'معدل الادخار',sd:'الرصيد الافتتاحي',sa:'الرصيد الختامي',sc:'التقييم المالي',ac:'3 إجراءات ذات أولوية',dr:'تفاصيل الإيرادات',dd:'تفاصيل المصروفات',t5:'أعلى 5 مصروفات',ai:'تحليل الذكاء الاصطناعي',cat:'الفئة',mt:'المبلغ',nf:'ملف جديد',nd:'غير متوفر',ex:'ممتاز',bon:'جيد',am:'يحتاج تحسين',cr:'وضع حرج'},
   portugues: {ov:'Visao geral',rec:'Receitas',dep:'Despesas',net:'Resultado liquido',ep:'Taxa de poupanca',sd:'Saldo inicial',sa:'Saldo final',sc:'Pontuacao financeira',ac:'3 acoes prioritarias',dr:'Detalhe receitas',dd:'Detalhe despesas',t5:'Top 5 despesas',ai:'Analise IA',cat:'Categoria',mt:'Valor',nf:'Novo ficheiro',nd:'Nao disponivel',ex:'Excelente',bon:'Boa gestao',am:'A melhorar',cr:'Critico'}
 };
 const COLORS_R = ['#2a78d6','#1baf7a','#eda100','#4a3aa7','#34c759'];
@@ -441,7 +443,7 @@ function renderResult(data) {
 
   function buildTable(items, colors, id) {
     const total = items.reduce((s,i)=>s+i.montant,0);
-    let h = '<table><thead><tr><th>Catégorie</th><th style="text-align:right">Montant</th><th style="text-align:right">%</th></tr></thead><tbody>';
+    let h = '<table><thead><tr><th>${T.cat}</th><th style="text-align:right">${T.mt}</th><th style="text-align:right">%</th></tr></thead><tbody>';
     items.forEach((item,i) => {
       const drillId = 'drill-'+id+'-'+i;
       const hasDrill = item.transactions && item.transactions.length > 0;
