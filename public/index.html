@@ -3,179 +3,108 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>BankAnalyzer — Votre bilan financier en 1 clic</title>
+<title>BankAnalyzer</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <style>
-  :root {
-    --blue: #0071e3;
-    --blue-light: #e8f1fc;
-    --green: #1baf7a;
-    --green-light: #e6f7f1;
-    --red: #e34948;
-    --red-light: #fdeaea;
-    --orange: #f5a623;
-    --bg: #f5f5f7;
-    --white: #ffffff;
-    --text: #1d1d1f;
-    --text-2: #6e6e73;
-    --text-3: #aeaeb2;
-    --border: #e5e5ea;
-    --radius: 16px;
-    --shadow: 0 2px 20px rgba(0,0,0,0.06);
-    --shadow-hover: 0 8px 40px rgba(0,0,0,0.12);
-  }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
-
-  /* HEADER */
-  header { background: rgba(255,255,255,0.85); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-bottom: 1px solid var(--border); padding: 0 2rem; height: 56px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
-  .logo { display: flex; align-items: center; gap: 10px; }
-  .logo-icon { width: 28px; height: 28px; background: linear-gradient(135deg, #0071e3, #00c7ff); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 13px; }
-  .logo h1 { font-size: 17px; font-weight: 600; letter-spacing: -0.3px; }
-  .logo span { font-size: 13px; color: var(--text-2); margin-left: 4px; }
-
-  /* HERO */
-  .hero { text-align: center; padding: 4rem 1rem 2rem; }
-  .hero h2 { font-size: 42px; font-weight: 700; letter-spacing: -1px; line-height: 1.1; margin-bottom: 12px; background: linear-gradient(135deg, #1d1d1f 0%, #6e6e73 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-  .hero p { font-size: 17px; color: var(--text-2); max-width: 480px; margin: 0 auto 2rem; line-height: 1.5; }
-
-  /* UPLOAD ZONE */
-  .upload-wrap { max-width: 580px; margin: 0 auto; padding: 0 1rem 3rem; }
-  .drop-zone { background: var(--white); border: 2px dashed var(--border); border-radius: 20px; padding: 3rem 2rem; text-align: center; cursor: pointer; transition: all 0.3s cubic-bezier(0.4,0,0.2,1); position: relative; overflow: hidden; }
-  .drop-zone::before { content: ''; position: absolute; inset: 0; background: linear-gradient(135deg, rgba(0,113,227,0.03), rgba(0,199,255,0.03)); opacity: 0; transition: opacity 0.3s; }
-  .drop-zone:hover, .drop-zone.drag-over { border-color: var(--blue); transform: translateY(-2px); box-shadow: var(--shadow-hover); }
-  .drop-zone:hover::before, .drop-zone.drag-over::before { opacity: 1; }
-  .upload-icon { width: 64px; height: 64px; background: linear-gradient(135deg, #e8f1fc, #d0e8ff); border-radius: 18px; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.25rem; font-size: 28px; transition: transform 0.3s; }
-  .drop-zone:hover .upload-icon { transform: scale(1.08) rotate(-3deg); }
-  .drop-zone h3 { font-size: 18px; font-weight: 600; margin-bottom: 6px; }
-  .drop-zone p { font-size: 14px; color: var(--text-2); margin-bottom: 1.25rem; }
-  .badges { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-bottom: 1.5rem; }
-  .badge { background: var(--bg); border: 1px solid var(--border); padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 500; color: var(--text-2); }
-  .lang-wrap { display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 1rem; }
-  .lang-wrap label { font-size: 13px; color: var(--text-2); }
-  .lang-select { font-size: 13px; padding: 6px 12px; border-radius: 10px; border: 1px solid var(--border); background: var(--white); color: var(--text); cursor: pointer; outline: none; appearance: none; -webkit-appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236e6e73' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 10px center; padding-right: 28px; }
-  .hint { font-size: 12px; color: var(--text-3); margin-top: 0.75rem; }
-  input[type=file] { display: none; }
-
-  /* LOADING */
-  #loading { display: none; max-width: 580px; margin: 0 auto; padding: 0 1rem 3rem; }
-  .loading-card { background: var(--white); border-radius: 20px; padding: 3rem 2rem; text-align: center; box-shadow: var(--shadow); }
-  .loading-spinner { width: 48px; height: 48px; border: 3px solid var(--border); border-top-color: var(--blue); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 1.5rem; }
-  @keyframes spin { to { transform: rotate(360deg); } }
-  .loading-steps { display: flex; flex-direction: column; gap: 12px; margin-top: 1.5rem; max-width: 280px; margin-left: auto; margin-right: auto; }
-  .step { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--text-3); transition: color 0.3s; }
-  .step.active { color: var(--blue); font-weight: 500; }
-  .step.done { color: var(--green); }
-  .step-dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
-
-  /* RESULT */
-  #result { display: none; max-width: 900px; margin: 0 auto; padding: 0 1rem 4rem; }
-
-  /* CARDS */
-  .card { background: var(--white); border-radius: var(--radius); padding: 1.75rem; margin-bottom: 1rem; box-shadow: var(--shadow); transition: box-shadow 0.2s; }
-  .card:hover { box-shadow: var(--shadow-hover); }
-  .card-title { font-size: 13px; font-weight: 600; color: var(--text-2); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 1rem; }
-
-  /* METRICS */
-  .metrics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 1rem; }
-  .metric { background: var(--bg); border-radius: 12px; padding: 1rem 1.25rem; transition: transform 0.2s; }
-  .metric:hover { transform: translateY(-2px); }
-  .metric-label { font-size: 11px; color: var(--text-2); font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px; }
-  .metric-value { font-size: 22px; font-weight: 600; letter-spacing: -0.5px; }
-  .metric-sub { font-size: 11px; color: var(--text-3); margin-top: 2px; }
-
-  /* SCORE */
-  .score-wrap { display: flex; gap: 1.5rem; align-items: center; background: linear-gradient(135deg, #f0f7ff, #e8f4fd); border-radius: 14px; padding: 1.25rem 1.5rem; margin-bottom: 1.5rem; }
-  .score-ring { position: relative; width: 72px; height: 72px; flex-shrink: 0; }
-  .score-ring svg { transform: rotate(-90deg); }
-  .score-ring-text { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 700; }
-  .score-info h3 { font-size: 16px; font-weight: 600; margin-bottom: 4px; }
-  .score-info p { font-size: 13px; color: var(--text-2); line-height: 1.5; }
-
-  /* ACTIONS */
-  .actions { display: flex; flex-direction: column; gap: 10px; }
-  .action { display: flex; gap: 1rem; background: var(--bg); border-radius: 12px; padding: 1rem 1.25rem; transition: all 0.2s; border-left: 3px solid var(--blue); }
-  .action:hover { background: var(--blue-light); transform: translateX(4px); }
-  .action-num { font-size: 20px; font-weight: 700; color: var(--blue); flex-shrink: 0; line-height: 1.3; }
-  .action h4 { font-size: 14px; font-weight: 600; margin-bottom: 3px; }
-  .action p { font-size: 13px; color: var(--text-2); line-height: 1.5; }
-
-  /* CHARTS */
-  .charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem; }
-  .chart-card { background: var(--white); border-radius: var(--radius); padding: 1.5rem; box-shadow: var(--shadow); }
-  .chart-label { font-size: 13px; font-weight: 600; color: var(--text-2); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 1rem; }
-
-  /* TABLE */
-  .tables-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem; }
-  table { width: 100%; border-collapse: collapse; font-size: 13px; }
-  th { text-align: left; color: var(--text-3); font-weight: 500; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; padding: 6px 0; border-bottom: 1px solid var(--border); }
-  td { padding: 10px 0; border-bottom: 1px solid var(--bg); vertical-align: top; }
-  tr:last-child td { border-bottom: none; }
-  .dot { display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 6px; vertical-align: 2px; flex-shrink: 0; }
-  .drill-toggle { color: var(--blue); font-size: 11px; cursor: pointer; margin-left: 6px; opacity: 0.7; }
-  .drill-toggle:hover { opacity: 1; }
-  .drill-content { display: none; margin-top: 6px; background: var(--bg); border-radius: 8px; padding: 6px 10px; }
-  .drill-content.open { display: block; }
-  .drill-row { display: flex; justify-content: space-between; padding: 4px 0; font-size: 12px; color: var(--text-2); border-bottom: 1px solid var(--border); }
-  .drill-row:last-child { border-bottom: none; }
-
-  /* TOP 5 */
-  .top5-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--bg); }
-  .top5-item:last-child { border-bottom: none; }
-  .top5-rank { width: 24px; height: 24px; border-radius: 50%; background: var(--bg); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; color: var(--text-2); flex-shrink: 0; margin-right: 10px; }
-  .top5-label { flex: 1; font-size: 13px; }
-  .top5-date { font-size: 11px; color: var(--text-3); margin-left: 6px; }
-  .top5-amount { font-size: 14px; font-weight: 600; color: var(--red); }
-
-  /* AI BOX */
-  .ai-box { background: linear-gradient(135deg, #f0f7ff, #e8f4fd); border-radius: 14px; padding: 1.25rem 1.5rem; border: 1px solid #d0e8ff; }
-  .ai-label { font-size: 12px; font-weight: 600; color: var(--blue); margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
-  .ai-box p { font-size: 14px; color: var(--text); line-height: 1.6; }
-
-  /* RESET */
-  .reset-btn { background: none; border: 1px solid var(--border); color: var(--text-2); padding: 6px 14px; border-radius: 20px; font-size: 13px; cursor: pointer; transition: all 0.2s; float: right; }
-  .reset-btn:hover { background: var(--bg); color: var(--text); }
-
-  /* PERIOD BADGE */
-  .period-badge { display: inline-flex; align-items: center; background: var(--blue-light); color: var(--blue); font-size: 13px; font-weight: 500; padding: 4px 12px; border-radius: 20px; margin-bottom: 1rem; }
-
-  /* ANIMATIONS */
-  @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-  .animate-in { animation: fadeUp 0.5s cubic-bezier(0.4,0,0.2,1) forwards; }
-  .animate-in:nth-child(2) { animation-delay: 0.1s; }
-  .animate-in:nth-child(3) { animation-delay: 0.2s; }
-  .animate-in:nth-child(4) { animation-delay: 0.3s; }
-
-  /* BONHOMME ANIME */
-  .perso-wrap { text-align: center; margin: 1.5rem 0; }
-  .perso { display: inline-block; }
-  @keyframes tremble { 0%,100%{transform:translateX(0) rotate(0deg)} 20%{transform:translateX(-4px) rotate(-3deg)} 40%{transform:translateX(4px) rotate(3deg)} 60%{transform:translateX(-3px) rotate(-2deg)} 80%{transform:translateX(3px) rotate(2deg)} }
-  @keyframes transpire { 0%,100%{opacity:0} 50%{opacity:1} }
-  @keyframes hausser { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-6px)} }
-  @keyframes confiant { 0%,100%{transform:rotate(-3deg)} 50%{transform:rotate(3deg)} }
-  @keyframes superstar { 0%{transform:scale(1) rotate(0deg)} 25%{transform:scale(1.05) rotate(-2deg)} 75%{transform:scale(1.05) rotate(2deg)} 100%{transform:scale(1) rotate(0deg)} }
-  @keyframes regarder { 0%,100%{transform:translateX(0)} 33%{transform:translateX(-3px)} 66%{transform:translateX(3px)} }
-  @keyframes cligner { 0%,90%,100%{transform:scaleY(1)} 95%{transform:scaleY(0.1)} }
-  .stress .body { animation: tremble 0.4s infinite; }
-  .neutre .body { animation: hausser 2s ease-in-out infinite; }
-  .bien .body { animation: confiant 2s ease-in-out infinite; }
-  .top .body { animation: superstar 1.5s ease-in-out infinite; }
-  .loading-perso .body { animation: regarder 1.5s ease-in-out infinite; }
-
-  @media (max-width: 640px) {
-    .hero h2 { font-size: 28px; }
-    .charts-grid, .tables-grid { grid-template-columns: 1fr; }
-    .metrics-grid { grid-template-columns: 1fr 1fr; }
-  }
+:root{--blue:#0071e3;--green:#1baf7a;--red:#e34948;--orange:#f5a623;--bg:#f5f5f7;--white:#fff;--text:#1d1d1f;--text2:#6e6e73;--text3:#aeaeb2;--border:#e5e5ea;--r:16px;--sh:0 2px 20px rgba(0,0,0,.06);--sh2:0 8px 40px rgba(0,0,0,.12)}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+header{background:rgba(255,255,255,.85);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:0 2rem;height:56px;display:flex;align-items:center;position:sticky;top:0;z-index:100}
+.logo{display:flex;align-items:center;gap:10px}
+.logo-icon{width:28px;height:28px;background:linear-gradient(135deg,#0071e3,#00c7ff);border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:13px}
+.logo h1{font-size:17px;font-weight:600}
+.hero{text-align:center;padding:4rem 1rem 2rem}
+.hero h2{font-size:42px;font-weight:700;letter-spacing:-1px;line-height:1.1;margin-bottom:12px;background:linear-gradient(135deg,#1d1d1f,#6e6e73);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.hero p{font-size:17px;color:var(--text2);max-width:480px;margin:0 auto 2rem;line-height:1.5}
+.upload-wrap{max-width:580px;margin:0 auto;padding:0 1rem 3rem}
+.drop-zone{background:#fff;border:2px dashed var(--border);border-radius:20px;padding:3rem 2rem;text-align:center;cursor:pointer;transition:all .3s}
+.drop-zone:hover,.drop-zone.drag-over{border-color:var(--blue);transform:translateY(-2px);box-shadow:var(--sh2)}
+.upload-icon{width:64px;height:64px;background:linear-gradient(135deg,#e8f1fc,#d0e8ff);border-radius:18px;display:flex;align-items:center;justify-content:center;margin:0 auto 1.25rem;font-size:28px;transition:transform .3s}
+.drop-zone:hover .upload-icon{transform:scale(1.08) rotate(-3deg)}
+.drop-zone h3{font-size:18px;font-weight:600;margin-bottom:6px}
+.drop-zone p{font-size:14px;color:var(--text2);margin-bottom:1.25rem}
+.badges{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:1.5rem}
+.badge{background:var(--bg);border:1px solid var(--border);padding:4px 12px;border-radius:20px;font-size:12px;font-weight:500;color:var(--text2)}
+.hint{font-size:12px;color:var(--text3);margin-top:.75rem}
+.lang-outer{display:flex;align-items:center;justify-content:center;gap:10px;margin-top:1rem}
+.lang-outer label{font-size:13px;color:var(--text2)}
+.lang-select{font-size:13px;padding:6px 28px 6px 12px;border-radius:10px;border:1px solid var(--border);background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236e6e73' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E") no-repeat right 10px center;color:var(--text);cursor:pointer;outline:none;-webkit-appearance:none}
+input[type=file]{display:none}
+#loading{display:none;max-width:580px;margin:0 auto;padding:0 1rem 3rem}
+.loading-card{background:#fff;border-radius:20px;padding:3rem 2rem;text-align:center;box-shadow:var(--sh)}
+.spinner{width:48px;height:48px;border:3px solid var(--border);border-top-color:var(--blue);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 1rem}
+@keyframes spin{to{transform:rotate(360deg)}}
+.steps{display:flex;flex-direction:column;gap:10px;margin-top:1rem;max-width:260px;margin-left:auto;margin-right:auto}
+.step{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--text3);transition:color .3s}
+.step.active{color:var(--blue);font-weight:500}
+.step.done{color:var(--green)}
+.step-dot{width:8px;height:8px;border-radius:50%;background:currentColor;flex-shrink:0}
+#result{display:none;max-width:900px;margin:0 auto;padding:0 1rem 4rem}
+.card{background:#fff;border-radius:var(--r);padding:1.75rem;margin-bottom:1rem;box-shadow:var(--sh)}
+.card-title{font-size:12px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:1rem}
+.metrics-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:1rem}
+.metric{background:var(--bg);border-radius:12px;padding:1rem 1.25rem}
+.metric-label{font-size:11px;color:var(--text2);font-weight:500;text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px}
+.metric-value{font-size:21px;font-weight:600;letter-spacing:-.5px}
+.score-wrap{display:flex;gap:1.5rem;align-items:center;background:linear-gradient(135deg,#f0f7ff,#e8f4fd);border-radius:14px;padding:1.25rem 1.5rem;margin-bottom:1.5rem}
+.score-ring{position:relative;width:72px;height:72px;flex-shrink:0}
+.score-ring svg{transform:rotate(-90deg)}
+.score-ring-text{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700}
+.score-info h3{font-size:16px;font-weight:600;margin-bottom:4px}
+.score-info p{font-size:13px;color:var(--text2);line-height:1.5}
+.actions{display:flex;flex-direction:column;gap:10px}
+.action{display:flex;gap:1rem;background:var(--bg);border-radius:12px;padding:1rem 1.25rem;border-left:3px solid var(--blue);transition:all .2s}
+.action:hover{background:#e8f1fc;transform:translateX(4px)}
+.action-num{font-size:20px;font-weight:700;color:var(--blue);flex-shrink:0}
+.action h4{font-size:14px;font-weight:600;margin-bottom:3px}
+.action p{font-size:13px;color:var(--text2);line-height:1.5}
+.charts-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem}
+.chart-card{background:#fff;border-radius:var(--r);padding:1.5rem;box-shadow:var(--sh)}
+.chart-label{font-size:12px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:1rem}
+.tables-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;color:var(--text3);font-weight:500;font-size:11px;text-transform:uppercase;letter-spacing:.05em;padding:6px 0;border-bottom:1px solid var(--border)}
+td{padding:9px 0;border-bottom:1px solid var(--bg);vertical-align:top}
+tr:last-child td{border-bottom:none}
+.dot{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:6px;vertical-align:2px}
+.drill-toggle{color:var(--blue);font-size:11px;cursor:pointer;margin-left:6px}
+.drill-content{display:none;margin-top:6px;background:var(--bg);border-radius:8px;padding:6px 10px}
+.drill-content.open{display:block}
+.drill-row{display:flex;justify-content:space-between;padding:4px 0;font-size:12px;color:var(--text2);border-bottom:1px solid var(--border)}
+.drill-row:last-child{border-bottom:none}
+.top5-item{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--bg)}
+.top5-item:last-child{border-bottom:none}
+.top5-rank{width:24px;height:24px;border-radius:50%;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:var(--text2);flex-shrink:0;margin-right:10px}
+.top5-label{flex:1;font-size:13px}
+.top5-date{font-size:11px;color:var(--text3);margin-left:6px}
+.top5-amount{font-size:14px;font-weight:600;color:var(--red)}
+.ai-box{background:linear-gradient(135deg,#f0f7ff,#e8f4fd);border-radius:14px;padding:1.25rem 1.5rem;border:1px solid #d0e8ff}
+.ai-label{font-size:12px;font-weight:600;color:var(--blue);margin-bottom:6px}
+.ai-box p{font-size:14px;color:var(--text);line-height:1.6}
+.period-badge{display:inline-flex;align-items:center;background:#e8f1fc;color:var(--blue);font-size:13px;font-weight:500;padding:4px 12px;border-radius:20px;margin-bottom:1rem}
+.reset-btn{background:none;border:1px solid var(--border);color:var(--text2);padding:6px 14px;border-radius:20px;font-size:13px;cursor:pointer;float:right}
+.perso-wrap{text-align:center;margin:1rem 0}
+@keyframes tremble{0%,100%{transform:translateX(0) rotate(0deg)}20%{transform:translateX(-4px) rotate(-3deg)}40%{transform:translateX(4px) rotate(3deg)}60%{transform:translateX(-3px) rotate(-2deg)}80%{transform:translateX(3px) rotate(2deg)}}
+@keyframes transpire{0%,100%{opacity:0}50%{opacity:1}}
+@keyframes hausser{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+@keyframes confiant{0%,100%{transform:rotate(-3deg)}50%{transform:rotate(3deg)}}
+@keyframes superstar{0%,100%{transform:scale(1) rotate(0deg)}50%{transform:scale(1.05) rotate(2deg)}}
+@keyframes regarder{0%,100%{transform:translateX(0)}33%{transform:translateX(-3px)}66%{transform:translateX(3px)}}
+.stress .body{animation:tremble .4s infinite}
+.neutre .body{animation:hausser 2s ease-in-out infinite}
+.bien .body{animation:confiant 2s ease-in-out infinite}
+.top .body{animation:superstar 1.5s ease-in-out infinite}
+.loading-perso .body{animation:regarder 1.5s ease-in-out infinite}
+@keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+.anim{animation:fadeUp .5s ease forwards}
+@media(max-width:640px){.hero h2{font-size:28px}.charts-grid,.tables-grid{grid-template-columns:1fr}.metrics-grid{grid-template-columns:1fr 1fr}}
 </style>
 </head>
 <body>
-
 <header>
   <div class="logo">
     <div class="logo-icon">B</div>
     <h1>BankAnalyzer</h1>
-    <span>by IA</span>
   </div>
 </header>
 
@@ -184,7 +113,6 @@
     <h2>Votre bilan financier<br>en 1 clic</h2>
     <p>Déposez vos relevés bancaires et obtenez une analyse complète par l'IA en quelques secondes.</p>
   </div>
-
   <div class="upload-wrap">
     <div class="drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
       <div class="upload-icon">📊</div>
@@ -196,63 +124,53 @@
         <span class="badge">📗 Excel</span>
         <span class="badge">🏦 Multi-banques</span>
       </div>
-
-      <p class="hint">🔒 Vos données restent confidentielles et ne sont jamais stockées</p>
+      <p class="hint">🔒 Données confidentielles, jamais stockées</p>
     </div>
     <input type="file" id="fileInput" accept=".pdf,.csv,.xls,.xlsx" multiple>
-  <div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-top:1rem;">
-    <label style="font-size:13px;color:#6e6e73;">🌍 Langue de l'analyse :</label>
-    <select id="langue" class="lang-select">
-      <option value="francais">🇫🇷 Français</option>
-      <option value="english">🇬🇧 English</option>
-      <option value="espanol">🇪🇸 Español</option>
-      <option value="deutsch">🇩🇪 Deutsch</option>
-      <option value="italiano">🇮🇹 Italiano</option>
-      <option value="portugues">🇵🇹 Português</option><option value="chinese">🇨🇳 中文</option><option value="arabic">🇸🇦 العربية</option>
-    </select>
-  </div>
+    <div class="lang-outer">
+      <label>🌍 Langue :</label>
+      <select id="langue" class="lang-select">
+        <option value="francais">🇫🇷 Français</option>
+        <option value="english">🇬🇧 English</option>
+        <option value="espanol">🇪🇸 Español</option>
+        <option value="deutsch">🇩🇪 Deutsch</option>
+        <option value="italiano">🇮🇹 Italiano</option>
+        <option value="portugues">🇵🇹 Português</option>
+        <option value="chinese">🇨🇳 中文</option>
+        <option value="arabic">🇸🇦 العربية</option>
+      </select>
+    </div>
   </div>
 </div>
 
 <div id="loading">
   <div class="loading-card">
-    <div class="loading-spinner"></div>
-    <div style="margin:1rem 0;">
-      <svg width="80" height="120" viewBox="0 0 80 120" class="loading-perso">
-        <g class="body">
-          <!-- Tete -->
-          <circle cx="40" cy="25" r="18" fill="#FFD93D" stroke="#333" stroke-width="2"/>
-          <!-- Yeux qui bougent -->
-          <ellipse cx="33" cy="22" rx="4" ry="4" fill="white"/>
-          <ellipse cx="47" cy="22" rx="4" ry="4" fill="white"/>
-          <circle cx="34" cy="23" r="2" fill="#333" class="pupil-l" style="animation:regarder 1.5s ease-in-out infinite"/>
-          <circle cx="48" cy="23" r="2" fill="#333" class="pupil-r" style="animation:regarder 1.5s ease-in-out infinite"/>
-          <!-- Sourcils inquiets -->
-          <path d="M28 16 Q33 13 36 16" stroke="#333" stroke-width="2" fill="none"/>
-          <path d="M44 16 Q47 13 52 16" stroke="#333" stroke-width="2" fill="none"/>
-          <!-- Bouche inquiete -->
-          <path d="M32 33 Q40 30 48 33" stroke="#333" stroke-width="2" fill="none"/>
-          <!-- Corps -->
-          <rect x="28" y="45" width="24" height="35" rx="8" fill="#4ECDC4" stroke="#333" stroke-width="2"/>
-          <!-- Bras -->
-          <line x1="28" y1="52" x2="12" y2="65" stroke="#333" stroke-width="3" stroke-linecap="round"/>
-          <line x1="52" y1="52" x2="68" y2="65" stroke="#333" stroke-width="3" stroke-linecap="round"/>
-          <!-- Jambes -->
-          <line x1="35" y1="80" x2="32" y2="105" stroke="#333" stroke-width="3" stroke-linecap="round"/>
-          <line x1="45" y1="80" x2="48" y2="105" stroke="#333" stroke-width="3" stroke-linecap="round"/>
-          <!-- Ordinateur -->
-          <rect x="10" y="60" width="25" height="18" rx="3" fill="#333"/>
-          <rect x="12" y="62" width="21" height="13" rx="2" fill="#00C7FF"/>
-          <rect x="14" y="78" width="21" height="3" rx="1" fill="#555"/>
-        </g>
-      </svg>
-    </div>
-    <p style="font-size:16px;font-weight:600;margin-bottom:4px;" id="loading-title">Analyse en cours...</p>
-    <p style="font-size:13px;color:#6e6e73;" id="loading-sub">L'IA lit vos relevés</p>
-    <div class="loading-steps">
+    <div class="spinner"></div>
+    <svg width="80" height="120" viewBox="0 0 80 120" class="loading-perso" style="margin:1rem 0">
+      <g class="body">
+        <circle cx="40" cy="25" r="18" fill="#FFD93D" stroke="#333" stroke-width="2"/>
+        <ellipse cx="33" cy="22" rx="4" ry="4" fill="white"/>
+        <ellipse cx="47" cy="22" rx="4" ry="4" fill="white"/>
+        <circle cx="34" cy="23" r="2" fill="#333"/>
+        <circle cx="48" cy="23" r="2" fill="#333"/>
+        <path d="M28 16 Q33 13 36 16" stroke="#333" stroke-width="2" fill="none"/>
+        <path d="M44 16 Q47 13 52 16" stroke="#333" stroke-width="2" fill="none"/>
+        <path d="M32 33 Q40 30 48 33" stroke="#333" stroke-width="2" fill="none"/>
+        <rect x="28" y="45" width="24" height="35" rx="8" fill="#4ECDC4" stroke="#333" stroke-width="2"/>
+        <line x1="28" y1="52" x2="12" y2="65" stroke="#333" stroke-width="3" stroke-linecap="round"/>
+        <line x1="52" y1="52" x2="68" y2="65" stroke="#333" stroke-width="3" stroke-linecap="round"/>
+        <line x1="35" y1="80" x2="32" y2="105" stroke="#333" stroke-width="3" stroke-linecap="round"/>
+        <line x1="45" y1="80" x2="48" y2="105" stroke="#333" stroke-width="3" stroke-linecap="round"/>
+        <rect x="10" y="60" width="25" height="18" rx="3" fill="#333"/>
+        <rect x="12" y="62" width="21" height="13" rx="2" fill="#00C7FF"/>
+      </g>
+    </svg>
+    <p style="font-size:16px;font-weight:600;margin-bottom:4px">Analyse en cours...</p>
+    <p style="font-size:13px;color:#6e6e73">L'IA analyse vos relevés</p>
+    <div class="steps">
       <div class="step active" id="step1"><div class="step-dot"></div>Lecture des fichiers</div>
       <div class="step" id="step2"><div class="step-dot"></div>Extraction des transactions</div>
-      <div class="step" id="step3"><div class="step-dot"></div>Catégorisation par l'IA</div>
+      <div class="step" id="step3"><div class="step-dot"></div>Catégorisation IA</div>
       <div class="step" id="step4"><div class="step-dot"></div>Génération du rapport</div>
     </div>
   </div>
@@ -261,339 +179,215 @@
 <div id="result"></div>
 
 <script>
-const T_ALL = {
-  francais: {ov:'Vue d\'ensemble',rec:'Recettes',dep:'Depenses',net:'Resultat net',ep:'Taux d\'epargne',sd:'Solde depart',sa:'Solde arrivee',sc:'Score de gestion',ac:'3 actions prioritaires',dr:'Detail recettes',dd:'Detail depenses',t5:'Top 5 depenses',ai:'Analyse IA',cat:'Categorie',mt:'Montant',nf:'Nouveau fichier',nd:'Non disponible',ex:'Excellente gestion',bon:'Bonne gestion',am:'A ameliorer',cr:'Situation critique'},
-  english: {ov:'Overview',rec:'Income',dep:'Expenses',net:'Net result',ep:'Savings rate',sd:'Opening balance',sa:'Closing balance',sc:'Financial score',ac:'3 priority actions',dr:'Income breakdown',dd:'Expense breakdown',t5:'Top 5 expenses',ai:'AI Analysis',cat:'Category',mt:'Amount',nf:'New file',nd:'Not available',ex:'Excellent',bon:'Good',am:'Needs improvement',cr:'Critical'},
-  espanol: {ov:'Resumen',rec:'Ingresos',dep:'Gastos',net:'Resultado neto',ep:'Tasa de ahorro',sd:'Saldo inicial',sa:'Saldo final',sc:'Puntuacion financiera',ac:'3 acciones prioritarias',dr:'Detalle ingresos',dd:'Detalle gastos',t5:'Top 5 gastos',ai:'Analisis IA',cat:'Categoria',mt:'Importe',nf:'Nuevo archivo',nd:'No disponible',ex:'Excelente',bon:'Buena gestion',am:'Mejorable',cr:'Critico'},
-  deutsch: {ov:'Uberblick',rec:'Einnahmen',dep:'Ausgaben',net:'Nettoresultat',ep:'Sparquote',sd:'Anfangssaldo',sa:'Endsaldo',sc:'Finanzbewertung',ac:'3 Massnahmen',dr:'Einnahmen',dd:'Ausgaben Details',t5:'Top 5 Ausgaben',ai:'KI-Analyse',cat:'Kategorie',mt:'Betrag',nf:'Neue Datei',nd:'Nicht verfugbar',ex:'Ausgezeichnet',bon:'Gut',am:'Verbesserungsbedarf',cr:'Kritisch'},
-  italiano: {ov:'Panoramica',rec:'Entrate',dep:'Uscite',net:'Risultato netto',ep:'Tasso di risparmio',sd:'Saldo iniziale',sa:'Saldo finale',sc:'Punteggio finanziario',ac:'3 azioni prioritarie',dr:'Dettaglio entrate',dd:'Dettaglio uscite',t5:'Top 5 spese',ai:'Analisi IA',cat:'Categoria',mt:'Importo',nf:'Nuovo file',nd:'Non disponibile',ex:'Eccellente',bon:'Buona gestione',am:'Da migliorare',cr:'Critico'},
-  chinese: {ov:'总览',rec:'收入',dep:'支出',net:'净结果',ep:'储蓄率',sd:'期初余额',sa:'期末余额',sc:'财务评分',ac:'3项优先行动',dr:'收入明细',dd:'支出明细',t5:'月度前5大支出',ai:'AI分析',cat:'类别',mt:'金额',nf:'新文件',nd:'不适用',ex:'优秀管理',bon:'良好管理',am:'需要改进',cr:'情况危急'},
-  arabic: {ov:'نظرة عامة',rec:'الإيرادات',dep:'المصروفات',net:'النتيجة الصافية',ep:'معدل الادخار',sd:'الرصيد الافتتاحي',sa:'الرصيد الختامي',sc:'التقييم المالي',ac:'3 إجراءات ذات أولوية',dr:'تفاصيل الإيرادات',dd:'تفاصيل المصروفات',t5:'أعلى 5 مصروفات',ai:'تحليل الذكاء الاصطناعي',cat:'الفئة',mt:'المبلغ',nf:'ملف جديد',nd:'غير متوفر',ex:'ممتاز',bon:'جيد',am:'يحتاج تحسين',cr:'وضع حرج'},
-  portugues: {ov:'Visao geral',rec:'Receitas',dep:'Despesas',net:'Resultado liquido',ep:'Taxa de poupanca',sd:'Saldo inicial',sa:'Saldo final',sc:'Pontuacao financeira',ac:'3 acoes prioritarias',dr:'Detalhe receitas',dd:'Detalhe despesas',t5:'Top 5 despesas',ai:'Analise IA',cat:'Categoria',mt:'Valor',nf:'Novo ficheiro',nd:'Nao disponivel',ex:'Excelente',bon:'Boa gestao',am:'A melhorar',cr:'Critico'}
+const TR = {
+  francais:{ov:'Vue d\'ensemble',rec:'Recettes',dep:'Dépenses',net:'Résultat net',ep:'Taux d\'épargne',sd:'Solde départ',sa:'Solde arrivée',sc:'Score de gestion',ac:'3 actions prioritaires',dr:'Détail recettes',dd:'Détail dépenses',t5:'Top 5 dépenses',ai:'✦ Analyse IA',cat:'Catégorie',mt:'Montant',nf:'↩ Nouveau fichier',nd:'Non disponible',ex:'🌟 Excellente gestion',bon:'✅ Bonne gestion',am:'⚠️ À améliorer',cr:'🔴 Situation critique'},
+  english:{ov:'Overview',rec:'Income',dep:'Expenses',net:'Net result',ep:'Savings rate',sd:'Opening balance',sa:'Closing balance',sc:'Financial score',ac:'3 priority actions',dr:'Income breakdown',dd:'Expense breakdown',t5:'Top 5 expenses',ai:'✦ AI Analysis',cat:'Category',mt:'Amount',nf:'↩ New file',nd:'Not available',ex:'🌟 Excellent',bon:'✅ Good',am:'⚠️ Needs work',cr:'🔴 Critical'},
+  espanol:{ov:'Resumen',rec:'Ingresos',dep:'Gastos',net:'Resultado neto',ep:'Tasa de ahorro',sd:'Saldo inicial',sa:'Saldo final',sc:'Puntuación',ac:'3 acciones prioritarias',dr:'Detalle ingresos',dd:'Detalle gastos',t5:'Top 5 gastos',ai:'✦ Análisis IA',cat:'Categoría',mt:'Importe',nf:'↩ Nuevo',nd:'No disponible',ex:'🌟 Excelente',bon:'✅ Bien',am:'⚠️ Mejorable',cr:'🔴 Crítico'},
+  deutsch:{ov:'Überblick',rec:'Einnahmen',dep:'Ausgaben',net:'Nettoresultat',ep:'Sparquote',sd:'Anfangssaldo',sa:'Endsaldo',sc:'Finanzbewertung',ac:'3 Maßnahmen',dr:'Einnahmen',dd:'Ausgaben Details',t5:'Top 5 Ausgaben',ai:'✦ KI-Analyse',cat:'Kategorie',mt:'Betrag',nf:'↩ Neue Datei',nd:'Nicht verfügbar',ex:'🌟 Ausgezeichnet',bon:'✅ Gut',am:'⚠️ Verbesserung',cr:'🔴 Kritisch'},
+  italiano:{ov:'Panoramica',rec:'Entrate',dep:'Uscite',net:'Risultato netto',ep:'Tasso risparmio',sd:'Saldo iniziale',sa:'Saldo finale',sc:'Punteggio',ac:'3 azioni prioritarie',dr:'Dettaglio entrate',dd:'Dettaglio uscite',t5:'Top 5 spese',ai:'✦ Analisi IA',cat:'Categoria',mt:'Importo',nf:'↩ Nuovo',nd:'Non disponibile',ex:'🌟 Eccellente',bon:'✅ Buono',am:'⚠️ Da migliorare',cr:'🔴 Critico'},
+  portugues:{ov:'Visão geral',rec:'Receitas',dep:'Despesas',net:'Resultado',ep:'Taxa poupança',sd:'Saldo inicial',sa:'Saldo final',sc:'Pontuação',ac:'3 ações prioritárias',dr:'Detalhe receitas',dd:'Detalhe despesas',t5:'Top 5 despesas',ai:'✦ Análise IA',cat:'Categoria',mt:'Valor',nf:'↩ Novo',nd:'Não disponível',ex:'🌟 Excelente',bon:'✅ Bom',am:'⚠️ A melhorar',cr:'🔴 Crítico'},
+  chinese:{ov:'总览',rec:'收入',dep:'支出',net:'净结果',ep:'储蓄率',sd:'期初余额',sa:'期末余额',sc:'财务评分',ac:'3项优先行动',dr:'收入明细',dd:'支出明细',t5:'月度前5大支出',ai:'✦ AI分析',cat:'类别',mt:'金额',nf:'↩ 新文件',nd:'不适用',ex:'🌟 优秀',bon:'✅ 良好',am:'⚠️ 需改进',cr:'🔴 危急'},
+  arabic:{ov:'نظرة عامة',rec:'الإيرادات',dep:'المصروفات',net:'الصافي',ep:'معدل الادخار',sd:'الرصيد الافتتاحي',sa:'الرصيد الختامي',sc:'التقييم',ac:'3 إجراءات',dr:'تفاصيل الإيرادات',dd:'تفاصيل المصروفات',t5:'أعلى 5 مصروفات',ai:'✦ تحليل ذكاء اصطناعي',cat:'الفئة',mt:'المبلغ',nf:'↩ ملف جديد',nd:'غير متوفر',ex:'🌟 ممتاز',bon:'✅ جيد',am:'⚠️ يحتاج تحسين',cr:'🔴 وضع حرج'}
 };
-const COLORS_R = ['#2a78d6','#1baf7a','#eda100','#4a3aa7','#34c759'];
-const COLORS_D = ['#e34948','#eb6834','#e87ba4','#898781','#4a3aa7','#eda100','#1baf7a'];
-let cR, cD;
+const CR=['#2a78d6','#1baf7a','#eda100','#4a3aa7','#34c759'];
+const CD=['#e34948','#eb6834','#e87ba4','#898781','#4a3aa7','#eda100','#1baf7a'];
+let cR,cD;
 
-function fmt(n) {
-  if (!n && n !== 0) return '—';
-  return new Intl.NumberFormat('fr-FR', {style:'currency', currency:'EUR', maximumFractionDigits:0}).format(n);
+function fmt(n){if(!n&&n!==0)return'—';return new Intl.NumberFormat('fr-FR',{style:'currency',currency:'EUR',maximumFractionDigits:0}).format(n)}
+function scolor(s){return s>=8?'#1baf7a':s>=5?'#f5a623':'#e34948'}
+function slabel(s,T){return s>=8?T.ex:s>=6?T.bon:s>=4?T.am:T.cr}
+
+function reset(){
+  document.getElementById('upload-section').style.display='block';
+  document.getElementById('result').style.display='none';
+  document.getElementById('result').innerHTML='';
+  if(cR){cR.destroy();cR=null}
+  if(cD){cD.destroy();cD=null}
 }
 
-function scoreColor(s) {
-  if (s >= 8) return '#1baf7a';
-  if (s >= 5) return '#f5a623';
-  return '#e34948';
+function showLoading(){
+  document.getElementById('upload-section').style.display='none';
+  document.getElementById('loading').style.display='block';
+  document.getElementById('result').style.display='none';
+  const steps=['step1','step2','step3','step4'];
+  let i=0;
+  const iv=setInterval(()=>{
+    if(i>0)document.getElementById(steps[i-1]).className='step done';
+    if(i<steps.length){document.getElementById(steps[i]).className='step active';i++}
+    else clearInterval(iv);
+  },4000);
 }
 
-function scoreLabel(s) {
-  if (s >= 8) return '';
-  if (s >= 6) return '';
-  if (s >= 4) return '';
-  return '';
-}
-
-function animateScore(targetScore, color) {
-  let current = 0;
-  const circle = document.getElementById('score-circle-progress');
-  const text = document.getElementById('score-text');
-  const circumference = 2 * Math.PI * 30;
-  circle.style.strokeDasharray = circumference;
-  const interval = setInterval(() => {
-    current += 0.2;
-    if (current >= targetScore) { current = targetScore; clearInterval(interval); }
-    const offset = circumference - (current / 10) * circumference;
-    circle.style.strokeDashoffset = offset;
-    circle.style.stroke = color;
-    text.textContent = Math.round(current) + '/10';
-  }, 20);
-}
-
-function animateValue(el, target) {
-  let start = 0;
-  const duration = 800;
-  const step = (timestamp) => {
-    if (!start) start = timestamp;
-    const progress = Math.min((timestamp - start) / duration, 1);
-    const val = Math.round(progress * target);
-    el.textContent = new Intl.NumberFormat('fr-FR', {style:'currency', currency:'EUR', maximumFractionDigits:0}).format(val);
-    if (progress < 1) requestAnimationFrame(step);
+function animVal(el,target){
+  let start=0;
+  const dur=800;
+  const step=(ts)=>{
+    if(!start)start=ts;
+    const p=Math.min((ts-start)/dur,1);
+    el.textContent=new Intl.NumberFormat('fr-FR',{style:'currency',currency:'EUR',maximumFractionDigits:0}).format(Math.round(p*target));
+    if(p<1)requestAnimationFrame(step);
   };
   requestAnimationFrame(step);
 }
 
-function reset() {
-  document.getElementById('upload-section').style.display = 'block';
-  document.getElementById('result').style.display = 'none';
-  document.getElementById('result').innerHTML = '';
-  if(cR) { cR.destroy(); cR = null; }
-  if(cD) { cD.destroy(); cD = null; }
+function animScore(target,color){
+  const circle=document.getElementById('scp');
+  const text=document.getElementById('sct');
+  if(!circle||!text)return;
+  const circ=2*Math.PI*30;
+  circle.style.strokeDasharray=circ;
+  let cur=0;
+  const iv=setInterval(()=>{
+    cur+=0.2;
+    if(cur>=target){cur=target;clearInterval(iv)}
+    circle.style.strokeDashoffset=circ-(cur/10)*circ;
+    circle.style.stroke=color;
+    text.textContent=Math.round(cur)+'/10';
+    text.style.color=color;
+  },20);
 }
 
-function showLoading() {
-  document.getElementById('upload-section').style.display = 'none';
-  document.getElementById('loading').style.display = 'block';
-  document.getElementById('result').style.display = 'none';
-  const steps = ['step1','step2','step3','step4'];
-  let i = 0;
-  const interval = setInterval(() => {
-    if (i > 0) { document.getElementById(steps[i-1]).className = 'step done'; }
-    if (i < steps.length) { document.getElementById(steps[i]).className = 'step active'; i++; }
-    else clearInterval(interval);
-  }, 4000);
-}
-
-function renderResult(data) {
-  const langueVal = document.getElementById('langue').value;
-  const T = T_ALL[langueVal] || T_ALL.francais;
-  document.getElementById('loading').style.display = 'none';
-  const net = data.totalRecettes - data.totalDepenses;
-  const taux = data.totalRecettes > 0 ? Math.round((net / data.totalRecettes) * 100) : 0;
-  const score = data.score || 0;
-  const color = scoreColor(score);
-  const circumference = 2 * Math.PI * 30;
-
-  const html = `
-  <div style="margin-bottom:1rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
-    <span class="period-badge">📅 ${data.periode || ''}</span>
-    <button class="reset-btn" onclick="reset()">'+T.nf+'</button>
-  </div>
-
-  <div class="card animate-in">
-    <div class="card-title">'+T.ov+'</div>
-    <div class="metrics-grid">
-      <div class="metric">
-        <div class="metric-label">'+T.rec+'</div>
-        <div class="metric-value" id="m-recettes" style="color:#1baf7a;">—</div>
-      </div>
-      <div class="metric">
-        <div class="metric-label">'+T.dep+'</div>
-        <div class="metric-value" id="m-depenses" style="color:#e34948;">—</div>
-      </div>
-      <div class="metric">
-        <div class="metric-label">'+T.net+'</div>
-        <div class="metric-value" id="m-net" style="color:${net >= 0 ? '#1baf7a' : '#e34948'};">—</div>
-      </div>
-      <div class="metric">
-        <div class="metric-label">'+T.ep+'</div>
-        <div class="metric-value" style="color:#0071e3;">${taux}%</div>
-      </div>
-      <div class="metric">
-        <div class="metric-label">'+T.sd+'</div>
-        <div class="metric-value" style="color:#6e6e73;">${fmt(data.soldeDepart)}</div>
-      </div>
-      <div class="metric">
-        <div class="metric-label">'+T.sa+'</div>
-        <div class="metric-value" style="color:#6e6e73;">${fmt(data.soldeArrivee)}</div>
-      </div>
-    </div>
-  </div>
-
-  <div class="card animate-in">
-    <div class="card-title">'+T.sc+'</div>
-    <div class="perso-wrap"><div id="perso-svg"></div></div>
-    <div class="score-wrap">
-      <div class="score-ring">
-        <svg width="72" height="72" viewBox="0 0 72 72">
-          <circle cx="36" cy="36" r="30" fill="none" stroke="#f0f0f5" stroke-width="6"/>
-          <circle id="score-circle-progress" cx="36" cy="36" r="30" fill="none" stroke="${color}" stroke-width="6"
-            stroke-dasharray="${circumference}" stroke-dashoffset="${circumference}" stroke-linecap="round"
-            style="transition: stroke-dashoffset 0.05s linear;"/>
-        </svg>
-        <div class="score-ring-text" id="score-text" style="color:${color};">0/10</div>
-      </div>
-      <div class="score-info">
-        <h3>${scoreLabel(score)}</h3>
-        <p>${data.score_detail || ''}</p>
-      </div>
-    </div>
-    <div class="card-title">'+T.ac+'</div>
-    <div class="actions">
-      ${(data.actions || []).map(a => `
-        <div class="action">
-          <div class="action-num">${a.priorite}</div>
-          <div>
-            <h4>${a.titre}</h4>
-            <p>${a.detail}</p>
-          </div>
-        </div>`).join('')}
-    </div>
-  </div>
-
-  <div class="charts-grid animate-in">
-    <div class="chart-card">
-      <div class="chart-label">'+T.rec+'</div>
-      <canvas id="chartR" role="img" aria-label="Répartition des recettes"></canvas>
-    </div>
-    <div class="chart-card">
-      <div class="chart-label">'+T.dep+'</div>
-      <canvas id="chartD" role="img" aria-label="Répartition des dépenses"></canvas>
-    </div>
-  </div>
-
-  <div class="tables-grid animate-in">
-    <div class="card">
-      <div class="card-title">'+T.dr+'</div>
-      <div id="tbl-r"></div>
-    </div>
-    <div class="card">
-      <div class="card-title">'+T.dd+'</div>
-      <div id="tbl-d"></div>
-    </div>
-  </div>
-
-  <div class="card animate-in">
-    <div class="card-title">'+T.t5+'</div>
-    <div id="top5-list">
-      ${(data.top5depenses || []).length === 0 ? '<p style="color:#aeaeb2;font-size:13px;">'+T.nd+'</p>' :
-        (data.top5depenses || []).map((t,i) => `
-          <div class="top5-item">
-            <div class="top5-rank">${i+1}</div>
-            <div class="top5-label">${t.libelle}<span class="top5-date">${t.date||''}</span></div>
-            <div class="top5-amount">-${fmt(t.montant)}</div>
-          </div>`).join('')}
-    </div>
-  </div>
-
-  <div class="card animate-in">
-    <div class="ai-box">
-      <div class="ai-label">'+T.ai+'</div>
-      <p>${data.commentaire || ''}</p>
-    </div>
-  </div>`;
-
-  const resultEl = document.getElementById('result');
-  resultEl.innerHTML = html;
-  resultEl.style.display = 'block';
-
-  // Animate numbers
-  drawPerso(score);
-  setTimeout(() => {
-    animateValue(document.getElementById('m-recettes'), data.totalRecettes);
-    animateValue(document.getElementById('m-depenses'), data.totalDepenses);
-    animateValue(document.getElementById('m-net'), Math.abs(net));
-    animateScore(score, color);
-  }, 100);
-
-  // Charts
-  if(cR) cR.destroy();
-  if(cD) cD.destroy();
-  cR = new Chart(document.getElementById('chartR'), {
-    type:'doughnut',
-    data:{labels:data.recettes.map(r=>r.label), datasets:[{data:data.recettes.map(r=>r.montant), backgroundColor:COLORS_R.slice(0,data.recettes.length), borderWidth:3, borderColor:'#fff'}]},
-    options:{responsive:true, plugins:{legend:{position:'bottom', labels:{font:{size:11}, padding:12}}}, animation:{animateRotate:true, duration:1000}}
-  });
-  cD = new Chart(document.getElementById('chartD'), {
-    type:'doughnut',
-    data:{labels:data.depenses.map(d=>d.label), datasets:[{data:data.depenses.map(d=>d.montant), backgroundColor:COLORS_D.slice(0,data.depenses.length), borderWidth:3, borderColor:'#fff'}]},
-    options:{responsive:true, plugins:{legend:{position:'bottom', labels:{font:{size:11}, padding:12}}}, animation:{animateRotate:true, duration:1000}}
-  });
-
-  function buildTable(items, colors, id) {
-    const total = items.reduce((s,i)=>s+i.montant,0);
-    let h = '<table><thead><tr><th>'+T.cat+'</th><th style="text-align:right">'+T.mt+'</th><th style="text-align:right">%</th></tr></thead><tbody>';
-    items.forEach((item,i) => {
-      const drillId = 'drill-'+id+'-'+i;
-      const hasDrill = item.transactions && item.transactions.length > 0;
-      h += '<tr><td>';
-      h += '<span class="dot" style="background:'+colors[i]+'"></span>' + item.label;
-      if (hasDrill) h += '<span class="drill-toggle" onclick="toggleDrill(\'' + drillId + '\')">▾ détail</span>';
-      if (hasDrill) {
-        h += '<div class="drill-content" id="' + drillId + '">';
-        item.transactions.forEach(t => {
-          h += '<div class="drill-row"><span>'+(t.date||'')+' '+t.libelle+'</span><span>'+fmt(t.montant)+'</span></div>';
-        });
-        h += '</div>';
-      }
-      h += '</td><td style="text-align:right;font-weight:500">'+fmt(item.montant)+'</td><td style="text-align:right;color:#aeaeb2">'+Math.round(item.montant/total*100)+'%</td></tr>';
-    });
-    h += '</tbody></table>';
-    document.getElementById(id).innerHTML = h;
+function drawPerso(score){
+  const wrap=document.getElementById('perso-svg');
+  if(!wrap)return;
+  let cls,face,bras,extra,col;
+  if(score<=3){
+    cls='stress';col='#e34948';
+    face='<path d="M30 35 Q40 30 50 35" stroke="#333" stroke-width="2" fill="none"/><path d="M28 17 Q33 13 37 17" stroke="#333" stroke-width="2.5" fill="none"/><path d="M43 17 Q47 13 52 17" stroke="#333" stroke-width="2.5" fill="none"/>';
+    bras='<line x1="28" y1="55" x2="10" y2="45" stroke="#333" stroke-width="3" stroke-linecap="round"/><line x1="52" y1="55" x2="70" y2="45" stroke="#333" stroke-width="3" stroke-linecap="round"/>';
+    extra='<text x="58" y="30" font-size="14" style="animation:transpire 1s infinite">💧</text><text x="5" y="42" font-size="14" style="animation:transpire 1s infinite 0.5s">💧</text><text x="30" y="115" font-size="10" fill="#e34948">😰</text>';
+  }else if(score<=6){
+    cls='neutre';col='#f5a623';
+    face='<path d="M32 33 L48 33" stroke="#333" stroke-width="2" fill="none"/><path d="M29 19 Q33 17 37 19" stroke="#333" stroke-width="2" fill="none"/><path d="M43 19 Q47 17 51 19" stroke="#333" stroke-width="2" fill="none"/>';
+    bras='<line x1="28" y1="55" x2="14" y2="65" stroke="#333" stroke-width="3" stroke-linecap="round"/><line x1="52" y1="52" x2="66" y2="42" stroke="#333" stroke-width="3" stroke-linecap="round"/><circle cx="66" cy="40" r="5" fill="#FFD93D" stroke="#333" stroke-width="1.5"/>';
+    extra='<text x="28" y="115" font-size="10" fill="#f5a623">🤔</text>';
+  }else if(score<=8){
+    cls='bien';col='#1baf7a';
+    face='<path d="M30 29 Q40 38 50 29" stroke="#333" stroke-width="2" fill="none"/><path d="M29 18 Q33 15 37 18" stroke="#333" stroke-width="2" fill="none"/><path d="M43 18 Q47 15 51 18" stroke="#333" stroke-width="2" fill="none"/>';
+    bras='<line x1="28" y1="55" x2="12" y2="48" stroke="#333" stroke-width="3" stroke-linecap="round"/><circle cx="10" cy="46" r="6" fill="#FFD93D" stroke="#333" stroke-width="2"/><text x="6" y="50" font-size="9">👍</text><line x1="52" y1="55" x2="68" y2="62" stroke="#333" stroke-width="3" stroke-linecap="round"/>';
+    extra='<text x="53" y="18" font-size="16">⭐</text><text x="28" y="115" font-size="10" fill="#1baf7a">😊</text>';
+  }else{
+    cls='top';col='#0071e3';
+    face='<path d="M29 29 Q40 39 51 29" stroke="#333" stroke-width="2.5" fill="none"/><rect x="27" y="17" width="10" height="6" rx="2" fill="#1a1a2e"/><rect x="43" y="17" width="10" height="6" rx="2" fill="#1a1a2e"/><line x1="27" y1="20" x2="37" y2="20" stroke="#0071e3" stroke-width="1.5"/><line x1="43" y1="20" x2="53" y2="20" stroke="#0071e3" stroke-width="1.5"/>';
+    bras='<line x1="28" y1="52" x2="10" y2="40" stroke="#333" stroke-width="3" stroke-linecap="round"/><line x1="52" y1="52" x2="70" y2="40" stroke="#333" stroke-width="3" stroke-linecap="round"/>';
+    extra='<text x="48" y="14" font-size="18">🏆</text><text x="2" y="32" font-size="14">💎</text><text x="58" y="48" font-size="14">🚀</text><text x="28" y="115" font-size="10" fill="#0071e3">😎</text>';
   }
-
-  buildTable(data.recettes, COLORS_R, 'tbl-r');
-  buildTable(data.depenses, COLORS_D, 'tbl-d');
+  wrap.innerHTML='<svg width="100" height="130" viewBox="0 0 80 120" class="'+cls+'" style="filter:drop-shadow(0 4px 12px rgba(0,0,0,.15))"><g class="body">'+extra+'<circle cx="40" cy="25" r="18" fill="#FFD93D" stroke="#333" stroke-width="2"/><ellipse cx="33" cy="22" rx="4" ry="4" fill="white"/><ellipse cx="47" cy="22" rx="4" ry="4" fill="white"/><circle cx="34" cy="23" r="2.5" fill="#333"/><circle cx="48" cy="23" r="2.5" fill="#333"/>'+face+'<rect x="28" y="45" width="24" height="35" rx="8" fill="'+col+'" stroke="#333" stroke-width="2"/>'+bras+'<line x1="35" y1="80" x2="32" y2="108" stroke="#333" stroke-width="3" stroke-linecap="round"/><line x1="45" y1="80" x2="48" y2="108" stroke="#333" stroke-width="3" stroke-linecap="round"/></g></svg>';
 }
 
-function drawPerso(score) {
-  const wrap = document.getElementById('perso-svg');
-  if (!wrap) return;
-  let cls, face, bras, extra, couleur;
-  if (score <= 3) {
-    cls = 'stress'; couleur = '#e34948';
-    face = '<path d="M30 35 Q40 30 50 35" stroke="#333" stroke-width="2" fill="none"/><path d="M28 18 Q33 14 37 18" stroke="#333" stroke-width="2.5" fill="none"/><path d="M43 18 Q47 14 52 18" stroke="#333" stroke-width="2.5" fill="none"/>';
-    bras = '<line x1="28" y1="55" x2="10" y2="45" stroke="#333" stroke-width="3" stroke-linecap="round"/><line x1="52" y1="55" x2="70" y2="45" stroke="#333" stroke-width="3" stroke-linecap="round"/>';
-    extra = '<text x="58" y="30" font-size="14" style="animation:transpire 1s infinite">💧</text><text x="5" y="42" font-size="14" style="animation:transpire 1s infinite 0.5s">💧</text>';
-  } else if (score <= 6) {
-    cls = 'neutre'; couleur = '#f5a623';
-    face = '<path d="M32 33 L48 33" stroke="#333" stroke-width="2" fill="none"/><path d="M29 18 Q33 16 37 18" stroke="#333" stroke-width="2" fill="none"/><path d="M43 18 Q47 16 51 18" stroke="#333" stroke-width="2" fill="none"/>';
-    bras = '<line x1="28" y1="55" x2="12" y2="62" stroke="#333" stroke-width="3" stroke-linecap="round"/><line x1="52" y1="55" x2="68" y2="62" stroke="#333" stroke-width="3" stroke-linecap="round"/><text x="5" y="68" font-size="16">🤷</text>';
-    extra = '';
-  } else if (score <= 8) {
-    cls = 'bien'; couleur = '#1baf7a';
-    face = '<path d="M30 30 Q40 38 50 30" stroke="#333" stroke-width="2" fill="none"/><path d="M29 18 Q33 15 37 18" stroke="#333" stroke-width="2" fill="none"/><path d="M43 18 Q47 15 51 18" stroke="#333" stroke-width="2" fill="none"/>';
-    bras = '<line x1="28" y1="55" x2="12" y2="48" stroke="#333" stroke-width="3" stroke-linecap="round"/><circle cx="12" cy="46" r="5" fill="#FFD93D" stroke="#333" stroke-width="2"/><text x="7" y="50" font-size="8">👍</text><line x1="52" y1="55" x2="68" y2="62" stroke="#333" stroke-width="3" stroke-linecap="round"/>';
-    extra = '<text x="55" y="20" font-size="16">⭐</text>';
-  } else {
-    cls = 'top'; couleur = '#0071e3';
-    face = '<path d="M29 29 Q40 38 51 29" stroke="#333" stroke-width="2.5" fill="none"/><rect x="27" y="17" width="10" height="6" rx="2" fill="#333"/><rect x="43" y="17" width="10" height="6" rx="2" fill="#333"/><rect x="27" y="17" width="10" height="3" rx="1" fill="#1a1a2e"/><rect x="43" y="17" width="10" height="3" rx="1" fill="#1a1a2e"/>';
-    bras = '<line x1="28" y1="52" x2="10" y2="42" stroke="#333" stroke-width="3" stroke-linecap="round"/><line x1="52" y1="52" x2="70" y2="42" stroke="#333" stroke-width="3" stroke-linecap="round"/>';
-    extra = '<text x="50" y="15" font-size="18">🏆</text><text x="5" y="35" font-size="14">💎</text><text x="58" y="45" font-size="14">🚀</text>';
-  }
-  wrap.innerHTML = `
-    <svg width="100" height="130" viewBox="0 0 80 120" class="${cls}" style="filter:drop-shadow(0 4px 12px rgba(0,0,0,0.15))">
-      <g class="body">
-        ${extra}
-        <circle cx="40" cy="25" r="18" fill="#FFD93D" stroke="#333" stroke-width="2"/>
-        <ellipse cx="33" cy="22" rx="4" ry="4" fill="white"/>
-        <ellipse cx="47" cy="22" rx="4" ry="4" fill="white"/>
-        <circle cx="34" cy="23" r="2.5" fill="#333"/>
-        <circle cx="48" cy="23" r="2.5" fill="#333"/>
-        ${face}
-        <rect x="28" y="45" width="24" height="35" rx="8" fill="${couleur}" stroke="#333" stroke-width="2"/>
-        ${bras}
-        <line x1="35" y1="80" x2="32" y2="108" stroke="#333" stroke-width="3" stroke-linecap="round"/>
-        <line x1="45" y1="80" x2="48" y2="108" stroke="#333" stroke-width="3" stroke-linecap="round"/>
-      </g>
-    </svg>`;
+function toggleDrill(id){const el=document.getElementById(id);if(el)el.classList.toggle('open')}
+
+function buildTable(items,colors,id,T){
+  const total=items.reduce((s,i)=>s+i.montant,0);
+  let h='<table><thead><tr><th>'+T.cat+'</th><th style="text-align:right">'+T.mt+'</th><th style="text-align:right">%</th></tr></thead><tbody>';
+  items.forEach((item,i)=>{
+    const did='drill-'+id+'-'+i;
+    const has=item.transactions&&item.transactions.length>0;
+    h+='<tr><td><span class="dot" style="background:'+colors[i]+'"></span>'+item.label;
+    if(has)h+='<span class="drill-toggle" onclick="toggleDrill(\''+did+'\')">▾ detail</span><div class="drill-content" id="'+did+'">'+item.transactions.map(t=>'<div class="drill-row"><span>'+(t.date||'')+' '+t.libelle+'</span><span>'+fmt(t.montant)+'</span></div>').join('')+'</div>';
+    h+='</td><td style="text-align:right;font-weight:500">'+fmt(item.montant)+'</td><td style="text-align:right;color:#aeaeb2">'+Math.round(item.montant/total*100)+'%</td></tr>';
+  });
+  h+='</tbody></table>';
+  document.getElementById(id).innerHTML=h;
 }
 
-function toggleDrill(id) {
-  const el = document.getElementById(id);
-  if (el) el.classList.toggle('open');
+function renderResult(data){
+  const langue=document.getElementById('langue').value;
+  const T=TR[langue]||TR.francais;
+  const net=data.totalRecettes-data.totalDepenses;
+  const taux=data.totalRecettes>0?Math.round((net/data.totalRecettes)*100):0;
+  const score=data.score||0;
+  const color=scolor(score);
+  const circ=2*Math.PI*30;
+
+  document.getElementById('result').innerHTML=
+    '<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:1rem;">'+
+    '<span class="period-badge">📅 '+(data.periode||'')+'</span>'+
+    '<button class="reset-btn" onclick="reset()">'+T.nf+'</button></div>'+
+
+    '<div class="card anim">'+
+    '<div class="card-title">'+T.ov+'</div>'+
+    '<div class="metrics-grid">'+
+    '<div class="metric"><div class="metric-label">'+T.rec+'</div><div class="metric-value" id="mr" style="color:#1baf7a">—</div></div>'+
+    '<div class="metric"><div class="metric-label">'+T.dep+'</div><div class="metric-value" id="md" style="color:#e34948">—</div></div>'+
+    '<div class="metric"><div class="metric-label">'+T.net+'</div><div class="metric-value" id="mn" style="color:'+(net>=0?'#1baf7a':'#e34948')+'">—</div></div>'+
+    '<div class="metric"><div class="metric-label">'+T.ep+'</div><div class="metric-value" style="color:#0071e3">'+taux+'%</div></div>'+
+    '<div class="metric"><div class="metric-label">'+T.sd+'</div><div class="metric-value" style="color:#6e6e73">'+fmt(data.soldeDepart)+'</div></div>'+
+    '<div class="metric"><div class="metric-label">'+T.sa+'</div><div class="metric-value" style="color:#6e6e73">'+fmt(data.soldeArrivee)+'</div></div>'+
+    '</div></div>'+
+
+    '<div class="card anim">'+
+    '<div class="card-title">'+T.sc+'</div>'+
+    '<div class="perso-wrap"><div id="perso-svg"></div></div>'+
+    '<div class="score-wrap">'+
+    '<div class="score-ring"><svg width="72" height="72" viewBox="0 0 72 72"><circle cx="36" cy="36" r="30" fill="none" stroke="#f0f0f5" stroke-width="6"/><circle id="scp" cx="36" cy="36" r="30" fill="none" stroke="'+color+'" stroke-width="6" stroke-dasharray="'+circ+'" stroke-dashoffset="'+circ+'" stroke-linecap="round"/></svg><div class="score-ring-text" id="sct">0/10</div></div>'+
+    '<div class="score-info"><h3>'+slabel(score,T)+'</h3><p>'+(data.score_detail||'')+'</p></div></div>'+
+    '<div class="card-title">'+T.ac+'</div>'+
+    '<div class="actions">'+
+    (data.actions||[]).map(a=>'<div class="action"><div class="action-num">'+a.priorite+'</div><div><h4>'+a.titre+'</h4><p>'+a.detail+'</p></div></div>').join('')+
+    '</div></div>'+
+
+    '<div class="charts-grid anim">'+
+    '<div class="chart-card"><div class="chart-label">'+T.rec+'</div><canvas id="chartR"></canvas></div>'+
+    '<div class="chart-card"><div class="chart-label">'+T.dep+'</div><canvas id="chartD"></canvas></div>'+
+    '</div>'+
+
+    '<div class="tables-grid anim">'+
+    '<div class="card"><div class="card-title">'+T.dr+'</div><div id="tbl-r"></div></div>'+
+    '<div class="card"><div class="card-title">'+T.dd+'</div><div id="tbl-d"></div></div>'+
+    '</div>'+
+
+    '<div class="card anim">'+
+    '<div class="card-title">'+T.t5+'</div>'+
+    '<div id="top5">'+
+    ((data.top5depenses||[]).length===0?'<p style="color:#aeaeb2;font-size:13px">'+T.nd+'</p>':
+    (data.top5depenses||[]).map((t,i)=>'<div class="top5-item"><div class="top5-rank">'+(i+1)+'</div><div class="top5-label">'+t.libelle+'<span class="top5-date">'+(t.date||'')+'</span></div><div class="top5-amount">-'+fmt(t.montant)+'</div></div>').join(''))+
+    '</div></div>'+
+
+    '<div class="card anim"><div class="ai-box"><div class="ai-label">'+T.ai+'</div><p>'+(data.commentaire||'')+'</p></div></div>';
+
+  document.getElementById('result').style.display='block';
+
+  setTimeout(()=>{
+    animVal(document.getElementById('mr'),data.totalRecettes);
+    animVal(document.getElementById('md'),data.totalDepenses);
+    animVal(document.getElementById('mn'),Math.abs(net));
+    animScore(score,color);
+    drawPerso(score);
+  },100);
+
+  if(cR)cR.destroy();
+  if(cD)cD.destroy();
+  cR=new Chart(document.getElementById('chartR'),{type:'doughnut',data:{labels:data.recettes.map(r=>r.label),datasets:[{data:data.recettes.map(r=>r.montant),backgroundColor:CR.slice(0,data.recettes.length),borderWidth:3,borderColor:'#fff'}]},options:{responsive:true,plugins:{legend:{position:'bottom',labels:{font:{size:11},padding:12}}},animation:{duration:1000}}});
+  cD=new Chart(document.getElementById('chartD'),{type:'doughnut',data:{labels:data.depenses.map(d=>d.label),datasets:[{data:data.depenses.map(d=>d.montant),backgroundColor:CD.slice(0,data.depenses.length),borderWidth:3,borderColor:'#fff'}]},options:{responsive:true,plugins:{legend:{position:'bottom',labels:{font:{size:11},padding:12}}},animation:{duration:1000}}});
+
+  buildTable(data.recettes,CR,'tbl-r',T);
+  buildTable(data.depenses,CD,'tbl-d',T);
 }
 
-async function processFile(files) {
+async function processFile(files){
   showLoading();
-  const langue = document.getElementById('langue').value;
-  const formData = new FormData();
-  formData.append('langue', langue);
-  for (let i = 0; i < Math.min(files.length, 5); i++) {
-    formData.append('files', files[i]);
-  }
-  try {
-    const resp = await fetch('https://bankanalyzer-production.up.railway.app/analyze', {method:'POST', body:formData});
-    const data = await resp.json();
-    if(data.error) throw new Error(data.error);
+  const langue=document.getElementById('langue').value;
+  const fd=new FormData();
+  fd.append('langue',langue);
+  for(let i=0;i<Math.min(files.length,5);i++)fd.append('files',files[i]);
+  try{
+    const resp=await fetch('https://bankanalyzer-production.up.railway.app/analyze',{method:'POST',body:fd});
+    const data=await resp.json();
+    if(data.error)throw new Error(data.error);
     renderResult(data);
-  } catch(e) {
-    document.getElementById('loading').style.display = 'none';
-    document.getElementById('upload-section').style.display = 'block';
-    alert('Erreur : ' + e.message);
+  }catch(e){
+    document.getElementById('loading').style.display='none';
+    document.getElementById('upload-section').style.display='block';
+    alert('Erreur : '+e.message);
   }
 }
 
-document.getElementById('fileInput').addEventListener('change', e => {
-  if(e.target.files.length > 0) processFile(e.target.files);
-});
-const dz = document.getElementById('dropZone');
-dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag-over'); });
-dz.addEventListener('dragleave', () => dz.classList.remove('drag-over'));
-dz.addEventListener('drop', e => {
-  e.preventDefault();
-  dz.classList.remove('drag-over');
-  if(e.dataTransfer.files.length > 0) processFile(e.dataTransfer.files);
-});
+document.getElementById('fileInput').addEventListener('change',e=>{if(e.target.files.length>0)processFile(e.target.files)});
+const dz=document.getElementById('dropZone');
+dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('drag-over')});
+dz.addEventListener('dragleave',()=>dz.classList.remove('drag-over'));
+dz.addEventListener('drop',e=>{e.preventDefault();dz.classList.remove('drag-over');if(e.dataTransfer.files.length>0)processFile(e.dataTransfer.files)});
 </script>
 </body>
 </html>
