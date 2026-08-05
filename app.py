@@ -177,6 +177,7 @@ def analyze():
         'top5depenses': all_top5,
         'recettes': rec_global,
         'depenses': dep_global,
+        'phrase_choc': conseil.get('phrase_choc', ''),
         'score': conseil.get('score', 5),
         'score_detail': conseil.get('score_detail', ''),
         'actions': conseil.get('actions', []),
