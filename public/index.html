@@ -214,6 +214,14 @@
 <div id="result"></div>
 
 <script>
+const T_ALL = {
+  francais: {ov:'Vue d\'ensemble',rec:'Recettes',dep:'Depenses',net:'Resultat net',ep:'Taux d\'epargne',sd:'Solde depart',sa:'Solde arrivee',sc:'${T.sc}',ac:'${T.ac}',dr:'Detail recettes',dd:'Detail depenses',t5:'Top 5 depenses',ai:'Analyse IA',cat:'Categorie',mt:'Montant',nf:'Nouveau fichier',nd:'${T.nd}',ex:'Excellente gestion',bon:'Bonne gestion',am:'A ameliorer',cr:'Situation critique'},
+  english: {ov:'Overview',rec:'Income',dep:'Expenses',net:'Net result',ep:'Savings rate',sd:'Opening balance',sa:'Closing balance',sc:'Financial score',ac:'3 priority actions',dr:'Income breakdown',dd:'Expense breakdown',t5:'Top 5 expenses',ai:'AI Analysis',cat:'Category',mt:'Amount',nf:'New file',nd:'Not available',ex:'Excellent',bon:'Good',am:'Needs improvement',cr:'Critical'},
+  espanol: {ov:'Resumen',rec:'Ingresos',dep:'Gastos',net:'Resultado neto',ep:'Tasa de ahorro',sd:'Saldo inicial',sa:'Saldo final',sc:'Puntuacion financiera',ac:'3 acciones prioritarias',dr:'Detalle ingresos',dd:'Detalle gastos',t5:'Top 5 gastos',ai:'Analisis IA',cat:'Categoria',mt:'Importe',nf:'Nuevo archivo',nd:'No disponible',ex:'Excelente',bon:'Buena gestion',am:'Mejorable',cr:'Critico'},
+  deutsch: {ov:'Uberblick',rec:'Einnahmen',dep:'Ausgaben',net:'Nettoresultat',ep:'Sparquote',sd:'Anfangssaldo',sa:'Endsaldo',sc:'Finanzbewertung',ac:'3 Massnahmen',dr:'Einnahmen',dd:'Ausgaben Details',t5:'Top 5 Ausgaben',ai:'KI-Analyse',cat:'Kategorie',mt:'Betrag',nf:'Neue Datei',nd:'Nicht verfugbar',ex:'Ausgezeichnet',bon:'Gut',am:'Verbesserungsbedarf',cr:'Kritisch'},
+  italiano: {ov:'Panoramica',rec:'Entrate',dep:'Uscite',net:'Risultato netto',ep:'Tasso di risparmio',sd:'Saldo iniziale',sa:'Saldo finale',sc:'Punteggio finanziario',ac:'3 azioni prioritarie',dr:'Dettaglio entrate',dd:'Dettaglio uscite',t5:'Top 5 spese',ai:'Analisi IA',cat:'Categoria',mt:'Importo',nf:'Nuovo file',nd:'Non disponibile',ex:'Eccellente',bon:'Buona gestione',am:'Da migliorare',cr:'Critico'},
+  portugues: {ov:'Visao geral',rec:'Receitas',dep:'Despesas',net:'Resultado liquido',ep:'Taxa de poupanca',sd:'Saldo inicial',sa:'Saldo final',sc:'Pontuacao financeira',ac:'3 acoes prioritarias',dr:'Detalhe receitas',dd:'Detalhe despesas',t5:'Top 5 despesas',ai:'Analise IA',cat:'Categoria',mt:'Valor',nf:'Novo ficheiro',nd:'Nao disponivel',ex:'Excelente',bon:'Boa gestao',am:'A melhorar',cr:'Critico'}
+};
 const COLORS_R = ['#2a78d6','#1baf7a','#eda100','#4a3aa7','#34c759'];
 const COLORS_D = ['#e34948','#eb6834','#e87ba4','#898781','#4a3aa7','#eda100','#1baf7a'];
 let cR, cD;
@@ -230,10 +238,10 @@ function scoreColor(s) {
 }
 
 function scoreLabel(s) {
-  if (s >= 8) return '🌟 Excellente gestion';
-  if (s >= 6) return '✅ Bonne gestion';
-  if (s >= 4) return '⚠️ À améliorer';
-  return '🔴 Situation critique';
+  if (s >= 8) return '${T.ex}';
+  if (s >= 6) return '${T.bon}';
+  if (s >= 4) return '${T.am}';
+  return '${T.cr}';
 }
 
 function animateScore(targetScore, color) {
@@ -287,6 +295,8 @@ function showLoading() {
 }
 
 function renderResult(data) {
+  const langueVal = document.getElementById('langue').value;
+  const T = T_ALL[langueVal] || T_ALL.francais;
   document.getElementById('loading').style.display = 'none';
   const net = data.totalRecettes - data.totalDepenses;
   const taux = data.totalRecettes > 0 ? Math.round((net / data.totalRecettes) * 100) : 0;
@@ -297,41 +307,41 @@ function renderResult(data) {
   const html = `
   <div style="margin-bottom:1rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
     <span class="period-badge">📅 ${data.periode || ''}</span>
-    <button class="reset-btn" onclick="reset()">↩ Nouveau fichier</button>
+    <button class="reset-btn" onclick="reset()">${T.nf}</button>
   </div>
 
   <div class="card animate-in">
-    <div class="card-title">Vue d'ensemble</div>
+    <div class="card-title">${T.ov}</div>
     <div class="metrics-grid">
       <div class="metric">
-        <div class="metric-label">Recettes</div>
+        <div class="metric-label">${T.rec}</div>
         <div class="metric-value" id="m-recettes" style="color:#1baf7a;">—</div>
       </div>
       <div class="metric">
-        <div class="metric-label">Dépenses</div>
+        <div class="metric-label">${T.dep}</div>
         <div class="metric-value" id="m-depenses" style="color:#e34948;">—</div>
       </div>
       <div class="metric">
-        <div class="metric-label">Résultat net</div>
+        <div class="metric-label">${T.net}</div>
         <div class="metric-value" id="m-net" style="color:${net >= 0 ? '#1baf7a' : '#e34948'};">—</div>
       </div>
       <div class="metric">
-        <div class="metric-label">Taux d'épargne</div>
+        <div class="metric-label">${T.ep}</div>
         <div class="metric-value" style="color:#0071e3;">${taux}%</div>
       </div>
       <div class="metric">
-        <div class="metric-label">Solde départ</div>
+        <div class="metric-label">${T.sd}</div>
         <div class="metric-value" style="color:#6e6e73;">${fmt(data.soldeDepart)}</div>
       </div>
       <div class="metric">
-        <div class="metric-label">Solde arrivée</div>
+        <div class="metric-label">${T.sa}</div>
         <div class="metric-value" style="color:#6e6e73;">${fmt(data.soldeArrivee)}</div>
       </div>
     </div>
   </div>
 
   <div class="card animate-in">
-    <div class="card-title">Score de gestion</div>
+    <div class="card-title">${T.sc}</div>
     <div class="score-wrap">
       <div class="score-ring">
         <svg width="72" height="72" viewBox="0 0 72 72">
@@ -347,7 +357,7 @@ function renderResult(data) {
         <p>${data.score_detail || ''}</p>
       </div>
     </div>
-    <div class="card-title">3 actions prioritaires</div>
+    <div class="card-title">${T.ac}</div>
     <div class="actions">
       ${(data.actions || []).map(a => `
         <div class="action">
@@ -362,30 +372,30 @@ function renderResult(data) {
 
   <div class="charts-grid animate-in">
     <div class="chart-card">
-      <div class="chart-label">Recettes</div>
+      <div class="chart-label">${T.rec}</div>
       <canvas id="chartR" role="img" aria-label="Répartition des recettes"></canvas>
     </div>
     <div class="chart-card">
-      <div class="chart-label">Dépenses</div>
+      <div class="chart-label">${T.dep}</div>
       <canvas id="chartD" role="img" aria-label="Répartition des dépenses"></canvas>
     </div>
   </div>
 
   <div class="tables-grid animate-in">
     <div class="card">
-      <div class="card-title">Détail recettes</div>
+      <div class="card-title">${T.dr}</div>
       <div id="tbl-r"></div>
     </div>
     <div class="card">
-      <div class="card-title">Détail dépenses</div>
+      <div class="card-title">${T.dd}</div>
       <div id="tbl-d"></div>
     </div>
   </div>
 
   <div class="card animate-in">
-    <div class="card-title">Top 5 dépenses du mois</div>
+    <div class="card-title">${T.t5}</div>
     <div id="top5-list">
-      ${(data.top5depenses || []).length === 0 ? '<p style="color:#aeaeb2;font-size:13px;">Non disponible</p>' :
+      ${(data.top5depenses || []).length === 0 ? '<p style="color:#aeaeb2;font-size:13px;">${T.nd}</p>' :
         (data.top5depenses || []).map((t,i) => `
           <div class="top5-item">
             <div class="top5-rank">${i+1}</div>
@@ -397,7 +407,7 @@ function renderResult(data) {
 
   <div class="card animate-in">
     <div class="ai-box">
-      <div class="ai-label">✦ Analyse IA</div>
+      <div class="ai-label">${T.ai}</div>
       <p>${data.commentaire || ''}</p>
     </div>
   </div>`;
