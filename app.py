@@ -121,6 +121,7 @@ def analyze():
             data['periode'] = get_periode(text)
             comptes.append(data)
         except Exception as e:
+            print('ERREUR releve', nom_banque, str(e))
             continue
     if not comptes:
         return jsonify({'error': 'Aucun releve analyse'}), 500
