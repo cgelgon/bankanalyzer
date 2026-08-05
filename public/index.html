@@ -180,20 +180,21 @@
         <span class="badge">📗 Excel</span>
         <span class="badge">🏦 Multi-banques</span>
       </div>
-      <div class="lang-wrap">
-        <label>Langue de l'analyse :</label>
-        <select id="langue" class="lang-select" onclick="event.stopPropagation()" onmousedown="event.stopPropagation()" onpointerdown="event.stopPropagation()">
-          <option value="francais">🇫🇷 Français</option>
-          <option value="english">🇬🇧 English</option>
-          <option value="espanol">🇪🇸 Español</option>
-          <option value="deutsch">🇩🇪 Deutsch</option>
-          <option value="italiano">🇮🇹 Italiano</option>
-          <option value="portugues">🇵🇹 Português</option>
-        </select>
-      </div>
+
       <p class="hint">🔒 Vos données restent confidentielles et ne sont jamais stockées</p>
     </div>
     <input type="file" id="fileInput" accept=".pdf,.csv,.xls,.xlsx" multiple>
+  <div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-top:1rem;">
+    <label style="font-size:13px;color:#6e6e73;">🌍 Langue de l'analyse :</label>
+    <select id="langue" class="lang-select">
+      <option value="francais">🇫🇷 Français</option>
+      <option value="english">🇬🇧 English</option>
+      <option value="espanol">🇪🇸 Español</option>
+      <option value="deutsch">🇩🇪 Deutsch</option>
+      <option value="italiano">🇮🇹 Italiano</option>
+      <option value="portugues">🇵🇹 Português</option>
+    </select>
+  </div>
   </div>
 </div>
 
