@@ -73,27 +73,33 @@ def get_conseil_global(client, comptes, total_r, total_d, periode, langue='franc
     langue_map = {'francais':'French','english':'English','espanol':'Spanish','deutsch':'German','italiano':'Italian','portugues':'Portuguese','chinese':'Chinese','arabic':'Arabic'}
     langue_name = langue_map.get(langue, 'French')
     prompt = (
-        'You are a senior financial expert. Write ALL text fields EXCLUSIVELY in ' + langue_name + '. No other language allowed.' + chr(10) +
+        'You are a senior financial expert. Write ALL text EXCLUSIVELY in ' + langue_name + '.' + chr(10) +
         'Financial data for ' + periode + ':' + chr(10) +
         comptes_str + chr(10) +
         'TOTAL: income=' + str(total_r) + 'EUR expenses=' + str(total_d) + 'EUR net=' + str(net) + 'EUR savings_rate=' + str(taux) + '%' + chr(10) +
-        'SCORING RULES (be strict and objective):' + chr(10) +
-        '- score 9-10: savings rate > 30% AND positive net AND diversified income' + chr(10) +
-        '- score 7-8: savings rate 10-30% AND positive net' + chr(10) +
-        '- score 5-6: savings rate 0-10% OR slightly negative net' + chr(10) +
-        '- score 3-4: savings rate -30% to 0% OR net deficit < 20% of income' + chr(10) +
-        '- score 1-2: savings rate < -30% OR net deficit > 20% of income' + chr(10) +
-        'Current savings rate is ' + str(taux) + '% -> apply scoring rules strictly.' + chr(10) +
-        'Return ONLY valid JSON, ALL text in ' + langue_name + ', no markdown:' + chr(10) +
-        '{"score":0,"score_detail":"sentence in ' + langue_name + '","actions":[' +
-        '{"priorite":1,"titre":"in ' + langue_name + '","detail":"concrete with numbers in ' + langue_name + '"},' +
-        '{"priorite":2,"titre":"in ' + langue_name + '","detail":"concrete with numbers in ' + langue_name + '"},' +
-        '{"priorite":3,"titre":"in ' + langue_name + '","detail":"concrete with numbers in ' + langue_name + '"}],' +
-        '"commentaire":"2 sentences in ' + langue_name + '"}'
+        'SCORING (be strict):' + chr(10) +
+        '- 9-10: savings>30% AND positive net AND diversified income' + chr(10) +
+        '- 7-8: savings 10-30% AND positive net' + chr(10) +
+        '- 5-6: savings 0-10% OR slightly negative' + chr(10) +
+        '- 3-4: savings -30% to 0%' + chr(10) +
+        '- 1-2: savings < -30% OR deficit > 20% of income' + chr(10) +
+        'Current savings rate=' + str(taux) + '% -> apply strictly.' + chr(10) +
+        'PHRASE_CHOC: One single punchy sentence (max 15 words) that hits hard. Examples:' + chr(10) +
+        '- "At this rate, your savings will be gone in 3 months."' + chr(10) +
+        '- "You save the equivalent of a new iPhone every month."' + chr(10) +
+        '- "Your biggest hidden expense: 4 forgotten subscriptions."' + chr(10) +
+        '- "Warning: 2 of your 3 accounts are in the red."' + chr(10) +
+        'Make it personal, specific with real numbers from the data, and impactful.' + chr(10) + chr(10) +
+        'Return ONLY valid JSON, ALL text in ' + langue_name + ':' + chr(10) +
+        '{"score":0,"score_detail":"sentence","phrase_choc":"impactful sentence with real numbers",' +
+        '"actions":[{"priorite":1,"titre":"title","detail":"detail with numbers"},' +
+        '{"priorite":2,"titre":"title","detail":"detail with numbers"},' +
+        '{"priorite":3,"titre":"title","detail":"detail with numbers"}],' +
+        '"commentaire":"2 sentences"}'
     )
     msg = client.messages.create(
         model='claude-sonnet-4-6',
-        max_tokens=800,
+        max_tokens=1000,
         messages=[{'role': 'user', 'content': prompt}]
     )
     raw = msg.content[0].text.replace('```json','').replace('```','').strip()
