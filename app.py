@@ -92,7 +92,7 @@ def analyse_releve(client, text, nom_banque, langue='français'):
 
 
 def get_conseil_global(client, comptes, total_r, total_d, periode, langue='francais'):
-    comptes_str = chr(10).join(['- ' + c['nom'] + ': recettes ' + str(c['totalRecettes']) + 'EUR, depenses ' + str(c['totalDepenses']) + 'EUR' for c in comptes])
+    comptes_str = chr(10).join(['- ' + c['nom'] + ' (' + c.get('periode', '') + '): recettes ' + str(c['totalRecettes']) + 'EUR, depenses ' + str(c['totalDepenses']) + 'EUR' for c in comptes])
     net = total_r - total_d
     taux = round(net / total_r * 100) if total_r else 0
     langue_map = {'francais': 'French', 'english': 'English', 'espanol': 'Spanish', 'deutsch': 'German', 'italiano': 'Italian', 'portugues': 'Portuguese', 'chinese': 'Chinese', 'arabic': 'Arabic'}
@@ -195,19 +195,25 @@ def analyze():
                 'net': tr_p - td_p,
                 'soldeArrivee': sa_p
             })
+        premiere_periode = periodes_uniques[0]
         derniere_periode = periodes_uniques[-1]
-        comptes_display = [c for c in comptes if c.get('periode', 'Periode inconnue') == derniere_periode]
-        periode_label = periodes_uniques[0] + ' -> ' + periodes_uniques[-1]
+        comptes_premiere = [c for c in comptes if c.get('periode', 'Periode inconnue') == premiere_periode]
+        comptes_derniere = [c for c in comptes if c.get('periode', 'Periode inconnue') == derniere_periode]
+        solde_depart = sum(c.get('soldeDepart', 0) for c in comptes_premiere)
+        solde_arrivee = sum(c.get('soldeArrivee', 0) for c in comptes_derniere)
+        periode_label = premiere_periode + ' -> ' + derniere_periode
     else:
-        comptes_display = comptes
+        solde_depart = sum(c.get('soldeDepart', 0) for c in comptes)
+        solde_arrivee = sum(c.get('soldeArrivee', 0) for c in comptes)
         periode_label = periodes_uniques[0] if periodes_uniques else 'Periode inconnue'
 
-    total_r = sum(c.get('totalRecettes', 0) for c in comptes_display)
-    total_d = sum(c.get('totalDepenses', 0) for c in comptes_display)
+    # Vue d'ensemble = toujours la somme de TOUS les mois/comptes envoyes
+    total_r = sum(c.get('totalRecettes', 0) for c in comptes)
+    total_d = sum(c.get('totalDepenses', 0) for c in comptes)
 
     all_rec = {}
     all_dep = {}
-    for c in comptes_display:
+    for c in comptes:
         for r in c.get('recettes', []):
             all_rec[r['label']] = all_rec.get(r['label'], 0) + r['montant']
         for d in c.get('depenses', []):
@@ -217,15 +223,12 @@ def analyze():
     dep_global = sorted([{'label': k, 'montant': v} for k, v in all_dep.items()], key=lambda x: -x['montant'])[:7]
 
     try:
-        conseil = get_conseil_global(client, comptes_display, total_r, total_d, periode_label, langue)
+        conseil = get_conseil_global(client, comptes, total_r, total_d, periode_label, langue)
     except Exception:
         conseil = {'score': 5, 'score_detail': 'Analyse partielle', 'actions': [], 'commentaire': 'Analyse disponible.'}
 
-    solde_depart = sum(c.get('soldeDepart', 0) for c in comptes_display)
-    solde_arrivee = sum(c.get('soldeArrivee', 0) for c in comptes_display)
-
     all_top5 = []
-    for c in comptes_display:
+    for c in comptes:
         all_top5.extend(c.get('top5depenses', []))
     all_top5 = sorted(all_top5, key=lambda x: -x.get('montant', 0))[:5]
 
@@ -245,7 +248,7 @@ def analyze():
         'score_detail': conseil.get('score_detail', ''),
         'actions': conseil.get('actions', []),
         'commentaire': conseil.get('commentaire', ''),
-        'comptes': comptes_display
+        'comptes': comptes
     }
     print('PHRASE_CHOC:', result.get('phrase_choc', 'VIDE'))
     return jsonify(result)
