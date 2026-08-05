@@ -48,6 +48,15 @@
   .ai-box { background: #f0f7ff; border-radius: 12px; padding: 1.25rem; border: 1px solid #cce0ff; }
   .ai-box strong { color: #0071e3; font-size: 12px; display: block; margin-bottom: 6px; }
   .ai-box p { font-size: 13px; color: #333; line-height: 1.6; }
+  .top5-item { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 0.5px solid #f0f0f0; font-size: 14px; }
+  .top5-item:last-child { border-bottom: none; }
+  .top5-montant { font-weight: 500; color: #e34948; }
+  .top5-date { color: #aaa; font-size: 12px; margin-left: 8px; }
+  .drill-toggle { cursor: pointer; color: #0071e3; font-size: 12px; margin-left: 8px; text-decoration: underline; }
+  .drill-content { display: none; background: #f9f9f9; border-radius: 8px; padding: 8px 12px; margin-top: 6px; font-size: 12px; }
+  .drill-content.open { display: block; }
+  .drill-row { display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 0.5px solid #eee; }
+  .drill-row:last-child { border-bottom: none; }
 </style>
 </head>
 <body>
@@ -87,6 +96,8 @@
         <div class="metric"><label>Total dépenses</label><value id="v-depenses" style="color:#e34948;"></value></div>
         <div class="metric"><label>Résultat net</label><value id="v-net"></value></div>
         <div class="metric"><label>Taux d'épargne</label><value id="v-taux" style="color:#0071e3;"></value></div>
+      <div class="metric"><label>Solde départ</label><value id="v-solde-depart" style="color:#555;"></value></div>
+      <div class="metric"><label>Solde arrivée</label><value id="v-solde-arrivee" style="color:#555;"></value></div>
       </div>
     </div>
 
@@ -112,6 +123,11 @@
         <div><h3 style="font-size:13px;color:#888;margin-bottom:12px;">Détail recettes</h3><div id="tbl-r"></div></div>
         <div><h3 style="font-size:13px;color:#888;margin-bottom:12px;">Détail dépenses</h3><div id="tbl-d"></div></div>
       </div>
+    </div>
+
+    <div class="card">
+      <h2 style="font-size:16px;margin-bottom:1rem;">Top 5 dépenses du mois</h2>
+      <div id="top5-list"></div>
     </div>
 
     <div class="card">
@@ -198,17 +214,54 @@ function renderResult(data) {
   cR = new Chart(document.getElementById('chartR'), {type:'doughnut', data:{labels:data.recettes.map(r=>r.label), datasets:[{data:data.recettes.map(r=>r.montant), backgroundColor:COLORS_R.slice(0,data.recettes.length), borderWidth:2}]}, options:{plugins:{legend:{position:'bottom', labels:{font:{size:11}}}}}});
   cD = new Chart(document.getElementById('chartD'), {type:'doughnut', data:{labels:data.depenses.map(d=>d.label), datasets:[{data:data.depenses.map(d=>d.montant), backgroundColor:COLORS_D.slice(0,data.depenses.length), borderWidth:2}]}, options:{plugins:{legend:{position:'bottom', labels:{font:{size:11}}}}}});
 
+  // Affiche soldes
+  function showSoldes(data) {
+    if (data.soldeDepart !== undefined) {
+      document.getElementById('v-solde-depart').textContent = fmt(data.soldeDepart);
+    }
+    if (data.soldeArrivee !== undefined) {
+      document.getElementById('v-solde-arrivee').textContent = fmt(data.soldeArrivee);
+    }
+  }
+
+  // Affiche top 5 dépenses
+  function showTop5(data) {
+    const top5 = data.top5depenses || [];
+    if (!top5.length) { document.getElementById('top5-list').innerHTML = '<p style="color:#aaa;font-size:13px;">Non disponible</p>'; return; }
+    let h = '';
+    top5.forEach((t, i) => {
+      h += '<div class="top5-item">';
+      h += '<span>' + (i+1) + '. ' + t.libelle + '<span class="top5-date">' + (t.date || '') + '</span></span>';
+      h += '<span class="top5-montant">-' + fmt(t.montant) + '</span>';
+      h += '</div>';
+    });
+    document.getElementById('top5-list').innerHTML = h;
+  }
+
   function buildTable(items, colors, id) {
     const total = items.reduce((s,i)=>s+i.montant,0);
     let h = '<table><thead><tr><th>Catégorie</th><th style="text-align:right">Montant</th><th style="text-align:right">%</th></tr></thead><tbody>';
     items.forEach((item,i) => {
-      h += `<tr><td><span class="dot" style="background:${colors[i]}"></span>${item.label}</td><td style="text-align:right">${fmt(item.montant)}</td><td style="text-align:right;color:#aaa">${Math.round(item.montant/total*100)}%</td></tr>`;
+      const drillId = 'drill-' + id + '-' + i;
+      const hasDrill = item.transactions && item.transactions.length > 0;
+      const drillLink = hasDrill ? '<span class="drill-toggle" onclick="toggleDrill(\'' + drillId + '\')">détail</span>' : '';
+      h += '<tr><td><span class="dot" style="background:' + colors[i] + '"></span>' + item.label + drillLink;
+      if (hasDrill) {
+        h += '<div class="drill-content" id="' + drillId + '">';
+        item.transactions.forEach(t => {
+          h += '<div class="drill-row"><span>' + (t.date||'') + ' ' + t.libelle + '</span><span>' + fmt(t.montant) + '</span></div>';
+        });
+        h += '</div>';
+      }
+      h += '</td><td style="text-align:right">' + fmt(item.montant) + '</td><td style="text-align:right;color:#aaa">' + Math.round(item.montant/total*100) + '%</td></tr>';
     });
     h += '</tbody></table>';
     document.getElementById(id).innerHTML = h;
   }
   buildTable(data.recettes, COLORS_R, 'tbl-r');
   buildTable(data.depenses, COLORS_D, 'tbl-d');
+  showTop5(data);
+  showSoldes(data);
 }
 
 async function processFile(files) {
@@ -227,6 +280,11 @@ async function processFile(files) {
     setTimeout(reset, 3000);
   }
 }
+
+  function toggleDrill(id) {
+    const el = document.getElementById(id);
+    if (el) el.classList.toggle('open');
+  }
 
 document.getElementById('fileInput').addEventListener('change', e => { if(e.target.files.length > 0) processFile(e.target.files); });
 const dz = document.getElementById('dropZone');
