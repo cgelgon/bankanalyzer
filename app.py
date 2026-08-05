@@ -59,6 +59,7 @@ def analyse_releve(client, text, nom_banque):
     msg = client.messages.create(
         model='claude-sonnet-4-6',
         max_tokens=2000,
+        system='Tu es un expert-comptable. Tu reponds UNIQUEMENT avec du JSON valide, sans aucun texte avant ou apres, sans markdown.',
         messages=[{'role': 'user', 'content': prompt}]
     )
     raw = msg.content[0].text.replace('```json','').replace('```','').strip()
