@@ -66,19 +66,24 @@ def analyse_releve(client, text, nom_banque, langue='français'):
     print('CLAUDE RESPONSE:', raw[:200])
     return json.loads(raw)
 
-def get_conseil_global(client, comptes, total_r, total_d, periode, langue='français'):
+def get_conseil_global(client, comptes, total_r, total_d, periode, langue='francais'):
     comptes_str = chr(10).join(['- ' + c['nom'] + ': recettes ' + str(c['totalRecettes']) + 'EUR, depenses ' + str(c['totalDepenses']) + 'EUR' for c in comptes])
     net = total_r - total_d
     taux = round(net/total_r*100) if total_r else 0
-    prompt = ('Tu es un expert-comptable. Situation consolidee de ' + str(len(comptes)) + ' compte(s) pour ' + periode + ':\n'
-        + comptes_str + '\n'
-        'TOTAL: recettes ' + str(total_r) + 'EUR, depenses ' + str(total_d) + 'EUR, net ' + str(net) + 'EUR, taux epargne ' + str(taux) + '%\n\n'
-        'Retourne UNIQUEMENT ce JSON sans markdown:\n'
-        '{"score":7,"score_detail":"phrase","actions":['
-        '{"priorite":1,"titre":"titre","detail":"detail concret et chiffre"},'
-        '{"priorite":2,"titre":"titre","detail":"detail concret et chiffre"},'
-        '{"priorite":3,"titre":"titre","detail":"detail concret et chiffre"}],'
-        '"commentaire":"2 phrases analyse globale."}')
+    langue_map = {'francais':'French','english':'English','espanol':'Spanish','deutsch':'German','italiano':'Italian','portugues':'Portuguese'}
+    langue_name = langue_map.get(langue, 'French')
+    prompt = (
+        'You are a financial expert. Write ALL text fields EXCLUSIVELY in ' + langue_name + '. No other language allowed.' + chr(10) +
+        'Data for ' + periode + ':' + chr(10) +
+        comptes_str + chr(10) +
+        'TOTAL: income=' + str(total_r) + 'EUR expenses=' + str(total_d) + 'EUR net=' + str(net) + 'EUR savings_rate=' + str(taux) + '%' + chr(10) +
+        'Return ONLY valid JSON in ' + langue_name + ' - no markdown:' + chr(10) +
+        '{"score":7,"score_detail":"sentence in ' + langue_name + '","actions":[' +
+        '{"priorite":1,"titre":"in ' + langue_name + '","detail":"with numbers in ' + langue_name + '"},' +
+        '{"priorite":2,"titre":"in ' + langue_name + '","detail":"with numbers in ' + langue_name + '"},' +
+        '{"priorite":3,"titre":"in ' + langue_name + '","detail":"with numbers in ' + langue_name + '"}],' +
+        '"commentaire":"2 sentences in ' + langue_name + '"}'
+    )
     msg = client.messages.create(
         model='claude-sonnet-4-6',
         max_tokens=800,
