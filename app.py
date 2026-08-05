@@ -40,26 +40,25 @@ def get_periode(text):
     return 'Periode inconnue'
 
 def analyse_releve(client, text, nom_banque):
-    prompt = ('Tu es un expert-comptable francais. Analyse ce releve bancaire (' + nom_banque + ').\n'
-        'Retourne UNIQUEMENT ce JSON sans markdown:\n'
-        '{"totalRecettes":0,"totalDepenses":0,'
-        '"soldeDepart":0,"soldeArrivee":0,'
-        '"recettes":[{"label":"cat","montant":0,"transactions":[{"libelle":"desc","montant":0,"date":"JJ/MM"}]}],'
-        '"depenses":[{"label":"cat","montant":0,"transactions":[{"libelle":"desc","montant":0,"date":"JJ/MM"}]}],'
-        '"top5depenses":[{"libelle":"desc","montant":0,"date":"JJ/MM"}],'
-        '"score":7,"score_detail":"phrase"}\n'
-        'REGLES IMPORTANTES:\n'
-        '1. Cherche EN PREMIER les totaux recapitulatifs du releve (ex: Total operations entrantes, Solde final, etc)\n'
-        '2. Utilise ces totaux comme totalRecettes et totalDepenses - ne les recalcule pas\n'
-        '3. Si pas de totaux recapitulatifs, additionne toutes les lignes\n'
-        '4. soldeDepart = solde au debut du releve, soldeArrivee = solde a la fin\n'
-        '5. top5depenses = les 5 plus grosses transactions sortantes individuelles\n'
-        '6. Pour chaque categorie, liste les transactions individuelles qui la composent\n'
-        '7. Montants entiers positifs, max 5 recettes, max 7 depenses\n\n'
-        'Releve:\n' + text[:20000])
+    prompt = (
+        'Tu es un expert-comptable francais. Analyse ce releve bancaire (' + nom_banque + ').' + chr(10) +
+        'Retourne UNIQUEMENT ce JSON sans markdown:' + chr(10) +
+        '{"totalRecettes":0,"totalDepenses":0,"soldeDepart":0,"soldeArrivee":0,' +
+        '"recettes":[{"label":"cat","montant":0}],' +
+        '"depenses":[{"label":"cat","montant":0}],' +
+        '"top5depenses":[{"libelle":"desc","montant":0,"date":"JJ/MM"}],' +
+        '"score":7,"score_detail":"phrase"}' + chr(10) +
+        'REGLES:' + chr(10) +
+        '1. Cherche EN PREMIER les totaux recapitulatifs (Total operations entrantes/sortantes, Solde initial, Solde final)' + chr(10) +
+        '2. Utilise ces totaux pour totalRecettes et totalDepenses' + chr(10) +
+        '3. soldeDepart = solde debut du releve, soldeArrivee = solde fin' + chr(10) +
+        '4. top5depenses = 5 plus grosses transactions sortantes individuelles avec libelle et date' + chr(10) +
+        '5. Montants entiers positifs, max 5 recettes, max 7 depenses' + chr(10) +
+        chr(10) + 'Releve:' + chr(10) + text[:20000]
+    )
     msg = client.messages.create(
         model='claude-sonnet-4-6',
-        max_tokens=4000,
+        max_tokens=2000,
         messages=[{'role': 'user', 'content': prompt}]
     )
     raw = msg.content[0].text.replace('```json','').replace('```','').strip()
