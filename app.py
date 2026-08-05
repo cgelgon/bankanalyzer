@@ -41,7 +41,7 @@ def get_periode(text):
 
 def analyse_releve(client, text, nom_banque, langue='français'):
     prompt = (
-        'Tu es un expert-comptable. Reponds UNIQUEMENT en ' + langue + '. Analyse ce releve bancaire (' + nom_banque + ').' + chr(10) +
+        'INSTRUCTION ABSOLUE: Tu dois repondre UNIQUEMENT en ' + langue + ', y compris le score_detail, le commentaire, les titres et details des actions. Aucun mot en francais si la langue demandee est differente. Analyse ce releve bancaire (' + nom_banque + ').' + chr(10) +
         'Retourne UNIQUEMENT ce JSON sans markdown:' + chr(10) +
         '{"totalRecettes":0,"totalDepenses":0,"soldeDepart":0,"soldeArrivee":0,' +
         '"recettes":[{"label":"cat","montant":0}],' +
