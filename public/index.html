@@ -146,6 +146,22 @@
   .animate-in:nth-child(3) { animation-delay: 0.2s; }
   .animate-in:nth-child(4) { animation-delay: 0.3s; }
 
+  /* BONHOMME ANIME */
+  .perso-wrap { text-align: center; margin: 1.5rem 0; }
+  .perso { display: inline-block; }
+  @keyframes tremble { 0%,100%{transform:translateX(0) rotate(0deg)} 20%{transform:translateX(-4px) rotate(-3deg)} 40%{transform:translateX(4px) rotate(3deg)} 60%{transform:translateX(-3px) rotate(-2deg)} 80%{transform:translateX(3px) rotate(2deg)} }
+  @keyframes transpire { 0%,100%{opacity:0} 50%{opacity:1} }
+  @keyframes hausser { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-6px)} }
+  @keyframes confiant { 0%,100%{transform:rotate(-3deg)} 50%{transform:rotate(3deg)} }
+  @keyframes superstar { 0%{transform:scale(1) rotate(0deg)} 25%{transform:scale(1.05) rotate(-2deg)} 75%{transform:scale(1.05) rotate(2deg)} 100%{transform:scale(1) rotate(0deg)} }
+  @keyframes regarder { 0%,100%{transform:translateX(0)} 33%{transform:translateX(-3px)} 66%{transform:translateX(3px)} }
+  @keyframes cligner { 0%,90%,100%{transform:scaleY(1)} 95%{transform:scaleY(0.1)} }
+  .stress .body { animation: tremble 0.4s infinite; }
+  .neutre .body { animation: hausser 2s ease-in-out infinite; }
+  .bien .body { animation: confiant 2s ease-in-out infinite; }
+  .top .body { animation: superstar 1.5s ease-in-out infinite; }
+  .loading-perso .body { animation: regarder 1.5s ease-in-out infinite; }
+
   @media (max-width: 640px) {
     .hero h2 { font-size: 28px; }
     .charts-grid, .tables-grid { grid-template-columns: 1fr; }
@@ -201,6 +217,36 @@
 <div id="loading">
   <div class="loading-card">
     <div class="loading-spinner"></div>
+    <div style="margin:1rem 0;">
+      <svg width="80" height="120" viewBox="0 0 80 120" class="loading-perso">
+        <g class="body">
+          <!-- Tete -->
+          <circle cx="40" cy="25" r="18" fill="#FFD93D" stroke="#333" stroke-width="2"/>
+          <!-- Yeux qui bougent -->
+          <ellipse cx="33" cy="22" rx="4" ry="4" fill="white"/>
+          <ellipse cx="47" cy="22" rx="4" ry="4" fill="white"/>
+          <circle cx="34" cy="23" r="2" fill="#333" class="pupil-l" style="animation:regarder 1.5s ease-in-out infinite"/>
+          <circle cx="48" cy="23" r="2" fill="#333" class="pupil-r" style="animation:regarder 1.5s ease-in-out infinite"/>
+          <!-- Sourcils inquiets -->
+          <path d="M28 16 Q33 13 36 16" stroke="#333" stroke-width="2" fill="none"/>
+          <path d="M44 16 Q47 13 52 16" stroke="#333" stroke-width="2" fill="none"/>
+          <!-- Bouche inquiete -->
+          <path d="M32 33 Q40 30 48 33" stroke="#333" stroke-width="2" fill="none"/>
+          <!-- Corps -->
+          <rect x="28" y="45" width="24" height="35" rx="8" fill="#4ECDC4" stroke="#333" stroke-width="2"/>
+          <!-- Bras -->
+          <line x1="28" y1="52" x2="12" y2="65" stroke="#333" stroke-width="3" stroke-linecap="round"/>
+          <line x1="52" y1="52" x2="68" y2="65" stroke="#333" stroke-width="3" stroke-linecap="round"/>
+          <!-- Jambes -->
+          <line x1="35" y1="80" x2="32" y2="105" stroke="#333" stroke-width="3" stroke-linecap="round"/>
+          <line x1="45" y1="80" x2="48" y2="105" stroke="#333" stroke-width="3" stroke-linecap="round"/>
+          <!-- Ordinateur -->
+          <rect x="10" y="60" width="25" height="18" rx="3" fill="#333"/>
+          <rect x="12" y="62" width="21" height="13" rx="2" fill="#00C7FF"/>
+          <rect x="14" y="78" width="21" height="3" rx="1" fill="#555"/>
+        </g>
+      </svg>
+    </div>
     <p style="font-size:16px;font-weight:600;margin-bottom:4px;" id="loading-title">Analyse en cours...</p>
     <p style="font-size:13px;color:#6e6e73;" id="loading-sub">L'IA lit vos relevés</p>
     <div class="loading-steps">
@@ -345,6 +391,7 @@ function renderResult(data) {
 
   <div class="card animate-in">
     <div class="card-title">${T.sc}</div>
+    <div class="perso-wrap"><div id="perso-svg"></div></div>
     <div class="score-wrap">
       <div class="score-ring">
         <svg width="72" height="72" viewBox="0 0 72 72">
@@ -420,6 +467,7 @@ function renderResult(data) {
   resultEl.style.display = 'block';
 
   // Animate numbers
+  drawPerso(score);
   setTimeout(() => {
     animateValue(document.getElementById('m-recettes'), data.totalRecettes);
     animateValue(document.getElementById('m-depenses'), data.totalDepenses);
@@ -465,6 +513,49 @@ function renderResult(data) {
 
   buildTable(data.recettes, COLORS_R, 'tbl-r');
   buildTable(data.depenses, COLORS_D, 'tbl-d');
+}
+
+function drawPerso(score) {
+  const wrap = document.getElementById('perso-svg');
+  if (!wrap) return;
+  let cls, face, bras, extra, couleur;
+  if (score <= 3) {
+    cls = 'stress'; couleur = '#e34948';
+    face = '<path d="M30 35 Q40 30 50 35" stroke="#333" stroke-width="2" fill="none"/><path d="M28 18 Q33 14 37 18" stroke="#333" stroke-width="2.5" fill="none"/><path d="M43 18 Q47 14 52 18" stroke="#333" stroke-width="2.5" fill="none"/>';
+    bras = '<line x1="28" y1="55" x2="10" y2="45" stroke="#333" stroke-width="3" stroke-linecap="round"/><line x1="52" y1="55" x2="70" y2="45" stroke="#333" stroke-width="3" stroke-linecap="round"/>';
+    extra = '<text x="58" y="30" font-size="14" style="animation:transpire 1s infinite">💧</text><text x="5" y="42" font-size="14" style="animation:transpire 1s infinite 0.5s">💧</text>';
+  } else if (score <= 6) {
+    cls = 'neutre'; couleur = '#f5a623';
+    face = '<path d="M32 33 L48 33" stroke="#333" stroke-width="2" fill="none"/><path d="M29 18 Q33 16 37 18" stroke="#333" stroke-width="2" fill="none"/><path d="M43 18 Q47 16 51 18" stroke="#333" stroke-width="2" fill="none"/>';
+    bras = '<line x1="28" y1="55" x2="12" y2="62" stroke="#333" stroke-width="3" stroke-linecap="round"/><line x1="52" y1="55" x2="68" y2="62" stroke="#333" stroke-width="3" stroke-linecap="round"/><text x="5" y="68" font-size="16">🤷</text>';
+    extra = '';
+  } else if (score <= 8) {
+    cls = 'bien'; couleur = '#1baf7a';
+    face = '<path d="M30 30 Q40 38 50 30" stroke="#333" stroke-width="2" fill="none"/><path d="M29 18 Q33 15 37 18" stroke="#333" stroke-width="2" fill="none"/><path d="M43 18 Q47 15 51 18" stroke="#333" stroke-width="2" fill="none"/>';
+    bras = '<line x1="28" y1="55" x2="12" y2="48" stroke="#333" stroke-width="3" stroke-linecap="round"/><circle cx="12" cy="46" r="5" fill="#FFD93D" stroke="#333" stroke-width="2"/><text x="7" y="50" font-size="8">👍</text><line x1="52" y1="55" x2="68" y2="62" stroke="#333" stroke-width="3" stroke-linecap="round"/>';
+    extra = '<text x="55" y="20" font-size="16">⭐</text>';
+  } else {
+    cls = 'top'; couleur = '#0071e3';
+    face = '<path d="M29 29 Q40 38 51 29" stroke="#333" stroke-width="2.5" fill="none"/><rect x="27" y="17" width="10" height="6" rx="2" fill="#333"/><rect x="43" y="17" width="10" height="6" rx="2" fill="#333"/><rect x="27" y="17" width="10" height="3" rx="1" fill="#1a1a2e"/><rect x="43" y="17" width="10" height="3" rx="1" fill="#1a1a2e"/>';
+    bras = '<line x1="28" y1="52" x2="10" y2="42" stroke="#333" stroke-width="3" stroke-linecap="round"/><line x1="52" y1="52" x2="70" y2="42" stroke="#333" stroke-width="3" stroke-linecap="round"/>';
+    extra = '<text x="50" y="15" font-size="18">🏆</text><text x="5" y="35" font-size="14">💎</text><text x="58" y="45" font-size="14">🚀</text>';
+  }
+  wrap.innerHTML = `
+    <svg width="100" height="130" viewBox="0 0 80 120" class="${cls}" style="filter:drop-shadow(0 4px 12px rgba(0,0,0,0.15))">
+      <g class="body">
+        ${extra}
+        <circle cx="40" cy="25" r="18" fill="#FFD93D" stroke="#333" stroke-width="2"/>
+        <ellipse cx="33" cy="22" rx="4" ry="4" fill="white"/>
+        <ellipse cx="47" cy="22" rx="4" ry="4" fill="white"/>
+        <circle cx="34" cy="23" r="2.5" fill="#333"/>
+        <circle cx="48" cy="23" r="2.5" fill="#333"/>
+        ${face}
+        <rect x="28" y="45" width="24" height="35" rx="8" fill="${couleur}" stroke="#333" stroke-width="2"/>
+        ${bras}
+        <line x1="35" y1="80" x2="32" y2="108" stroke="#333" stroke-width="3" stroke-linecap="round"/>
+        <line x1="45" y1="80" x2="48" y2="108" stroke="#333" stroke-width="3" stroke-linecap="round"/>
+      </g>
+    </svg>`;
 }
 
 function toggleDrill(id) {
