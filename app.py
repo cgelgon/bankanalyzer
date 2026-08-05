@@ -184,6 +184,7 @@ def analyze():
         'commentaire': conseil.get('commentaire', ''),
         'comptes': comptes
     }
+    print('PHRASE_CHOC:', result.get('phrase_choc','VIDE'))
     return jsonify(result)
 
 if __name__ == '__main__':
