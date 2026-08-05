@@ -78,7 +78,19 @@
       </div>
     </div>
     <input type="file" id="fileInput" accept=".pdf,.csv,.xls,.xlsx" multiple style="display:none">
-    <p style="font-size:13px;color:#aaa;margin-top:1rem;text-align:center;">Vos données restent sur votre appareil et ne sont jamais stockées.</p>
+    <p style="font-size:13px;color:#aaa;margin-top:1rem;text-align:center;"></p>
+      <div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-top:1rem;">
+        <label style="font-size:13px;color:#888;">Langue :</label>
+        <select id="langue" style="font-size:13px;padding:4px 10px;border-radius:8px;border:1px solid #d0d0d0;cursor:pointer;">
+          <option value="francais">🇫🇷 Français</option>
+          <option value="english">🇬🇧 English</option>
+          <option value="espanol">🇪🇸 Español</option>
+          <option value="deutsch">🇩🇪 Deutsch</option>
+          <option value="italiano">🇮🇹 Italiano</option>
+          <option value="portugues">🇵🇹 Português</option>
+        </select>
+      </div>
+      <p style="font-size:13px;color:#aaa;margin-top:0.5rem;text-align:center;">Vos données restent sur votre appareil et ne sont jamais stockées.
   </div>
 
   <div id="loading" class="card">
