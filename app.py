@@ -115,7 +115,8 @@ def analyse_releve(client, text, nom_banque, langue='français'):
         'INSTRUCTION ABSOLUE: Tu dois repondre UNIQUEMENT en ' + langue + ', y compris le score_detail, le commentaire, les titres et details des actions. Aucun mot en francais si la langue demandee est differente. Analyse ce releve bancaire (' + nom_banque + ').' + chr(10) +
         'Retourne UNIQUEMENT ce JSON sans markdown:' + chr(10) +
         '{"compte":"nom de la banque et/ou du compte tel qu\'il apparait EXPLICITEMENT sur le releve (ex: REVOLUT, BNP PARIBAS - Compte Principal, Compte Booster)",' +
-        '"banque":"nom de la banque et/ou du compte tel qu\'indique sur le releve (ex: REVOLUT, BNP Paribas - Compte Principal)","totalRecettes":0,"totalDepenses":0,"soldeDepart":0,"soldeArrivee":0,' +
+        '"devise":"code devise ISO du releve tel qu\'indique dessus (EUR, JOD, USD, GBP, etc.)",' +
+        '"totalRecettes":0,"totalDepenses":0,"soldeDepart":0,"soldeArrivee":0,' +
         '"recettes":[{"label":"cat","montant":0,"transactions":[{"libelle":"desc","montant":0,"date":"JJ/MM"}]}],' +
         '"depenses":[{"label":"cat","montant":0,"transactions":[{"libelle":"desc","montant":0,"date":"JJ/MM"}]}],' +
         '"top5depenses":[{"libelle":"desc","montant":0,"date":"JJ/MM"}],' +
@@ -253,6 +254,23 @@ def _analyze_impl():
                 }
         except (json.JSONDecodeError, AttributeError, TypeError):
             patrimoine_resume = None
+
+    devises_raw = request.form.get('devises', '')
+    taux_par_devise = {}
+    if devises_raw:
+        try:
+            liste_taux = json.loads(devises_raw)
+            for item in liste_taux:
+                code = (item.get('code') or '').upper().strip()
+                try:
+                    taux = float(item.get('taux'))
+                except (TypeError, ValueError):
+                    taux = 0
+                if code and taux > 0:
+                    taux_par_devise[code] = taux
+        except (json.JSONDecodeError, AttributeError, TypeError):
+            taux_par_devise = {}
+
     if not files:
         f = request.files.get('file')
         if f:
@@ -321,6 +339,58 @@ def _analyze_impl():
 
     if not comptes:
         return jsonify({'error': 'Aucun releve analyse', 'fichiersIgnores': fichiers_ignores}), 500
+
+    # --- Detection automatique des devises : on ne mixe jamais des montants de devises differentes ---
+    devises_presentes = set((c.get('devise') or 'EUR').upper().strip() for c in comptes)
+    devise_principale = 'EUR'
+    if 'EUR' not in devises_presentes:
+        compte_par_devise = {}
+        for c in comptes:
+            dv = (c.get('devise') or 'EUR').upper().strip()
+            compte_par_devise[dv] = compte_par_devise.get(dv, 0) + 1
+        devise_principale = max(compte_par_devise, key=compte_par_devise.get)
+
+    if len(devises_presentes) > 1:
+        def convertir_compte_devise(compte, taux):
+            c = dict(compte)
+            for champ in ['totalRecettes', 'totalDepenses', 'soldeDepart', 'soldeArrivee']:
+                if champ in c:
+                    c[champ] = to_num(c[champ]) * taux
+            for cle in ['recettes', 'depenses']:
+                nouvelles = []
+                for item in c.get(cle, []):
+                    item2 = dict(item)
+                    item2['montant'] = to_num(item2.get('montant', 0)) * taux
+                    item2['transactions'] = [
+                        dict(t, montant=to_num(t.get('montant', 0)) * taux) for t in item.get('transactions', [])
+                    ]
+                    nouvelles.append(item2)
+                c[cle] = nouvelles
+            c['top5depenses'] = [
+                dict(t, montant=to_num(t.get('montant', 0)) * taux) for t in c.get('top5depenses', [])
+            ]
+            c['devise'] = devise_principale
+            return c
+
+        comptes_convertis = []
+        comptes_hors_devise = []
+        for c in comptes:
+            dv = (c.get('devise') or 'EUR').upper().strip()
+            if dv == devise_principale:
+                comptes_convertis.append(c)
+            elif dv in taux_par_devise:
+                comptes_convertis.append(convertir_compte_devise(c, taux_par_devise[dv]))
+            else:
+                comptes_hors_devise.append(c)
+        for c in comptes_hors_devise:
+            fichiers_ignores.append({
+                'nom': c.get('nom', '?') + ' (' + c.get('periode', '') + ')',
+                'raison': 'Devise ' + (c.get('devise') or '?') + ' - aucun taux de conversion fourni vers ' + devise_principale
+            })
+        comptes = comptes_convertis
+
+    if not comptes:
+        return jsonify({'error': 'Tous les fichiers etaient dans des devises differentes, aucune analyse coherente possible', 'fichiersIgnores': fichiers_ignores}), 500
 
     # --- Detection automatique multi-mois vs multi-comptes ---
     periodes_uniques = sorted(
@@ -413,6 +483,7 @@ def _analyze_impl():
 
     result = {
         'periode': periode_label,
+        'devise': devise_principale,
         'isMultiMois': is_multi_mois,
         'evolution': evolution,
         'fichiersIgnores': fichiers_ignores,
