@@ -115,6 +115,8 @@ tr.has-detail:hover{background:var(--bg)}
 .devise-ref-label{display:block;font-size:12px;font-weight:600;color:var(--text2);margin:12px 0 6px}
 .devise-select{font-size:12px;padding:9px 8px;border:1px solid var(--border);border-radius:8px;background:#fff;font-family:inherit;cursor:pointer}
 select.devise-input-solo{max-width:280px}
+.taux-apercu{font-size:12px;color:var(--text3);min-width:60px}
+.taux-apercu-ok{color:#1baf7a;font-weight:600}
 .patrimoine-toggle{display:flex;justify-content:space-between;align-items:center;background:#fff;border:1px solid var(--border);border-radius:14px;padding:12px 16px;cursor:pointer;font-size:13px;font-weight:500;color:var(--text2)}
 .patrimoine-toggle:hover{border-color:var(--blue)}
 .patrimoine-body{background:#fff;border:1px solid var(--border);border-top:none;border-radius:0 0 14px 14px;padding:1rem 1.25rem}
@@ -449,14 +451,30 @@ function renderDevises(){
     '<select class="devise-select" onchange="updateDevise('+i+',\'code\',this.value)">'+
     '<option value="">'+T.devCode+'</option>'+opts+
     '</select>'+
-    '<input placeholder="'+T.devTaux+'" type="number" step="0.0001" value="'+(d.taux||'')+'" oninput="updateDevise('+i+',\'taux\',this.value)">'+
+    '<input placeholder="'+T.devTaux+'" type="number" step="0.0001" value="'+(d.taux||'')+'" oninput="updateDevise('+i+',\'taux\',this.value);majApercuTaux('+i+')" id="taux-input-'+i+'">'+
+    '<span class="taux-apercu" id="taux-apercu-'+i+'"></span>'+
     '<button type="button" class="rm-btn" onclick="removeDevise('+i+')">×</button>'+
     '</div>'
   ).join('');
   devisesConversion.forEach((d,i)=>{
     const sel=document.getElementById('devises-list').children[i].querySelector('select');
     if(d.code)sel.value=d.code;
+    majApercuTaux(i);
   });
+}
+
+function majApercuTaux(i){
+  const el=document.getElementById('taux-apercu-'+i);
+  const input=document.getElementById('taux-input-'+i);
+  if(!el||!input)return;
+  const v=Number(input.value);
+  if(input.value&&isFinite(v)&&v>0){
+    el.textContent='✓ = '+v;
+    el.className='taux-apercu taux-apercu-ok';
+  }else{
+    el.textContent='';
+    el.className='taux-apercu';
+  }
 }
 
 let patrimoine={epargnes:[],emprunts:[],actifs:[]};
