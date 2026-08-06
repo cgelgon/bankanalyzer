@@ -199,6 +199,16 @@ def get_conseil_global(client, comptes, total_r, total_d, periode, langue='franc
 
 @app.route('/analyze', methods=['POST'])
 def analyze():
+    try:
+        return _analyze_impl()
+    except Exception as e:
+        import traceback
+        print('ERREUR FATALE /analyze:', str(e))
+        print(traceback.format_exc())
+        return jsonify({'error': "Erreur serveur : " + str(e)[:300]}), 500
+
+
+def _analyze_impl():
     langue = request.form.get('langue', 'français')
     files = request.files.getlist('files')
 
