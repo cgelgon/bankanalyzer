@@ -130,7 +130,6 @@ def analyse_releve(client, text, nom_banque, langue='français'):
         '5. Montants entiers positifs, max 5 recettes, max 7 depenses' + chr(10) +
         '6b. Si le releve affiche un recapitulatif officiel imprime des totaux (ex: "Total des operations", "TOTAL", "Amount of Transactions", "Number/Amount of Transactions Debit/Credit"), rapporte ces totaux exacts dans totalRecettesOfficiel et totalDepensesOfficiel (arrondis a l\'entier). Si aucun recapitulatif officiel n\'est visible sur le releve, mets exactement les memes valeurs que totalRecettes et totalDepenses.' + chr(10) +
         '6. Pour CHAQUE categorie de recettes et de depenses, liste dans "transactions" jusqu\'a 5 transactions individuelles les plus importantes qui la composent (libelle, montant, date)' + chr(10) +
-        '7. "banque" doit etre le nom reel de la banque et/ou de l\'intitule du compte tel qu\'il apparait sur le releve (jamais un nom de fichier)' + chr(10) +
         '7. Pour "compte", identifie le nom de la banque et/ou du compte TEL QU\'IL APPARAIT sur le releve (logo, en-tete, intitule de compte). Si tu ne trouves rien de clair, mets "' + nom_banque + '"' + chr(10) +
         chr(10) + 'Releve:' + chr(10) + text[:20000]
     )
@@ -160,8 +159,8 @@ def analyse_releve(client, text, nom_banque, langue='français'):
         raise
 
 
-def get_conseil_global(client, comptes, total_r, total_d, periode, langue='francais', patrimoine=None):
-    comptes_str = chr(10).join(['- ' + c['nom'] + ' (' + c.get('periode', '') + '): recettes ' + str(c['totalRecettes']) + 'EUR, depenses ' + str(c['totalDepenses']) + 'EUR' for c in comptes])
+def get_conseil_global(client, comptes, total_r, total_d, periode, langue='francais', patrimoine=None, devise='EUR'):
+    comptes_str = chr(10).join(['- ' + c['nom'] + ' (' + c.get('periode', '') + '): recettes ' + str(c['totalRecettes']) + devise + ', depenses ' + str(c['totalDepenses']) + devise for c in comptes])
     net = total_r - total_d
     taux = round(net / total_r * 100) if total_r else 0
     langue_map = {'francais': 'French', 'english': 'English', 'espanol': 'Spanish', 'deutsch': 'German', 'italiano': 'Italian', 'portugues': 'Portuguese', 'chinese': 'Chinese', 'arabic': 'Arabic'}
@@ -171,18 +170,18 @@ def get_conseil_global(client, comptes, total_r, total_d, periode, langue='franc
     if patrimoine:
         patrimoine_str = (
             chr(10) + 'ADDITIONAL CONTEXT - USER-DECLARED NET WORTH (beyond the bank flows above):' + chr(10) +
-            '- Owned assets: ' + str(round(patrimoine['totalActifs'])) + 'EUR' + chr(10) +
-            '- Savings/investments: ' + str(round(patrimoine['totalEpargnes'])) + 'EUR' + chr(10) +
-            '- Remaining debts/loans: ' + str(round(patrimoine['totalDettes'])) + 'EUR' + chr(10) +
-            '- Estimated net worth: ' + str(round(patrimoine['patrimoineNet'])) + 'EUR' + chr(10) +
+            '- Owned assets: ' + str(round(patrimoine['totalActifs'])) + devise + chr(10) +
+            '- Savings/investments: ' + str(round(patrimoine['totalEpargnes'])) + devise + chr(10) +
+            '- Remaining debts/loans: ' + str(round(patrimoine['totalDettes'])) + devise + chr(10) +
+            '- Estimated net worth: ' + str(round(patrimoine['patrimoineNet'])) + devise + chr(10) +
             'Factor this into your score and advice: a tight monthly cash flow matters less if net worth is solid, and vice versa. Mention net worth explicitly if it materially changes the picture.' + chr(10)
         )
 
     prompt = (
-        'You are a senior financial expert. Write ALL text EXCLUSIVELY in ' + langue_name + '.' + chr(10) +
+        'You are a senior financial expert. Write ALL text EXCLUSIVELY in ' + langue_name + '. The currency of ALL amounts is ' + devise + ' - use this currency code (' + devise + ') everywhere you mention a monetary amount, NEVER write EUR or any other currency code.' + chr(10) +
         'Financial data for ' + periode + ':' + chr(10) +
         comptes_str + chr(10) +
-        'TOTAL: income=' + str(total_r) + 'EUR expenses=' + str(total_d) + 'EUR net=' + str(net) + 'EUR savings_rate=' + str(taux) + '%' + chr(10) +
+        'TOTAL: income=' + str(total_r) + devise + ' expenses=' + str(total_d) + devise + ' net=' + str(net) + devise + ' savings_rate=' + str(taux) + '%' + chr(10) +
         patrimoine_str +
         'SCORING (be strict):' + chr(10) +
         '- 9-10: savings>30% AND positive net AND diversified income' + chr(10) +
@@ -191,7 +190,7 @@ def get_conseil_global(client, comptes, total_r, total_d, periode, langue='franc
         '- 3-4: savings -30% to 0%' + chr(10) +
         '- 1-2: savings < -30% OR deficit > 20% of income' + chr(10) +
         'Current savings rate=' + str(taux) + '% -> apply strictly.' + chr(10) +
-        'PHRASE_CHOC: One single punchy sentence (max 15 words) that hits hard. Examples:' + chr(10) +
+        'PHRASE_CHOC: One single punchy sentence (max 15 words) that hits hard, using the ' + devise + ' currency code. Examples:' + chr(10) +
         '- "At this rate, your savings will be gone in 3 months."' + chr(10) +
         '- "You save the equivalent of a new iPhone every month."' + chr(10) +
         '- "Your biggest hidden expense: 4 forgotten subscriptions."' + chr(10) +
@@ -228,6 +227,36 @@ def _analyze_impl():
     langue = request.form.get('langue', 'français')
     files = request.files.getlist('files')
 
+    mode_devise = request.form.get('modeDevise', 'unique')
+    devise_unique = (request.form.get('deviseUnique') or 'EUR').upper().strip()
+    devise_reference = (request.form.get('deviseReference') or 'EUR').upper().strip()
+    devise_principale = devise_unique if mode_devise == 'unique' else devise_reference
+
+    devises_raw = request.form.get('devises', '')
+    taux_par_devise = {}
+    if devises_raw:
+        try:
+            liste_taux = json.loads(devises_raw)
+            for item in liste_taux:
+                code = (item.get('code') or '').upper().strip()
+                taux = to_num(item.get('taux'))
+                if code and taux > 0:
+                    taux_par_devise[code] = taux
+        except (json.JSONDecodeError, AttributeError, TypeError):
+            taux_par_devise = {}
+
+    def convertir_montant_patrimoine(montant, devise_entree, taux_ligne):
+        m = to_num(montant)
+        devise_entree = (devise_entree or devise_principale).upper().strip()
+        if devise_entree == devise_principale:
+            return m
+        t = to_num(taux_ligne)
+        if t > 0:
+            return m * t
+        if devise_entree in taux_par_devise:
+            return m * taux_par_devise[devise_entree]
+        return m  # aucun taux disponible : on garde la valeur brute (imprecis mais on ne bloque pas)
+
     patrimoine_raw = request.form.get('patrimoine', '')
     patrimoine_resume = None
     if patrimoine_raw:
@@ -237,14 +266,9 @@ def _analyze_impl():
             epargnes = patrimoine.get('epargnes', []) or []
             actifs = patrimoine.get('actifs', []) or []
             if emprunts or epargnes or actifs:
-                def to_float(v):
-                    try:
-                        return float(v)
-                    except (TypeError, ValueError):
-                        return 0.0
-                total_actifs = sum(to_float(a.get('valeur')) for a in actifs)
-                total_epargnes = sum(to_float(e.get('montant')) for e in epargnes)
-                total_dettes = sum(to_float(e.get('capitalRestantDu') or e.get('montantInitial')) for e in emprunts)
+                total_actifs = sum(convertir_montant_patrimoine(a.get('valeur'), a.get('devise'), a.get('tauxConversion')) for a in actifs)
+                total_epargnes = sum(convertir_montant_patrimoine(e.get('montant'), e.get('devise'), e.get('tauxConversion')) for e in epargnes)
+                total_dettes = sum(convertir_montant_patrimoine(e.get('capitalRestantDu') or e.get('montantInitial'), e.get('devise'), e.get('tauxConversion')) for e in emprunts)
                 patrimoine_resume = {
                     'totalActifs': total_actifs,
                     'totalEpargnes': total_epargnes,
@@ -256,26 +280,6 @@ def _analyze_impl():
                 }
         except (json.JSONDecodeError, AttributeError, TypeError):
             patrimoine_resume = None
-
-    mode_devise = request.form.get('modeDevise', 'unique')
-    devise_unique = (request.form.get('deviseUnique') or 'EUR').upper().strip()
-    devise_reference = (request.form.get('deviseReference') or 'EUR').upper().strip()
-
-    devises_raw = request.form.get('devises', '')
-    taux_par_devise = {}
-    if devises_raw:
-        try:
-            liste_taux = json.loads(devises_raw)
-            for item in liste_taux:
-                code = (item.get('code') or '').upper().strip()
-                try:
-                    taux = to_num(item.get('taux'))
-                except (TypeError, ValueError):
-                    taux = 0
-                if code and taux > 0:
-                    taux_par_devise[code] = taux
-        except (json.JSONDecodeError, AttributeError, TypeError):
-            taux_par_devise = {}
 
     if not files:
         f = request.files.get('file')
@@ -492,7 +496,7 @@ def _analyze_impl():
     )[:7]
 
     try:
-        conseil = get_conseil_global(client, comptes, total_r, total_d, periode_label, langue, patrimoine_resume)
+        conseil = get_conseil_global(client, comptes, total_r, total_d, periode_label, langue, patrimoine_resume, devise_principale)
     except Exception:
         conseil = {'score': 5, 'score_detail': 'Analyse partielle', 'actions': [], 'commentaire': 'Analyse disponible.'}
 

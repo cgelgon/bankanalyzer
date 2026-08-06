@@ -202,13 +202,13 @@ select.devise-input-solo{max-width:280px}
 
         <div id="devise-unique-block">
           <p class="patrimoine-hint" id="dev-hint-unique">Tous vos relevés sont dans la même devise. Laquelle ?</p>
-          <select id="deviseUniqueInput" class="devise-input-solo devise-select"></select>
+          <select id="deviseUniqueInput" class="devise-input-solo devise-select" onchange="if(typeof renderPatrimoine==='function')renderPatrimoine()"></select>
         </div>
 
         <div id="devise-multiple-block" style="display:none">
           <p class="patrimoine-hint" id="dev-hint-multi">Choisissez votre devise de référence, puis indiquez le taux de conversion pour chaque autre devise présente dans vos relevés. Sans taux fourni, ces comptes seront exclus de l'analyse.</p>
           <label class="devise-ref-label" id="dev-ref-label">Devise de référence</label>
-          <select id="deviseReferenceInput" class="devise-input-solo devise-select"></select>
+          <select id="deviseReferenceInput" class="devise-input-solo devise-select" onchange="if(typeof renderPatrimoine==='function')renderPatrimoine()"></select>
           <div id="devises-list" style="margin-top:12px"></div>
           <button type="button" class="add-btn" id="dev-add-btn" onclick="addDevise()">+ Ajouter une devise</button>
         </div>
@@ -431,6 +431,7 @@ function onModeDeviseChange(){
   const mode=document.querySelector('input[name="modeDevise"]:checked').value;
   document.getElementById('devise-unique-block').style.display=mode==='unique'?'block':'none';
   document.getElementById('devise-multiple-block').style.display=mode==='multiple'?'block':'none';
+  if(typeof renderPatrimoine==='function')renderPatrimoine();
 }
 
 let devisesConversion=[];
@@ -499,9 +500,9 @@ function togglePatrimoine(){
   body.style.display=open?'none':'block';
   chev.textContent=open?'▾':'▴';
 }
-function addEpargne(){patrimoine.epargnes.push({libelle:'',montant:'',taux:''});renderPatrimoine();savePatrimoine()}
-function addEmprunt(){patrimoine.emprunts.push({libelle:'',montantInitial:'',capitalRestantDu:'',taux:'',dateDebut:'',assuranceMensuelle:''});renderPatrimoine();savePatrimoine()}
-function addActif(){patrimoine.actifs.push({libelle:'',valeur:'',statut:'paye'});renderPatrimoine();savePatrimoine()}
+function addEpargne(){patrimoine.epargnes.push({libelle:'',montant:'',taux:'',devise:'',tauxConversion:''});renderPatrimoine();savePatrimoine()}
+function addEmprunt(){patrimoine.emprunts.push({libelle:'',montantInitial:'',capitalRestantDu:'',taux:'',dateDebut:'',assuranceMensuelle:'',devise:'',tauxConversion:''});renderPatrimoine();savePatrimoine()}
+function addActif(){patrimoine.actifs.push({libelle:'',valeur:'',statut:'paye',devise:'',tauxConversion:''});renderPatrimoine();savePatrimoine()}
 function removeEntry(cat,idx){patrimoine[cat].splice(idx,1);renderPatrimoine();savePatrimoine()}
 function updateEntry(cat,idx,field,value){patrimoine[cat][idx][field]=value;savePatrimoine()}
 
@@ -526,6 +527,22 @@ function applyPatrimoineLang(){
   renderDevises();
 }
 
+function referenceCourante(){
+  const mode=document.querySelector('input[name="modeDevise"]:checked');
+  if(!mode)return'EUR';
+  return mode.value==='unique'?(document.getElementById('deviseUniqueInput').value||'EUR'):(document.getElementById('deviseReferenceInput').value||'EUR');
+}
+
+function champDeviseLigne(cat,i,valeurDevise,valeurTaux){
+  const ref=referenceCourante();
+  const opts=CURRENCIES.map(c=>'<option value="'+c.code+'"'+(valeurDevise===c.code?' selected':'')+'>'+c.code+'</option>').join('');
+  const showTaux=valeurDevise&&valeurDevise!==ref;
+  return '<select class="devise-select" onchange="updateEntry(\''+cat+'\','+i+',\'devise\',this.value);renderPatrimoine()" style="max-width:90px">'+
+    '<option value="">'+ref+' ('+(TR[document.getElementById('langue').value]||TR.francais).devRefLabel+')</option>'+opts+
+    '</select>'+
+    (showTaux?'<input placeholder="Taux vers '+ref+'" type="number" step="0.0001" value="'+(valeurTaux||'')+'" oninput="updateEntry(\''+cat+'\','+i+',\'tauxConversion\',this.value)" style="max-width:130px">':'');
+}
+
 function renderPatrimoine(){
   const T=TR[document.getElementById('langue').value]||TR.francais;
   document.getElementById('epargnes-list').innerHTML=patrimoine.epargnes.map((e,i)=>
@@ -533,6 +550,7 @@ function renderPatrimoine(){
     '<input placeholder="'+T.patLibelleEpargne+'" value="'+(e.libelle||'')+'" oninput="updateEntry(\'epargnes\','+i+',\'libelle\',this.value)">'+
     '<input placeholder="'+T.patMontantPlace+'" type="number" value="'+(e.montant||'')+'" oninput="updateEntry(\'epargnes\','+i+',\'montant\',this.value)">'+
     '<input placeholder="'+T.patTaux+'" type="number" step="0.01" value="'+(e.taux||'')+'" oninput="updateEntry(\'epargnes\','+i+',\'taux\',this.value)">'+
+    champDeviseLigne('epargnes',i,e.devise,e.tauxConversion)+
     '<button type="button" class="rm-btn" onclick="removeEntry(\'epargnes\','+i+')">×</button>'+
     '</div>'
   ).join('');
@@ -545,6 +563,7 @@ function renderPatrimoine(){
     '<input placeholder="'+T.patTaux+'" type="number" step="0.01" value="'+(e.taux||'')+'" oninput="updateEntry(\'emprunts\','+i+',\'taux\',this.value)">'+
     '<input placeholder="'+T.patDebut+'" type="date" value="'+(e.dateDebut||'')+'" oninput="updateEntry(\'emprunts\','+i+',\'dateDebut\',this.value)">'+
     '<input placeholder="'+T.patAssurance+'" type="number" value="'+(e.assuranceMensuelle||'')+'" oninput="updateEntry(\'emprunts\','+i+',\'assuranceMensuelle\',this.value)">'+
+    champDeviseLigne('emprunts',i,e.devise,e.tauxConversion)+
     '<button type="button" class="rm-btn" onclick="removeEntry(\'emprunts\','+i+')">×</button>'+
     '</div>'
   ).join('');
@@ -557,6 +576,7 @@ function renderPatrimoine(){
     '<option value="paye"'+(a.statut==='paye'?' selected':'')+'>'+T.patStatutPaye+'</option>'+
     '<option value="encours"'+(a.statut==='encours'?' selected':'')+'>'+T.patStatutEncours+'</option>'+
     '</select>'+
+    champDeviseLigne('actifs',i,a.devise,a.tauxConversion)+
     '<button type="button" class="rm-btn" onclick="removeEntry(\'actifs\','+i+')">×</button>'+
     '</div>'
   ).join('');
