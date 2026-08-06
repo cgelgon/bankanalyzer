@@ -102,8 +102,8 @@ def analyse_releve(client, text, nom_banque, langue='français'):
         'INSTRUCTION ABSOLUE: Tu dois repondre UNIQUEMENT en ' + langue + ', y compris le score_detail, le commentaire, les titres et details des actions. Aucun mot en francais si la langue demandee est differente. Analyse ce releve bancaire (' + nom_banque + ').' + chr(10) +
         'Retourne UNIQUEMENT ce JSON sans markdown:' + chr(10) +
         '{"totalRecettes":0,"totalDepenses":0,"soldeDepart":0,"soldeArrivee":0,' +
-        '"recettes":[{"label":"cat","montant":0}],' +
-        '"depenses":[{"label":"cat","montant":0}],' +
+        '"recettes":[{"label":"cat","montant":0,"transactions":[{"libelle":"desc","montant":0,"date":"JJ/MM"}]}],' +
+        '"depenses":[{"label":"cat","montant":0,"transactions":[{"libelle":"desc","montant":0,"date":"JJ/MM"}]}],' +
         '"top5depenses":[{"libelle":"desc","montant":0,"date":"JJ/MM"}],' +
         '"score":7,"score_detail":"phrase"}' + chr(10) +
         'REGLES:' + chr(10) +
@@ -112,6 +112,7 @@ def analyse_releve(client, text, nom_banque, langue='français'):
         '3. soldeDepart = solde debut du releve, soldeArrivee = solde fin' + chr(10) +
         '4. top5depenses = 5 plus grosses transactions sortantes individuelles avec libelle et date' + chr(10) +
         '5. Montants entiers positifs, max 5 recettes, max 7 depenses' + chr(10) +
+        '6. Pour CHAQUE categorie de recettes et de depenses, liste dans "transactions" jusqu\'a 5 transactions individuelles les plus importantes qui la composent (libelle, montant, date)' + chr(10) +
         chr(10) + 'Releve:' + chr(10) + text[:20000]
     )
     msg = client.messages.create(
@@ -299,15 +300,28 @@ def analyze():
     total_d = sum(c.get('totalDepenses', 0) for c in comptes)
 
     all_rec = {}
+    all_rec_tx = {}
     all_dep = {}
+    all_dep_tx = {}
     for c in comptes:
         for r in c.get('recettes', []):
             all_rec[r['label']] = all_rec.get(r['label'], 0) + r['montant']
+            all_rec_tx.setdefault(r['label'], []).extend(r.get('transactions', []))
         for d in c.get('depenses', []):
             all_dep[d['label']] = all_dep.get(d['label'], 0) + d['montant']
+            all_dep_tx.setdefault(d['label'], []).extend(d.get('transactions', []))
 
-    rec_global = sorted([{'label': k, 'montant': v} for k, v in all_rec.items()], key=lambda x: -x['montant'])[:5]
-    dep_global = sorted([{'label': k, 'montant': v} for k, v in all_dep.items()], key=lambda x: -x['montant'])[:7]
+    def top_transactions(liste):
+        return sorted(liste, key=lambda x: -x.get('montant', 0))[:8]
+
+    rec_global = sorted(
+        [{'label': k, 'montant': v, 'transactions': top_transactions(all_rec_tx.get(k, []))} for k, v in all_rec.items()],
+        key=lambda x: -x['montant']
+    )[:5]
+    dep_global = sorted(
+        [{'label': k, 'montant': v, 'transactions': top_transactions(all_dep_tx.get(k, []))} for k, v in all_dep.items()],
+        key=lambda x: -x['montant']
+    )[:7]
 
     try:
         conseil = get_conseil_global(client, comptes, total_r, total_d, periode_label, langue)

@@ -72,6 +72,9 @@ tr:last-child td{border-bottom:none}
 .drill-content.open{display:block}
 .drill-row{display:flex;justify-content:space-between;padding:4px 0;font-size:12px;color:var(--text2);border-bottom:1px solid var(--border)}
 .drill-row:last-child{border-bottom:none}
+tr.has-detail{cursor:pointer}
+tr.has-detail:hover{background:var(--bg)}
+#chartR,#chartD{cursor:pointer}
 .top5-item{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--bg)}
 .top5-item:last-child{border-bottom:none}
 .top5-rank{width:24px;height:24px;border-radius:50%;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:var(--text2);flex-shrink:0;margin-right:10px}
@@ -287,14 +290,24 @@ function drawPerso(score){
 
 function toggleDrill(id){const el=document.getElementById(id);if(el)el.classList.toggle('open')}
 
+function onChartSliceClick(elements,tableId){
+  if(!elements.length)return;
+  const idx=elements[0].index;
+  const did='drill-'+tableId+'-'+idx;
+  const el=document.getElementById(did);
+  const row=document.getElementById('row-'+tableId+'-'+idx);
+  if(el&&!el.classList.contains('open'))el.classList.add('open');
+  if(row)row.scrollIntoView({behavior:'smooth',block:'center'});
+}
+
 function buildTable(items,colors,id,T){
   const total=items.reduce((s,i)=>s+i.montant,0);
   let h='<table><thead><tr><th>'+T.cat+'</th><th style="text-align:right">'+T.mt+'</th><th style="text-align:right">%</th></tr></thead><tbody>';
   items.forEach((item,i)=>{
     const did='drill-'+id+'-'+i;
     const has=item.transactions&&item.transactions.length>0;
-    h+='<tr><td><span class="dot" style="background:'+colors[i]+'"></span>'+item.label;
-    if(has)h+='<span class="drill-toggle" onclick="toggleDrill(\''+did+'\')">▾ detail</span><div class="drill-content" id="'+did+'">'+item.transactions.map(t=>'<div class="drill-row"><span>'+(t.date||'')+' '+t.libelle+'</span><span>'+fmt(t.montant)+'</span></div>').join('')+'</div>';
+    h+='<tr id="row-'+id+'-'+i+'"'+(has?' class="has-detail" onclick="toggleDrill(\''+did+'\')"':'')+'><td><span class="dot" style="background:'+colors[i]+'"></span>'+item.label;
+    if(has)h+='<span class="drill-toggle">▾ detail</span><div class="drill-content" id="'+did+'">'+item.transactions.map(t=>'<div class="drill-row"><span>'+(t.date||'')+' '+t.libelle+'</span><span>'+fmt(t.montant)+'</span></div>').join('')+'</div>';
     h+='</td><td style="text-align:right;font-weight:500">'+fmt(item.montant)+'</td><td style="text-align:right;color:#aeaeb2">'+Math.round(item.montant/total*100)+'%</td></tr>';
   });
   h+='</tbody></table>';
@@ -382,8 +395,8 @@ function renderResult(data){
   if(cS)cS.destroy();
   if(cT)cT.destroy();
 
-  cR=new Chart(document.getElementById('chartR'),{type:'doughnut',data:{labels:data.recettes.map(r=>r.label),datasets:[{data:data.recettes.map(r=>r.montant),backgroundColor:CR.slice(0,data.recettes.length),borderWidth:3,borderColor:'#fff'}]},options:{responsive:true,plugins:{legend:{position:'bottom',labels:{font:{size:11},padding:12}}},animation:{duration:1000}}});
-  cD=new Chart(document.getElementById('chartD'),{type:'doughnut',data:{labels:data.depenses.map(d=>d.label),datasets:[{data:data.depenses.map(d=>d.montant),backgroundColor:CD.slice(0,data.depenses.length),borderWidth:3,borderColor:'#fff'}]},options:{responsive:true,plugins:{legend:{position:'bottom',labels:{font:{size:11},padding:12}}},animation:{duration:1000}}});
+  cR=new Chart(document.getElementById('chartR'),{type:'doughnut',data:{labels:data.recettes.map(r=>r.label),datasets:[{data:data.recettes.map(r=>r.montant),backgroundColor:CR.slice(0,data.recettes.length),borderWidth:3,borderColor:'#fff'}]},options:{responsive:true,onClick:(evt,elements)=>onChartSliceClick(elements,'tbl-r'),plugins:{legend:{position:'bottom',labels:{font:{size:11},padding:12}}},animation:{duration:1000}}});
+  cD=new Chart(document.getElementById('chartD'),{type:'doughnut',data:{labels:data.depenses.map(d=>d.label),datasets:[{data:data.depenses.map(d=>d.montant),backgroundColor:CD.slice(0,data.depenses.length),borderWidth:3,borderColor:'#fff'}]},options:{responsive:true,onClick:(evt,elements)=>onChartSliceClick(elements,'tbl-d'),plugins:{legend:{position:'bottom',labels:{font:{size:11},padding:12}}},animation:{duration:1000}}});
 
   if(showEvo){
     cS=new Chart(document.getElementById('chartS'),{type:'line',data:{labels:evolution.map(e=>e.periode),datasets:[{label:T.sa,data:evolution.map(e=>e.soldeArrivee),borderColor:'#0071e3',backgroundColor:'rgba(0,113,227,0.12)',fill:true,tension:0.35,pointBackgroundColor:'#0071e3',pointRadius:4}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{ticks:{callback:v=>fmt(v)}}}}});
