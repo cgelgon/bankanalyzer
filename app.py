@@ -267,7 +267,7 @@ def _analyze_impl():
             for item in liste_taux:
                 code = (item.get('code') or '').upper().strip()
                 try:
-                    taux = float(item.get('taux'))
+                    taux = to_num(item.get('taux'))
                 except (TypeError, ValueError):
                     taux = 0
                 if code and taux > 0:
