@@ -183,6 +183,22 @@ def analyze():
 
     evolution = []
     if is_multi_mois:
+        premiere_periode = periodes_uniques[0]
+        derniere_periode = periodes_uniques[-1]
+        comptes_premiere = [c for c in comptes if c.get('periode', 'Periode inconnue') == premiere_periode]
+        comptes_derniere = [c for c in comptes if c.get('periode', 'Periode inconnue') == derniere_periode]
+        solde_depart = sum(c.get('soldeDepart', 0) for c in comptes_premiere)
+        solde_arrivee = sum(c.get('soldeArrivee', 0) for c in comptes_derniere)
+        periode_label = premiere_periode + ' -> ' + derniere_periode
+
+        # Point de depart : solde d'ouverture du tout premier mois, avant tout mouvement
+        evolution.append({
+            'periode': 'Debut ' + premiere_periode,
+            'totalRecettes': 0,
+            'totalDepenses': 0,
+            'net': 0,
+            'soldeArrivee': solde_depart
+        })
         for p in periodes_uniques:
             comptes_p = [c for c in comptes if c.get('periode', 'Periode inconnue') == p]
             tr_p = sum(c.get('totalRecettes', 0) for c in comptes_p)
@@ -195,13 +211,6 @@ def analyze():
                 'net': tr_p - td_p,
                 'soldeArrivee': sa_p
             })
-        premiere_periode = periodes_uniques[0]
-        derniere_periode = periodes_uniques[-1]
-        comptes_premiere = [c for c in comptes if c.get('periode', 'Periode inconnue') == premiere_periode]
-        comptes_derniere = [c for c in comptes if c.get('periode', 'Periode inconnue') == derniere_periode]
-        solde_depart = sum(c.get('soldeDepart', 0) for c in comptes_premiere)
-        solde_arrivee = sum(c.get('soldeArrivee', 0) for c in comptes_derniere)
-        periode_label = premiere_periode + ' -> ' + derniere_periode
     else:
         solde_depart = sum(c.get('soldeDepart', 0) for c in comptes)
         solde_arrivee = sum(c.get('soldeArrivee', 0) for c in comptes)
