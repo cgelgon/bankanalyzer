@@ -121,6 +121,7 @@ def analyse_releve(client, text, nom_banque, langue='français'):
         '"recettes":[{"label":"cat","montant":0,"transactions":[{"libelle":"desc","montant":0,"date":"JJ/MM"}]}],' +
         '"depenses":[{"label":"cat","montant":0,"transactions":[{"libelle":"desc","montant":0,"date":"JJ/MM"}]}],' +
         '"top5depenses":[{"libelle":"desc","montant":0,"date":"JJ/MM"}],' +
+        '"prelevementsRecurrents":[{"libelle":"desc","montant":0}],' +
         '"score":7,"score_detail":"phrase"}' + chr(10) +
         'REGLES:' + chr(10) +
         '1. Cherche EN PREMIER les totaux recapitulatifs (Total operations entrantes/sortantes, Solde initial, Solde final)' + chr(10) +
@@ -131,6 +132,7 @@ def analyse_releve(client, text, nom_banque, langue='français'):
         '6b. Si le releve affiche un recapitulatif officiel imprime des totaux (ex: "Total des operations", "TOTAL", "Amount of Transactions", "Number/Amount of Transactions Debit/Credit"), rapporte ces totaux exacts dans totalRecettesOfficiel et totalDepensesOfficiel (arrondis a l\'entier). Si aucun recapitulatif officiel n\'est visible sur le releve, mets exactement les memes valeurs que totalRecettes et totalDepenses.' + chr(10) +
         '6. Pour CHAQUE categorie de recettes et de depenses, liste dans "transactions" jusqu\'a 5 transactions individuelles les plus importantes qui la composent (libelle, montant, date)' + chr(10) +
         '7. Pour "compte", identifie le nom de la banque et/ou du compte TEL QU\'IL APPARAIT sur le releve (logo, en-tete, intitule de compte). Si tu ne trouves rien de clair, mets "' + nom_banque + '"' + chr(10) +
+        '8. Identifie dans "prelevementsRecurrents" les charges probablement recurrentes/fixes de ce releve : abonnements, assurances, loyer, mensualites de credit, telephonie, energie, etc. (generalement des PRLV SEPA ou virements automatiques a montant fixe). Max 10, avec libelle et montant.' + chr(10) +
         chr(10) + 'Releve:' + chr(10) + text[:20000]
     )
     msg = client.messages.create(
@@ -506,6 +508,41 @@ def _analyze_impl():
     all_top5 = sorted(all_top5, key=lambda x: -to_num(x.get('montant', 0)))[:5]
     all_top5 = normaliser_montants(all_top5)
 
+    charges_dict = {}
+    for c in comptes:
+        for p in (c.get('prelevementsRecurrents') or []):
+            label = (p.get('libelle') or '').strip()
+            if not label:
+                continue
+            montant = to_num(p.get('montant', 0))
+            if montant <= 0:
+                continue
+            key = label.lower()
+            if key not in charges_dict:
+                charges_dict[key] = {'libelle': label, 'total': 0.0, 'mois': set(), 'montants': []}
+            charges_dict[key]['total'] += montant
+            charges_dict[key]['mois'].add(c.get('periode', ''))
+            charges_dict[key]['montants'].append(montant)
+
+    charges_fixes_liste = []
+    for v in charges_dict.values():
+        nb_mois = len(v['mois'])
+        montant_moyen = v['total'] / len(v['montants']) if v['montants'] else 0
+        charges_fixes_liste.append({
+            'libelle': v['libelle'],
+            'montantMoyen': montant_moyen,
+            'montantTotal': v['total'],
+            'nbMois': nb_mois
+        })
+    charges_fixes_liste = sorted(charges_fixes_liste, key=lambda x: -x['montantTotal'])[:15]
+    total_charges_fixes = sum(x['montantTotal'] for x in charges_fixes_liste)
+    pourcentage_charges_fixes = round(total_charges_fixes / total_d * 100) if total_d else 0
+    charges_fixes_resume = {
+        'liste': charges_fixes_liste,
+        'total': total_charges_fixes,
+        'pourcentage': pourcentage_charges_fixes
+    }
+
     result = {
         'periode': periode_label,
         'devise': devise_principale,
@@ -513,6 +550,7 @@ def _analyze_impl():
         'evolution': evolution,
         'fichiersIgnores': fichiers_ignores,
         'avertissements': avertissements,
+        'chargesFixes': charges_fixes_resume,
         'patrimoine': patrimoine_resume,
         'totalRecettes': total_r,
         'totalDepenses': total_d,
