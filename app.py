@@ -38,6 +38,19 @@ def sans_accents(s):
     return ''.join(c for c in unicodedata.normalize('NFD', s) if unicodedata.category(c) != 'Mn')
 
 
+def to_num(v):
+    """Convertit une valeur (potentiellement une chaine renvoyee par l'IA) en nombre, sans jamais planter."""
+    if isinstance(v, (int, float)):
+        return v
+    if v is None:
+        return 0.0
+    try:
+        s = str(v).strip().replace('\u202f', '').replace(' ', '').replace(',', '.')
+        return float(s)
+    except (TypeError, ValueError):
+        return 0.0
+
+
 def extract_text_from_pdf(file_bytes):
     text = ''
     reader = pypdf.PdfReader(io.BytesIO(file_bytes))
@@ -322,8 +335,8 @@ def _analyze_impl():
         derniere_periode = periodes_uniques[-1]
         comptes_premiere = [c for c in comptes if c.get('periode', 'Periode inconnue') == premiere_periode]
         comptes_derniere = [c for c in comptes if c.get('periode', 'Periode inconnue') == derniere_periode]
-        solde_depart = sum(c.get('soldeDepart', 0) for c in comptes_premiere)
-        solde_arrivee = sum(c.get('soldeArrivee', 0) for c in comptes_derniere)
+        solde_depart = sum(to_num(c.get('soldeDepart', 0)) for c in comptes_premiere)
+        solde_arrivee = sum(to_num(c.get('soldeArrivee', 0)) for c in comptes_derniere)
         periode_label = premiere_periode + ' -> ' + derniere_periode
 
         # Point de depart : solde d'ouverture du tout premier mois, avant tout mouvement
@@ -336,9 +349,9 @@ def _analyze_impl():
         })
         for p in periodes_uniques:
             comptes_p = [c for c in comptes if c.get('periode', 'Periode inconnue') == p]
-            tr_p = sum(c.get('totalRecettes', 0) for c in comptes_p)
-            td_p = sum(c.get('totalDepenses', 0) for c in comptes_p)
-            sa_p = sum(c.get('soldeArrivee', 0) for c in comptes_p)
+            tr_p = sum(to_num(c.get('totalRecettes', 0)) for c in comptes_p)
+            td_p = sum(to_num(c.get('totalDepenses', 0)) for c in comptes_p)
+            sa_p = sum(to_num(c.get('soldeArrivee', 0)) for c in comptes_p)
             evolution.append({
                 'periode': p,
                 'totalRecettes': tr_p,
@@ -347,13 +360,13 @@ def _analyze_impl():
                 'soldeArrivee': sa_p
             })
     else:
-        solde_depart = sum(c.get('soldeDepart', 0) for c in comptes)
-        solde_arrivee = sum(c.get('soldeArrivee', 0) for c in comptes)
+        solde_depart = sum(to_num(c.get('soldeDepart', 0)) for c in comptes)
+        solde_arrivee = sum(to_num(c.get('soldeArrivee', 0)) for c in comptes)
         periode_label = periodes_uniques[0] if periodes_uniques else 'Periode inconnue'
 
     # Vue d'ensemble = toujours la somme de TOUS les mois/comptes envoyes
-    total_r = sum(c.get('totalRecettes', 0) for c in comptes)
-    total_d = sum(c.get('totalDepenses', 0) for c in comptes)
+    total_r = sum(to_num(c.get('totalRecettes', 0)) for c in comptes)
+    total_d = sum(to_num(c.get('totalDepenses', 0)) for c in comptes)
 
     all_rec = {}
     all_rec_tx = {}
@@ -361,22 +374,30 @@ def _analyze_impl():
     all_dep_tx = {}
     for c in comptes:
         for r in c.get('recettes', []):
-            all_rec[r['label']] = all_rec.get(r['label'], 0) + r['montant']
+            all_rec[r['label']] = all_rec.get(r['label'], 0) + to_num(r.get('montant', 0))
             all_rec_tx.setdefault(r['label'], []).extend(r.get('transactions', []))
         for d in c.get('depenses', []):
-            all_dep[d['label']] = all_dep.get(d['label'], 0) + d['montant']
+            all_dep[d['label']] = all_dep.get(d['label'], 0) + to_num(d.get('montant', 0))
             all_dep_tx.setdefault(d['label'], []).extend(d.get('transactions', []))
 
+    def normaliser_montants(transactions):
+        out = []
+        for t in transactions:
+            t2 = dict(t)
+            t2['montant'] = to_num(t2.get('montant', 0))
+            out.append(t2)
+        return out
+
     def top_transactions(liste):
-        return sorted(liste, key=lambda x: -x.get('montant', 0))[:8]
+        return normaliser_montants(sorted(liste, key=lambda x: -to_num(x.get('montant', 0)))[:8])
 
     rec_global = sorted(
         [{'label': k, 'montant': v, 'transactions': top_transactions(all_rec_tx.get(k, []))} for k, v in all_rec.items()],
-        key=lambda x: -x['montant']
+        key=lambda x: -to_num(x['montant'])
     )[:5]
     dep_global = sorted(
         [{'label': k, 'montant': v, 'transactions': top_transactions(all_dep_tx.get(k, []))} for k, v in all_dep.items()],
-        key=lambda x: -x['montant']
+        key=lambda x: -to_num(x['montant'])
     )[:7]
 
     try:
@@ -387,7 +408,8 @@ def _analyze_impl():
     all_top5 = []
     for c in comptes:
         all_top5.extend(c.get('top5depenses', []))
-    all_top5 = sorted(all_top5, key=lambda x: -x.get('montant', 0))[:5]
+    all_top5 = sorted(all_top5, key=lambda x: -to_num(x.get('montant', 0)))[:5]
+    all_top5 = normaliser_montants(all_top5)
 
     result = {
         'periode': periode_label,
