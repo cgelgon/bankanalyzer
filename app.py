@@ -83,7 +83,7 @@ def analyse_releve(client, text, nom_banque, langue='français'):
     )
     msg = client.messages.create(
         model='claude-sonnet-4-6',
-        max_tokens=2000,
+        max_tokens=4000,
         system='Tu es un expert-comptable. Tu reponds UNIQUEMENT avec du JSON valide, sans aucun texte avant ou apres, sans markdown. IMPORTANT: toutes les valeurs textuelles du JSON (labels de categories, commentaire, score_detail, titres et details des actions) doivent etre redigees dans la langue specifiee dans le prompt utilisateur.',
         messages=[{'role': 'user', 'content': prompt}]
     )
@@ -197,7 +197,8 @@ def analyze():
                     comptes.append(future.result())
                 except Exception as e:
                     print('ERREUR releve', f['nom'], str(e))
-                    fichiers_ignores.append({'nom': f['nomFichier'], 'raison': "Echec de l'analyse IA apres 2 tentatives"})
+                    err_msg = str(e)[:150]
+                    fichiers_ignores.append({'nom': f['nomFichier'], 'raison': "Echec de l'analyse IA : " + err_msg})
                     continue
 
     if not comptes:
