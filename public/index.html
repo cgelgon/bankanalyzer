@@ -92,6 +92,21 @@ tr.has-detail:hover{background:var(--bg)}
 .perso-wrap{text-align:center;margin:1rem 0}
 .evo-empty{font-size:13px;color:var(--text3);text-align:center;padding:1.5rem 0}
 .patrimoine-wrap{max-width:580px;margin:1rem auto 0;text-align:left}
+.step-block{max-width:580px;margin:1rem auto 0;text-align:left}
+.step-head{display:flex;align-items:center;gap:10px;padding:2px 0 10px}
+.step-head-clickable{background:#fff;border:1px solid var(--border);border-radius:14px;padding:12px 16px;cursor:pointer}
+.step-head-clickable:hover{border-color:var(--blue)}
+.step-num{width:26px;height:26px;border-radius:50%;background:var(--blue);color:#fff;font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.step-num-optional{background:var(--text3)}
+.step-label{font-size:14px;font-weight:600;flex:1}
+.step-chevron{font-size:13px;color:var(--text2)}
+.step-body{background:#fff;border:1px solid var(--border);border-top:none;border-radius:0 0 14px 14px;padding:1rem 1.25rem;margin-top:-11px}
+.step-block .drop-zone{margin-top:0}
+.go-wrap{max-width:580px;margin:1.75rem auto 0;text-align:center}
+.go-btn{width:100%;background:linear-gradient(135deg,#0071e3,#00c7ff);color:#fff;border:none;border-radius:18px;padding:18px 24px;font-size:17px;font-weight:700;cursor:pointer;box-shadow:0 8px 24px rgba(0,113,227,.35);transition:transform .15s,box-shadow .15s}
+.go-btn:not(:disabled):hover{transform:translateY(-2px);box-shadow:0 12px 28px rgba(0,113,227,.45)}
+.go-btn:disabled{background:var(--border);color:var(--text3);cursor:not-allowed;box-shadow:none}
+.files-selected{background:#e8f9f0;border:1px solid #b8ebd0;border-radius:12px;padding:10px 14px;margin-top:10px;font-size:13px;color:#1baf7a;font-weight:500}
 .patrimoine-toggle{display:flex;justify-content:space-between;align-items:center;background:#fff;border:1px solid var(--border);border-radius:14px;padding:12px 16px;cursor:pointer;font-size:13px;font-weight:500;color:var(--text2)}
 .patrimoine-toggle:hover{border-color:var(--blue)}
 .patrimoine-body{background:#fff;border:1px solid var(--border);border-top:none;border-radius:0 0 14px 14px;padding:1rem 1.25rem}
@@ -133,47 +148,49 @@ tr.has-detail:hover{background:var(--bg)}
     <p>Déposez vos relevés bancaires et obtenez une analyse complète par l'IA en quelques secondes.</p>
   </div>
   <div class="upload-wrap">
-    <div class="drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
-      <div class="upload-icon">📊</div>
-      <h3>Déposez vos relevés bancaires</h3>
-      <p>Jusqu'à 60 fichiers simultanément (multi-comptes, multi-mois)</p>
-      <div class="badges">
-        <span class="badge">📄 PDF</span>
-        <span class="badge">📊 CSV</span>
-        <span class="badge">📗 Excel</span>
-        <span class="badge">🏦 Multi-banques</span>
+
+    <div class="step-block">
+      <div class="step-head"><span class="step-num">1</span><span class="step-label">Déposez vos relevés bancaires</span></div>
+      <div class="drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
+        <div class="upload-icon" id="dropIcon">📊</div>
+        <h3 id="dropTitle">Déposez vos relevés bancaires</h3>
+        <p id="dropSubtitle">Jusqu'à 60 fichiers simultanément (multi-comptes, multi-mois)</p>
+        <div class="badges">
+          <span class="badge">📄 PDF</span>
+          <span class="badge">📊 CSV</span>
+          <span class="badge">📗 Excel</span>
+          <span class="badge">🏦 Multi-banques</span>
+        </div>
+        <p class="hint">🔒 Données confidentielles, jamais stockées</p>
       </div>
-      <p class="hint">🔒 Données confidentielles, jamais stockées</p>
-    </div>
-    <input type="file" id="fileInput" accept=".pdf,.csv,.xls,.xlsx" multiple>
-    <div class="lang-outer">
-      <label>🌍 Langue :</label>
-      <select id="langue" class="lang-select">
-        <option value="francais">🇫🇷 Français</option>
-        <option value="english">🇬🇧 English</option>
-        <option value="espanol">🇪🇸 Español</option>
-        <option value="deutsch">🇩🇪 Deutsch</option>
-        <option value="italiano">🇮🇹 Italiano</option>
-        <option value="portugues">🇵🇹 Português</option>
-        <option value="chinese">🇨🇳 中文</option>
-        <option value="arabic">🇸🇦 العربية</option>
-      </select>
-    </div>
-    <div class="patrimoine-wrap">
-      <div class="patrimoine-toggle" onclick="toggleDevises()">
-        <span id="dev-title-text">💱 Devises étrangères (optionnel)</span>
-        <span id="devises-chevron">▾</span>
+      <input type="file" id="fileInput" accept=".pdf,.csv,.xls,.xlsx" multiple>
+      <div class="lang-outer">
+        <label>🌍 Langue :</label>
+        <select id="langue" class="lang-select">
+          <option value="francais">🇫🇷 Français</option>
+          <option value="english">🇬🇧 English</option>
+          <option value="espanol">🇪🇸 Español</option>
+          <option value="deutsch">🇩🇪 Deutsch</option>
+          <option value="italiano">🇮🇹 Italiano</option>
+          <option value="portugues">🇵🇹 Português</option>
+          <option value="chinese">🇨🇳 中文</option>
+          <option value="arabic">🇸🇦 العربية</option>
+        </select>
       </div>
-      <div class="patrimoine-body" id="devises-body" style="display:none">
+    </div>
+
+    <div class="step-block">
+      <div class="step-head step-head-clickable" onclick="toggleDevises()"><span class="step-num step-num-optional">2</span><span class="step-label" id="dev-title-text">Devises étrangères (optionnel)</span><span class="step-chevron" id="devises-chevron">▾</span></div>
+      <div class="step-body" id="devises-body" style="display:none">
         <p class="patrimoine-hint" id="dev-hint">Si certains relevés ne sont pas en euros, indiquez le code devise et le taux de conversion vers l'euro (ex: JOD, 1.41). Sans taux fourni, ces comptes seront exclus de l'analyse pour ne pas fausser les totaux.</p>
         <div id="devises-list"></div>
         <button type="button" class="add-btn" id="dev-add-btn" onclick="addDevise()">+ Ajouter une devise</button>
       </div>
     </div>
-        <span id="pat-title-text">📊 Ajouter mon patrimoine (optionnel)</span>
-        <span id="patrimoine-chevron">▾</span>
-      </div>
-      <div class="patrimoine-body" id="patrimoine-body" style="display:none">
+
+    <div class="step-block">
+      <div class="step-head step-head-clickable" onclick="togglePatrimoine()"><span class="step-num step-num-optional">3</span><span class="step-label" id="pat-title-text">Ajouter mon patrimoine (optionnel)</span><span class="step-chevron" id="patrimoine-chevron">▾</span></div>
+      <div class="step-body" id="patrimoine-body" style="display:none">
         <p class="patrimoine-hint" id="pat-hint">Épargne, emprunts et biens possédés. Ces informations restent dans votre navigateur et enrichissent l'analyse (patrimoine net).</p>
         <div class="patrimoine-group">
           <h4 id="pat-epargne-title">💰 Épargne / Placements</h4>
@@ -192,6 +209,13 @@ tr.has-detail:hover{background:var(--bg)}
         </div>
       </div>
     </div>
+
+    <div class="go-wrap">
+      <button type="button" class="go-btn" id="goBtn" onclick="lancerAnalyse()" disabled>
+        🚀 <span id="goBtnText">Sélectionnez d'abord vos relevés</span>
+      </button>
+    </div>
+
   </div>
 </div>
 
@@ -245,7 +269,15 @@ const CR=['#2a78d6','#1baf7a','#eda100','#4a3aa7','#34c759'];
 const CD=['#e34948','#eb6834','#e87ba4','#898781','#4a3aa7','#eda100','#1baf7a'];
 let cR,cD,cS,cT;
 
-function fmt(n){if(!n&&n!==0)return'—';return new Intl.NumberFormat('fr-FR',{style:'currency',currency:'EUR',maximumFractionDigits:0}).format(n)}
+let deviseActuelle='EUR';
+function fmt(n){
+  if(!n&&n!==0)return'—';
+  try{
+    return new Intl.NumberFormat('fr-FR',{style:'currency',currency:deviseActuelle,maximumFractionDigits:0}).format(n);
+  }catch(e){
+    return new Intl.NumberFormat('fr-FR',{maximumFractionDigits:0}).format(n)+' '+deviseActuelle;
+  }
+}
 function scolor(s){return s>=8?'#1baf7a':s>=5?'#f5a623':'#e34948'}
 function slabel(s,T){return s>=8?T.ex:s>=6?T.bon:s>=4?T.am:T.cr}
 
@@ -257,6 +289,9 @@ function reset(){
   if(cD){cD.destroy();cD=null}
   if(cS){cS.destroy();cS=null}
   if(cT){cT.destroy();cT=null}
+  fichiersSelectionnes=[];
+  document.getElementById('fileInput').value='';
+  majAffichageSelection();
 }
 
 function showLoading(nbFiles){
@@ -282,7 +317,7 @@ function animVal(el,target){
   const step=(ts)=>{
     if(!start)start=ts;
     const p=Math.min((ts-start)/dur,1);
-    el.textContent=new Intl.NumberFormat('fr-FR',{style:'currency',currency:'EUR',maximumFractionDigits:0}).format(Math.round(p*target));
+    el.textContent=fmt(Math.round(p*target));
     if(p<1)requestAnimationFrame(step);
   };
   requestAnimationFrame(step);
@@ -464,6 +499,7 @@ function buildTable(items,colors,id,T){
 function renderResult(data){
   const langue=document.getElementById('langue').value;
   const T=TR[langue]||TR.francais;
+  deviseActuelle=data.devise||'EUR';
   const net=data.totalRecettes-data.totalDepenses;
   const taux=data.totalRecettes>0?Math.round((net/data.totalRecettes)*100):0;
   const score=data.score||0;
@@ -568,6 +604,39 @@ function renderResult(data){
   buildTable(data.depenses,CD,'tbl-d',T);
 }
 
+let fichiersSelectionnes=[];
+
+function majAffichageSelection(){
+  const goBtn=document.getElementById('goBtn');
+  const goBtnText=document.getElementById('goBtnText');
+  const dropTitle=document.getElementById('dropTitle');
+  const dropSubtitle=document.getElementById('dropSubtitle');
+  const dropIcon=document.getElementById('dropIcon');
+  if(fichiersSelectionnes.length>0){
+    goBtn.disabled=false;
+    goBtnText.textContent="GO BankAnalyzer, on analyse tout ça \u00a0! ("+fichiersSelectionnes.length+" fichier"+(fichiersSelectionnes.length>1?'s':'')+")";
+    dropIcon.textContent='✅';
+    dropTitle.textContent=fichiersSelectionnes.length+' fichier'+(fichiersSelectionnes.length>1?'s':'')+' sélectionné'+(fichiersSelectionnes.length>1?'s':'');
+    dropSubtitle.textContent='Cliquez ici pour changer votre sélection';
+  }else{
+    goBtn.disabled=true;
+    goBtnText.textContent='Sélectionnez d\'abord vos relevés';
+    dropIcon.textContent='📊';
+    dropTitle.textContent='Déposez vos relevés bancaires';
+    dropSubtitle.textContent="Jusqu'à 60 fichiers simultanément (multi-comptes, multi-mois)";
+  }
+}
+
+function selectionnerFichiers(fileList){
+  fichiersSelectionnes=Array.from(fileList).slice(0,60);
+  majAffichageSelection();
+}
+
+function lancerAnalyse(){
+  if(fichiersSelectionnes.length===0)return;
+  processFile(fichiersSelectionnes);
+}
+
 async function processFile(files){
   showLoading(files.length);
   const langue=document.getElementById('langue').value;
@@ -588,14 +657,14 @@ async function processFile(files){
   }
 }
 
-document.getElementById('fileInput').addEventListener('change',e=>{if(e.target.files.length>0)processFile(e.target.files)});
+document.getElementById('fileInput').addEventListener('change',e=>{if(e.target.files.length>0)selectionnerFichiers(e.target.files)});
 document.getElementById('langue').addEventListener('change',applyPatrimoineLang);
 loadPatrimoine();
 applyPatrimoineLang();
 const dz=document.getElementById('dropZone');
 dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('drag-over')});
 dz.addEventListener('dragleave',()=>dz.classList.remove('drag-over'));
-dz.addEventListener('drop',e=>{e.preventDefault();dz.classList.remove('drag-over');if(e.dataTransfer.files.length>0)processFile(e.dataTransfer.files)});
+dz.addEventListener('drop',e=>{e.preventDefault();dz.classList.remove('drag-over');if(e.dataTransfer.files.length>0)selectionnerFichiers(e.dataTransfer.files)});
 </script>
 </body>
 </html>
