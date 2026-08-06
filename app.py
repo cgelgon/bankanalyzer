@@ -87,8 +87,11 @@ def analyse_releve(client, text, nom_banque, langue='français'):
         system='Tu es un expert-comptable. Tu reponds UNIQUEMENT avec du JSON valide, sans aucun texte avant ou apres, sans markdown. IMPORTANT: toutes les valeurs textuelles du JSON (labels de categories, commentaire, score_detail, titres et details des actions) doivent etre redigees dans la langue specifiee dans le prompt utilisateur.',
         messages=[{'role': 'user', 'content': prompt}]
     )
-    raw = msg.content[0].text.replace('```json', '').replace('```', '').strip()
-    print('CLAUDE RESPONSE:', raw[:200])
+    raw = msg.content[0].text.replace('```json', '').replace('```', '').strip() if msg.content else ''
+    stop_reason = getattr(msg, 'stop_reason', None)
+    print('CLAUDE RESPONSE:', raw[:200], '| stop_reason:', stop_reason, '| nb_blocks:', len(msg.content), '| longueur_texte_source:', len(text))
+    if not raw:
+        raise ValueError('Reponse vide de Claude (stop_reason=' + str(stop_reason) + ', longueur texte source=' + str(len(text)) + ' caracteres)')
     return json.loads(raw)
 
 
