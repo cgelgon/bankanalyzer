@@ -162,25 +162,25 @@ tr.has-detail:hover{background:var(--bg)}
     </div>
     <div class="patrimoine-wrap">
       <div class="patrimoine-toggle" onclick="togglePatrimoine()">
-        <span>📊 Ajouter mon patrimoine (optionnel)</span>
+        <span id="pat-title-text">📊 Ajouter mon patrimoine (optionnel)</span>
         <span id="patrimoine-chevron">▾</span>
       </div>
       <div class="patrimoine-body" id="patrimoine-body" style="display:none">
-        <p class="patrimoine-hint">Épargne, emprunts et biens possédés. Ces informations restent dans votre navigateur et enrichissent l'analyse (patrimoine net).</p>
+        <p class="patrimoine-hint" id="pat-hint">Épargne, emprunts et biens possédés. Ces informations restent dans votre navigateur et enrichissent l'analyse (patrimoine net).</p>
         <div class="patrimoine-group">
-          <h4>💰 Épargne / Placements</h4>
+          <h4 id="pat-epargne-title">💰 Épargne / Placements</h4>
           <div id="epargnes-list"></div>
-          <button type="button" class="add-btn" onclick="addEpargne()">+ Ajouter un placement</button>
+          <button type="button" class="add-btn" id="pat-add-epargne-btn" onclick="addEpargne()">+ Ajouter un placement</button>
         </div>
         <div class="patrimoine-group">
-          <h4>🏦 Emprunts</h4>
+          <h4 id="pat-emprunt-title">🏦 Emprunts</h4>
           <div id="emprunts-list"></div>
-          <button type="button" class="add-btn" onclick="addEmprunt()">+ Ajouter un emprunt</button>
+          <button type="button" class="add-btn" id="pat-add-emprunt-btn" onclick="addEmprunt()">+ Ajouter un emprunt</button>
         </div>
         <div class="patrimoine-group">
-          <h4>🏠 Actifs possédés</h4>
+          <h4 id="pat-actif-title">🏠 Actifs possédés</h4>
           <div id="actifs-list"></div>
-          <button type="button" class="add-btn" onclick="addActif()">+ Ajouter un actif</button>
+          <button type="button" class="add-btn" id="pat-add-actif-btn" onclick="addActif()">+ Ajouter un actif</button>
         </div>
       </div>
     </div>
@@ -224,14 +224,14 @@ tr.has-detail:hover{background:var(--bg)}
 
 <script>
 const TR = {
-  francais:{ov:'Vue d\'ensemble',rec:'Recettes',dep:'Dépenses',net:'Résultat net',ep:'Taux d\'épargne',sd:'Solde départ',sa:'Solde arrivée',sc:'Score de gestion',ac:'3 actions prioritaires',dr:'Détail recettes',dd:'Détail dépenses',t5:'Top 5 dépenses',ai:'✦ Analyse IA',cat:'Catégorie',mt:'Montant',nf:'↩ Nouveau fichier',nd:'Non disponible',ex:'🌟 Excellente gestion',bon:'✅ Bonne gestion',am:'⚠️ À améliorer',cr:'🔴 Situation critique',evo:'Évolution du solde',evoWait:'Déposez plusieurs mois du même compte (ex : mai, juin, juillet) pour voir votre évolution.',ign:'Fichiers ignorés :'},
-  english:{ov:'Overview',rec:'Income',dep:'Expenses',net:'Net result',ep:'Savings rate',sd:'Opening balance',sa:'Closing balance',sc:'Financial score',ac:'3 priority actions',dr:'Income breakdown',dd:'Expense breakdown',t5:'Top 5 expenses',ai:'✦ AI Analysis',cat:'Category',mt:'Amount',nf:'↩ New file',nd:'Not available',ex:'🌟 Excellent',bon:'✅ Good',am:'⚠️ Needs work',cr:'🔴 Critical',evo:'Balance evolution',evoWait:'Upload several months of the same account (e.g. May, June, July) to see your trend.',ign:'Skipped files:'},
-  espanol:{ov:'Resumen',rec:'Ingresos',dep:'Gastos',net:'Resultado neto',ep:'Tasa de ahorro',sd:'Saldo inicial',sa:'Saldo final',sc:'Puntuación',ac:'3 acciones prioritarias',dr:'Detalle ingresos',dd:'Detalle gastos',t5:'Top 5 gastos',ai:'✦ Análisis IA',cat:'Categoría',mt:'Importe',nf:'↩ Nuevo',nd:'No disponible',ex:'🌟 Excelente',bon:'✅ Bien',am:'⚠️ Mejorable',cr:'🔴 Crítico',evo:'Evolución del saldo',evoWait:'Sube varios meses de la misma cuenta (ej: mayo, junio, julio) para ver tu evolución.',ign:'Archivos ignorados:'},
-  deutsch:{ov:'Überblick',rec:'Einnahmen',dep:'Ausgaben',net:'Nettoresultat',ep:'Sparquote',sd:'Anfangssaldo',sa:'Endsaldo',sc:'Finanzbewertung',ac:'3 Maßnahmen',dr:'Einnahmen',dd:'Ausgaben Details',t5:'Top 5 Ausgaben',ai:'✦ KI-Analyse',cat:'Kategorie',mt:'Betrag',nf:'↩ Neue Datei',nd:'Nicht verfügbar',ex:'🌟 Ausgezeichnet',bon:'✅ Gut',am:'⚠️ Verbesserung',cr:'🔴 Kritisch',evo:'Saldoentwicklung',evoWait:'Lade mehrere Monate desselben Kontos hoch (z.B. Mai, Juni, Juli), um deinen Verlauf zu sehen.',ign:'Übersprungene Dateien:'},
-  italiano:{ov:'Panoramica',rec:'Entrate',dep:'Uscite',net:'Risultato netto',ep:'Tasso risparmio',sd:'Saldo iniziale',sa:'Saldo finale',sc:'Punteggio',ac:'3 azioni prioritarie',dr:'Dettaglio entrate',dd:'Dettaglio uscite',t5:'Top 5 spese',ai:'✦ Analisi IA',cat:'Categoria',mt:'Importo',nf:'↩ Nuovo',nd:'Non disponibile',ex:'🌟 Eccellente',bon:'✅ Buono',am:'⚠️ Da migliorare',cr:'🔴 Critico',evo:'Evoluzione del saldo',evoWait:'Carica più mesi dello stesso conto (es: maggio, giugno, luglio) per vedere il tuo andamento.',ign:'File ignorati:'},
-  portugues:{ov:'Visão geral',rec:'Receitas',dep:'Despesas',net:'Resultado',ep:'Taxa poupança',sd:'Saldo inicial',sa:'Saldo final',sc:'Pontuação',ac:'3 ações prioritárias',dr:'Detalhe receitas',dd:'Detalhe despesas',t5:'Top 5 despesas',ai:'✦ Análise IA',cat:'Categoria',mt:'Valor',nf:'↩ Novo',nd:'Não disponível',ex:'🌟 Excelente',bon:'✅ Bom',am:'⚠️ A melhorar',cr:'🔴 Crítico',evo:'Evolução do saldo',evoWait:'Envie vários meses da mesma conta (ex: maio, junho, julho) para ver sua evolução.',ign:'Arquivos ignorados:'},
-  chinese:{ov:'总览',rec:'收入',dep:'支出',net:'净结果',ep:'储蓄率',sd:'期初余额',sa:'期末余额',sc:'财务评分',ac:'3项优先行动',dr:'收入明细',dd:'支出明细',t5:'月度前5大支出',ai:'✦ AI分析',cat:'类别',mt:'金额',nf:'↩ 新文件',nd:'不适用',ex:'🌟 优秀',bon:'✅ 良好',am:'⚠️ 需改进',cr:'🔴 危急',evo:'余额变化趋势',evoWait:'上传同一账户多个月份的对账单（如5月、6月、7月）以查看变化趋势。',ign:'已跳过的文件：'},
-  arabic:{ov:'نظرة عامة',rec:'الإيرادات',dep:'المصروفات',net:'الصافي',ep:'معدل الادخار',sd:'الرصيد الافتتاحي',sa:'الرصيد الختامي',sc:'التقييم',ac:'3 إجراءات',dr:'تفاصيل الإيرادات',dd:'تفاصيل المصروفات',t5:'أعلى 5 مصروفات',ai:'✦ تحليل ذكاء اصطناعي',cat:'الفئة',mt:'المبلغ',nf:'↩ ملف جديد',nd:'غير متوفر',ex:'🌟 ممتاز',bon:'✅ جيد',am:'⚠️ يحتاج تحسين',cr:'🔴 وضع حرج',evo:'تطور الرصيد',evoWait:'قم برفع عدة أشهر لنفس الحساب (مثال: مايو، يونيو، يوليو) لرؤية تطورك.',ign:'الملفات المتجاهلة:'}
+  francais:{ov:'Vue d\'ensemble',rec:'Recettes',dep:'Dépenses',net:'Résultat net',ep:'Taux d\'épargne',sd:'Solde départ',sa:'Solde arrivée',sc:'Score de gestion',ac:'3 actions prioritaires',dr:'Détail recettes',dd:'Détail dépenses',t5:'Top 5 dépenses',ai:'✦ Analyse IA',cat:'Catégorie',mt:'Montant',nf:'↩ Nouveau fichier',nd:'Non disponible',ex:'🌟 Excellente gestion',bon:'✅ Bonne gestion',am:'⚠️ À améliorer',cr:'🔴 Situation critique',evo:'Évolution du solde',evoWait:'Déposez plusieurs mois du même compte (ex : mai, juin, juillet) pour voir votre évolution.',ign:'Fichiers ignorés :',patTitle:'📊 Ajouter mon patrimoine (optionnel)',patHint:'Épargne, emprunts et biens possédés. Ces informations restent dans votre navigateur et enrichissent l\'analyse (patrimoine net).',patEpargneTitle:'💰 Épargne / Placements',patAddEpargne:'+ Ajouter un placement',patEmpruntTitle:'🏦 Emprunts',patAddEmprunt:'+ Ajouter un emprunt',patActifTitle:'🏠 Actifs possédés',patAddActif:'+ Ajouter un actif',patLibelleEpargne:'Libellé (ex: Livret A)',patMontantPlace:'Montant placé (€)',patTaux:'Taux (%)',patLibelleEmprunt:'Libellé (ex: Prêt immo)',patMontantInitial:'Montant initial (€)',patCapitalRestant:'Capital restant dû (€)',patDebut:'Début',patAssurance:'Assurance (€/mois)',patLibelleActif:'Libellé (ex: Appartement)',patValeur:'Valeur estimée (€)',patStatutPaye:'Payé entièrement',patStatutEncours:'En cours de remboursement',patNetTitle:'Patrimoine net',patActifsLabel:'Actifs',patEpargneLabel:'Épargne',patDettesLabel:'Dettes',patNetLabel:'Patrimoine net'},
+  english:{ov:'Overview',rec:'Income',dep:'Expenses',net:'Net result',ep:'Savings rate',sd:'Opening balance',sa:'Closing balance',sc:'Financial score',ac:'3 priority actions',dr:'Income breakdown',dd:'Expense breakdown',t5:'Top 5 expenses',ai:'✦ AI Analysis',cat:'Category',mt:'Amount',nf:'↩ New file',nd:'Not available',ex:'🌟 Excellent',bon:'✅ Good',am:'⚠️ Needs work',cr:'🔴 Critical',evo:'Balance evolution',evoWait:'Upload several months of the same account (e.g. May, June, July) to see your trend.',ign:'Skipped files:',patTitle:'📊 Add my net worth (optional)',patHint:'Savings, loans and owned assets. This stays in your browser and enriches the analysis (net worth).',patEpargneTitle:'💰 Savings / Investments',patAddEpargne:'+ Add a savings account',patEmpruntTitle:'🏦 Loans',patAddEmprunt:'+ Add a loan',patActifTitle:'🏠 Owned assets',patAddActif:'+ Add an asset',patLibelleEpargne:'Label (e.g. Savings account)',patMontantPlace:'Amount saved ($)',patTaux:'Rate (%)',patLibelleEmprunt:'Label (e.g. Mortgage)',patMontantInitial:'Initial amount ($)',patCapitalRestant:'Remaining balance ($)',patDebut:'Start date',patAssurance:'Insurance ($/month)',patLibelleActif:'Label (e.g. Apartment)',patValeur:'Estimated value ($)',patStatutPaye:'Fully paid off',patStatutEncours:'Still being paid off',patNetTitle:'Net worth',patActifsLabel:'Assets',patEpargneLabel:'Savings',patDettesLabel:'Debts',patNetLabel:'Net worth'},
+  espanol:{ov:'Resumen',rec:'Ingresos',dep:'Gastos',net:'Resultado neto',ep:'Tasa de ahorro',sd:'Saldo inicial',sa:'Saldo final',sc:'Puntuación',ac:'3 acciones prioritarias',dr:'Detalle ingresos',dd:'Detalle gastos',t5:'Top 5 gastos',ai:'✦ Análisis IA',cat:'Categoría',mt:'Importe',nf:'↩ Nuevo',nd:'No disponible',ex:'🌟 Excelente',bon:'✅ Bien',am:'⚠️ Mejorable',cr:'🔴 Crítico',evo:'Evolución del saldo',evoWait:'Sube varios meses de la misma cuenta (ej: mayo, junio, julio) para ver tu evolución.',ign:'Archivos ignorados:',patTitle:'📊 Añadir mi patrimonio (opcional)',patHint:'Ahorros, préstamos y bienes propios. Esta información permanece en tu navegador y enriquece el análisis (patrimonio neto).',patEpargneTitle:'💰 Ahorros / Inversiones',patAddEpargne:'+ Añadir una cuenta de ahorro',patEmpruntTitle:'🏦 Préstamos',patAddEmprunt:'+ Añadir un préstamo',patActifTitle:'🏠 Bienes propios',patAddActif:'+ Añadir un bien',patLibelleEpargne:'Nombre (ej: Cuenta de ahorro)',patMontantPlace:'Importe ahorrado (€)',patTaux:'Tasa (%)',patLibelleEmprunt:'Nombre (ej: Hipoteca)',patMontantInitial:'Importe inicial (€)',patCapitalRestant:'Capital pendiente (€)',patDebut:'Fecha inicio',patAssurance:'Seguro (€/mes)',patLibelleActif:'Nombre (ej: Piso)',patValeur:'Valor estimado (€)',patStatutPaye:'Pagado por completo',patStatutEncours:'En proceso de pago',patNetTitle:'Patrimonio neto',patActifsLabel:'Bienes',patEpargneLabel:'Ahorros',patDettesLabel:'Deudas',patNetLabel:'Patrimonio neto'},
+  deutsch:{ov:'Überblick',rec:'Einnahmen',dep:'Ausgaben',net:'Nettoresultat',ep:'Sparquote',sd:'Anfangssaldo',sa:'Endsaldo',sc:'Finanzbewertung',ac:'3 Maßnahmen',dr:'Einnahmen',dd:'Ausgaben Details',t5:'Top 5 Ausgaben',ai:'✦ KI-Analyse',cat:'Kategorie',mt:'Betrag',nf:'↩ Neue Datei',nd:'Nicht verfügbar',ex:'🌟 Ausgezeichnet',bon:'✅ Gut',am:'⚠️ Verbesserung',cr:'🔴 Kritisch',evo:'Saldoentwicklung',evoWait:'Lade mehrere Monate desselben Kontos hoch (z.B. Mai, Juni, Juli), um deinen Verlauf zu sehen.',ign:'Übersprungene Dateien:',patTitle:'📊 Mein Vermögen hinzufügen (optional)',patHint:'Ersparnisse, Kredite und Vermögenswerte. Diese Angaben bleiben in deinem Browser und bereichern die Analyse (Nettovermögen).',patEpargneTitle:'💰 Ersparnisse / Investitionen',patAddEpargne:'+ Sparkonto hinzufügen',patEmpruntTitle:'🏦 Kredite',patAddEmprunt:'+ Kredit hinzufügen',patActifTitle:'🏠 Vermögenswerte',patAddActif:'+ Vermögenswert hinzufügen',patLibelleEpargne:'Bezeichnung (z.B. Sparkonto)',patMontantPlace:'Angelegter Betrag (€)',patTaux:'Zinssatz (%)',patLibelleEmprunt:'Bezeichnung (z.B. Immobilienkredit)',patMontantInitial:'Anfangsbetrag (€)',patCapitalRestant:'Restschuld (€)',patDebut:'Beginn',patAssurance:'Versicherung (€/Monat)',patLibelleActif:'Bezeichnung (z.B. Wohnung)',patValeur:'Geschätzter Wert (€)',patStatutPaye:'Vollständig bezahlt',patStatutEncours:'Wird noch abbezahlt',patNetTitle:'Nettovermögen',patActifsLabel:'Vermögenswerte',patEpargneLabel:'Ersparnisse',patDettesLabel:'Schulden',patNetLabel:'Nettovermögen'},
+  italiano:{ov:'Panoramica',rec:'Entrate',dep:'Uscite',net:'Risultato netto',ep:'Tasso risparmio',sd:'Saldo iniziale',sa:'Saldo finale',sc:'Punteggio',ac:'3 azioni prioritarie',dr:'Dettaglio entrate',dd:'Dettaglio uscite',t5:'Top 5 spese',ai:'✦ Analisi IA',cat:'Categoria',mt:'Importo',nf:'↩ Nuovo',nd:'Non disponibile',ex:'🌟 Eccellente',bon:'✅ Buono',am:'⚠️ Da migliorare',cr:'🔴 Critico',evo:'Evoluzione del saldo',evoWait:'Carica più mesi dello stesso conto (es: maggio, giugno, luglio) per vedere il tuo andamento.',ign:'File ignorati:',patTitle:'📊 Aggiungi il mio patrimonio (opzionale)',patHint:'Risparmi, prestiti e beni posseduti. Queste informazioni restano nel tuo browser e arricchiscono l\'analisi (patrimonio netto).',patEpargneTitle:'💰 Risparmi / Investimenti',patAddEpargne:'+ Aggiungi un risparmio',patEmpruntTitle:'🏦 Prestiti',patAddEmprunt:'+ Aggiungi un prestito',patActifTitle:'🏠 Beni posseduti',patAddActif:'+ Aggiungi un bene',patLibelleEpargne:'Nome (es: Conto risparmio)',patMontantPlace:'Importo risparmiato (€)',patTaux:'Tasso (%)',patLibelleEmprunt:'Nome (es: Mutuo)',patMontantInitial:'Importo iniziale (€)',patCapitalRestant:'Capitale residuo (€)',patDebut:'Inizio',patAssurance:'Assicurazione (€/mese)',patLibelleActif:'Nome (es: Appartamento)',patValeur:'Valore stimato (€)',patStatutPaye:'Pagato interamente',patStatutEncours:'In fase di rimborso',patNetTitle:'Patrimonio netto',patActifsLabel:'Beni',patEpargneLabel:'Risparmi',patDettesLabel:'Debiti',patNetLabel:'Patrimonio netto'},
+  portugues:{ov:'Visão geral',rec:'Receitas',dep:'Despesas',net:'Resultado',ep:'Taxa poupança',sd:'Saldo inicial',sa:'Saldo final',sc:'Pontuação',ac:'3 ações prioritárias',dr:'Detalhe receitas',dd:'Detalhe despesas',t5:'Top 5 despesas',ai:'✦ Análise IA',cat:'Categoria',mt:'Valor',nf:'↩ Novo',nd:'Não disponível',ex:'🌟 Excelente',bon:'✅ Bom',am:'⚠️ A melhorar',cr:'🔴 Crítico',evo:'Evolução do saldo',evoWait:'Envie vários meses da mesma conta (ex: maio, junho, julho) para ver sua evolução.',ign:'Arquivos ignorados:',patTitle:'📊 Adicionar meu patrimônio (opcional)',patHint:'Poupança, empréstimos e bens possuídos. Essas informações ficam no seu navegador e enriquecem a análise (patrimônio líquido).',patEpargneTitle:'💰 Poupança / Investimentos',patAddEpargne:'+ Adicionar uma poupança',patEmpruntTitle:'🏦 Empréstimos',patAddEmprunt:'+ Adicionar um empréstimo',patActifTitle:'🏠 Bens possuídos',patAddActif:'+ Adicionar um bem',patLibelleEpargne:'Nome (ex: Poupança)',patMontantPlace:'Valor investido (€)',patTaux:'Taxa (%)',patLibelleEmprunt:'Nome (ex: Financiamento imobiliário)',patMontantInitial:'Valor inicial (€)',patCapitalRestant:'Saldo devedor (€)',patDebut:'Início',patAssurance:'Seguro (€/mês)',patLibelleActif:'Nome (ex: Apartamento)',patValeur:'Valor estimado (€)',patStatutPaye:'Totalmente pago',patStatutEncours:'Em pagamento',patNetTitle:'Patrimônio líquido',patActifsLabel:'Bens',patEpargneLabel:'Poupança',patDettesLabel:'Dívidas',patNetLabel:'Patrimônio líquido'},
+  chinese:{ov:'总览',rec:'收入',dep:'支出',net:'净结果',ep:'储蓄率',sd:'期初余额',sa:'期末余额',sc:'财务评分',ac:'3项优先行动',dr:'收入明细',dd:'支出明细',t5:'月度前5大支出',ai:'✦ AI分析',cat:'类别',mt:'金额',nf:'↩ 新文件',nd:'不适用',ex:'🌟 优秀',bon:'✅ 良好',am:'⚠️ 需改进',cr:'🔴 危急',evo:'余额变化趋势',evoWait:'上传同一账户多个月份的对账单（如5月、6月、7月）以查看变化趋势。',ign:'已跳过的文件：',patTitle:'📊 添加我的资产状况（可选）',patHint:'储蓄、贷款和名下资产。这些信息仅保留在您的浏览器中，用于丰富分析结果（净资产）。',patEpargneTitle:'💰 储蓄/投资',patAddEpargne:'+ 添加储蓄项目',patEmpruntTitle:'🏦 贷款',patAddEmprunt:'+ 添加贷款',patActifTitle:'🏠 名下资产',patAddActif:'+ 添加资产',patLibelleEpargne:'名称（例如：储蓄账户）',patMontantPlace:'存入金额（€）',patTaux:'利率（%）',patLibelleEmprunt:'名称（例如：房贷）',patMontantInitial:'初始金额（€）',patCapitalRestant:'剩余本金（€）',patDebut:'开始日期',patAssurance:'保险（€/月）',patLibelleActif:'名称（例如：公寓）',patValeur:'估计价值（€）',patStatutPaye:'已全部付清',patStatutEncours:'还款中',patNetTitle:'净资产',patActifsLabel:'资产',patEpargneLabel:'储蓄',patDettesLabel:'负债',patNetLabel:'净资产'},
+  arabic:{ov:'نظرة عامة',rec:'الإيرادات',dep:'المصروفات',net:'الصافي',ep:'معدل الادخار',sd:'الرصيد الافتتاحي',sa:'الرصيد الختامي',sc:'التقييم',ac:'3 إجراءات',dr:'تفاصيل الإيرادات',dd:'تفاصيل المصروفات',t5:'أعلى 5 مصروفات',ai:'✦ تحليل ذكاء اصطناعي',cat:'الفئة',mt:'المبلغ',nf:'↩ ملف جديد',nd:'غير متوفر',ex:'🌟 ممتاز',bon:'✅ جيد',am:'⚠️ يحتاج تحسين',cr:'🔴 وضع حرج',evo:'تطور الرصيد',evoWait:'قم برفع عدة أشهر لنفس الحساب (مثال: مايو، يونيو، يوليو) لرؤية تطورك.',ign:'الملفات المتجاهلة:',patTitle:'📊 إضافة ثروتي (اختياري)',patHint:'المدخرات والقروض والممتلكات. تبقى هذه المعلومات في متصفحك وتثري التحليل (صافي الثروة).',patEpargneTitle:'💰 المدخرات / الاستثمارات',patAddEpargne:'+ إضافة مدخرات',patEmpruntTitle:'🏦 القروض',patAddEmprunt:'+ إضافة قرض',patActifTitle:'🏠 الممتلكات',patAddActif:'+ إضافة ممتلك',patLibelleEpargne:'التسمية (مثال: حساب توفير)',patMontantPlace:'المبلغ المودع (€)',patTaux:'النسبة (%)',patLibelleEmprunt:'التسمية (مثال: قرض عقاري)',patMontantInitial:'المبلغ الأولي (€)',patCapitalRestant:'الرصيد المتبقي (€)',patDebut:'تاريخ البدء',patAssurance:'التأمين (€/شهر)',patLibelleActif:'التسمية (مثال: شقة)',patValeur:'القيمة المقدرة (€)',patStatutPaye:'مدفوع بالكامل',patStatutEncours:'قيد السداد',patNetTitle:'صافي الثروة',patActifsLabel:'الممتلكات',patEpargneLabel:'المدخرات',patDettesLabel:'الديون',patNetLabel:'صافي الثروة'}
 };
 const CR=['#2a78d6','#1baf7a','#eda100','#4a3aa7','#34c759'];
 const CD=['#e34948','#eb6834','#e87ba4','#898781','#4a3aa7','#eda100','#1baf7a'];
@@ -352,35 +352,49 @@ function addActif(){patrimoine.actifs.push({libelle:'',valeur:'',statut:'paye'})
 function removeEntry(cat,idx){patrimoine[cat].splice(idx,1);renderPatrimoine();savePatrimoine()}
 function updateEntry(cat,idx,field,value){patrimoine[cat][idx][field]=value;savePatrimoine()}
 
+function applyPatrimoineLang(){
+  const T=TR[document.getElementById('langue').value]||TR.francais;
+  document.getElementById('pat-title-text').textContent=T.patTitle;
+  document.getElementById('pat-hint').textContent=T.patHint;
+  document.getElementById('pat-epargne-title').textContent=T.patEpargneTitle;
+  document.getElementById('pat-add-epargne-btn').textContent=T.patAddEpargne;
+  document.getElementById('pat-emprunt-title').textContent=T.patEmpruntTitle;
+  document.getElementById('pat-add-emprunt-btn').textContent=T.patAddEmprunt;
+  document.getElementById('pat-actif-title').textContent=T.patActifTitle;
+  document.getElementById('pat-add-actif-btn').textContent=T.patAddActif;
+  renderPatrimoine();
+}
+
 function renderPatrimoine(){
+  const T=TR[document.getElementById('langue').value]||TR.francais;
   document.getElementById('epargnes-list').innerHTML=patrimoine.epargnes.map((e,i)=>
     '<div class="patrimoine-row">'+
-    '<input placeholder="Libellé (ex: Livret A)" value="'+(e.libelle||'')+'" oninput="updateEntry(\'epargnes\','+i+',\'libelle\',this.value)">'+
-    '<input placeholder="Montant placé (€)" type="number" value="'+(e.montant||'')+'" oninput="updateEntry(\'epargnes\','+i+',\'montant\',this.value)">'+
-    '<input placeholder="Taux (%)" type="number" step="0.01" value="'+(e.taux||'')+'" oninput="updateEntry(\'epargnes\','+i+',\'taux\',this.value)">'+
+    '<input placeholder="'+T.patLibelleEpargne+'" value="'+(e.libelle||'')+'" oninput="updateEntry(\'epargnes\','+i+',\'libelle\',this.value)">'+
+    '<input placeholder="'+T.patMontantPlace+'" type="number" value="'+(e.montant||'')+'" oninput="updateEntry(\'epargnes\','+i+',\'montant\',this.value)">'+
+    '<input placeholder="'+T.patTaux+'" type="number" step="0.01" value="'+(e.taux||'')+'" oninput="updateEntry(\'epargnes\','+i+',\'taux\',this.value)">'+
     '<button type="button" class="rm-btn" onclick="removeEntry(\'epargnes\','+i+')">×</button>'+
     '</div>'
   ).join('');
 
   document.getElementById('emprunts-list').innerHTML=patrimoine.emprunts.map((e,i)=>
     '<div class="patrimoine-row emprunt-row">'+
-    '<input placeholder="Libellé (ex: Prêt immo)" value="'+(e.libelle||'')+'" oninput="updateEntry(\'emprunts\','+i+',\'libelle\',this.value)">'+
-    '<input placeholder="Montant initial (€)" type="number" value="'+(e.montantInitial||'')+'" oninput="updateEntry(\'emprunts\','+i+',\'montantInitial\',this.value)">'+
-    '<input placeholder="Capital restant dû (€)" type="number" value="'+(e.capitalRestantDu||'')+'" oninput="updateEntry(\'emprunts\','+i+',\'capitalRestantDu\',this.value)">'+
-    '<input placeholder="Taux (%)" type="number" step="0.01" value="'+(e.taux||'')+'" oninput="updateEntry(\'emprunts\','+i+',\'taux\',this.value)">'+
-    '<input placeholder="Début" type="date" value="'+(e.dateDebut||'')+'" oninput="updateEntry(\'emprunts\','+i+',\'dateDebut\',this.value)">'+
-    '<input placeholder="Assurance (€/mois)" type="number" value="'+(e.assuranceMensuelle||'')+'" oninput="updateEntry(\'emprunts\','+i+',\'assuranceMensuelle\',this.value)">'+
+    '<input placeholder="'+T.patLibelleEmprunt+'" value="'+(e.libelle||'')+'" oninput="updateEntry(\'emprunts\','+i+',\'libelle\',this.value)">'+
+    '<input placeholder="'+T.patMontantInitial+'" type="number" value="'+(e.montantInitial||'')+'" oninput="updateEntry(\'emprunts\','+i+',\'montantInitial\',this.value)">'+
+    '<input placeholder="'+T.patCapitalRestant+'" type="number" value="'+(e.capitalRestantDu||'')+'" oninput="updateEntry(\'emprunts\','+i+',\'capitalRestantDu\',this.value)">'+
+    '<input placeholder="'+T.patTaux+'" type="number" step="0.01" value="'+(e.taux||'')+'" oninput="updateEntry(\'emprunts\','+i+',\'taux\',this.value)">'+
+    '<input placeholder="'+T.patDebut+'" type="date" value="'+(e.dateDebut||'')+'" oninput="updateEntry(\'emprunts\','+i+',\'dateDebut\',this.value)">'+
+    '<input placeholder="'+T.patAssurance+'" type="number" value="'+(e.assuranceMensuelle||'')+'" oninput="updateEntry(\'emprunts\','+i+',\'assuranceMensuelle\',this.value)">'+
     '<button type="button" class="rm-btn" onclick="removeEntry(\'emprunts\','+i+')">×</button>'+
     '</div>'
   ).join('');
 
   document.getElementById('actifs-list').innerHTML=patrimoine.actifs.map((a,i)=>
     '<div class="patrimoine-row">'+
-    '<input placeholder="Libellé (ex: Appartement)" value="'+(a.libelle||'')+'" oninput="updateEntry(\'actifs\','+i+',\'libelle\',this.value)">'+
-    '<input placeholder="Valeur estimée (€)" type="number" value="'+(a.valeur||'')+'" oninput="updateEntry(\'actifs\','+i+',\'valeur\',this.value)">'+
+    '<input placeholder="'+T.patLibelleActif+'" value="'+(a.libelle||'')+'" oninput="updateEntry(\'actifs\','+i+',\'libelle\',this.value)">'+
+    '<input placeholder="'+T.patValeur+'" type="number" value="'+(a.valeur||'')+'" oninput="updateEntry(\'actifs\','+i+',\'valeur\',this.value)">'+
     '<select onchange="updateEntry(\'actifs\','+i+',\'statut\',this.value)">'+
-    '<option value="paye"'+(a.statut==='paye'?' selected':'')+'>Payé entièrement</option>'+
-    '<option value="encours"'+(a.statut==='encours'?' selected':'')+'>En cours de remboursement</option>'+
+    '<option value="paye"'+(a.statut==='paye'?' selected':'')+'>'+T.patStatutPaye+'</option>'+
+    '<option value="encours"'+(a.statut==='encours'?' selected':'')+'>'+T.patStatutEncours+'</option>'+
     '</select>'+
     '<button type="button" class="rm-btn" onclick="removeEntry(\'actifs\','+i+')">×</button>'+
     '</div>'
@@ -442,12 +456,12 @@ function renderResult(data){
 
     (data.patrimoine ? (
       '<div class="card anim">'+
-      '<div class="card-title">Patrimoine net</div>'+
+      '<div class="card-title">'+T.patNetTitle+'</div>'+
       '<div class="metrics-grid">'+
-      '<div class="metric"><div class="metric-label">Actifs</div><div class="metric-value" style="color:#1baf7a">'+fmt(data.patrimoine.totalActifs)+'</div></div>'+
-      '<div class="metric"><div class="metric-label">Épargne</div><div class="metric-value" style="color:#1baf7a">'+fmt(data.patrimoine.totalEpargnes)+'</div></div>'+
-      '<div class="metric"><div class="metric-label">Dettes</div><div class="metric-value" style="color:#e34948">'+fmt(data.patrimoine.totalDettes)+'</div></div>'+
-      '<div class="metric"><div class="metric-label">Patrimoine net</div><div class="metric-value" style="color:#0071e3">'+fmt(data.patrimoine.patrimoineNet)+'</div></div>'+
+      '<div class="metric"><div class="metric-label">'+T.patActifsLabel+'</div><div class="metric-value" style="color:#1baf7a">'+fmt(data.patrimoine.totalActifs)+'</div></div>'+
+      '<div class="metric"><div class="metric-label">'+T.patEpargneLabel+'</div><div class="metric-value" style="color:#1baf7a">'+fmt(data.patrimoine.totalEpargnes)+'</div></div>'+
+      '<div class="metric"><div class="metric-label">'+T.patDettesLabel+'</div><div class="metric-value" style="color:#e34948">'+fmt(data.patrimoine.totalDettes)+'</div></div>'+
+      '<div class="metric"><div class="metric-label">'+T.patNetLabel+'</div><div class="metric-value" style="color:#0071e3">'+fmt(data.patrimoine.patrimoineNet)+'</div></div>'+
       '</div></div>'
     ) : '')+
 
@@ -538,7 +552,9 @@ async function processFile(files){
 }
 
 document.getElementById('fileInput').addEventListener('change',e=>{if(e.target.files.length>0)processFile(e.target.files)});
+document.getElementById('langue').addEventListener('change',applyPatrimoineLang);
 loadPatrimoine();
+applyPatrimoineLang();
 const dz=document.getElementById('dropZone');
 dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('drag-over')});
 dz.addEventListener('dragleave',()=>dz.classList.remove('drag-over'));
