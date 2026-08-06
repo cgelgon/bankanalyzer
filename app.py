@@ -84,7 +84,7 @@ def analyse_releve(client, text, nom_banque, langue='français'):
     msg = client.messages.create(
         model='claude-sonnet-4-6',
         max_tokens=4000,
-        system='Tu es un expert-comptable. Tu reponds UNIQUEMENT avec du JSON valide, sans aucun texte avant ou apres, sans markdown. IMPORTANT: toutes les valeurs textuelles du JSON (labels de categories, commentaire, score_detail, titres et details des actions) doivent etre redigees dans la langue specifiee dans le prompt utilisateur.',
+        system='Tu es un expert-comptable. Tu reponds UNIQUEMENT avec du JSON valide, sans aucun texte avant ou apres, sans markdown, sans phrase d\'introduction ni de raisonnement visible (meme sur des releves complexes ou volumineux, va directement au JSON final). IMPORTANT: toutes les valeurs textuelles du JSON (labels de categories, commentaire, score_detail, titres et details des actions) doivent etre redigees dans la langue specifiee dans le prompt utilisateur.',
         messages=[{'role': 'user', 'content': prompt}]
     )
     raw = msg.content[0].text.replace('```json', '').replace('```', '').strip() if msg.content else ''
@@ -92,7 +92,19 @@ def analyse_releve(client, text, nom_banque, langue='français'):
     print('CLAUDE RESPONSE:', raw[:200], '| stop_reason:', stop_reason, '| nb_blocks:', len(msg.content), '| longueur_texte_source:', len(text))
     if not raw:
         raise ValueError('Reponse vide de Claude (stop_reason=' + str(stop_reason) + ', longueur texte source=' + str(len(text)) + ' caracteres)')
-    return json.loads(raw)
+    try:
+        return json.loads(raw)
+    except json.JSONDecodeError:
+        # L'IA a parfois ajoute une phrase de raisonnement avant/apres le JSON malgre la consigne.
+        # On tente de recuperer uniquement le bloc JSON (premiere { a derniere }).
+        start = raw.find('{')
+        end = raw.rfind('}')
+        if start != -1 and end != -1 and end > start:
+            try:
+                return json.loads(raw[start:end + 1])
+            except json.JSONDecodeError:
+                pass
+        raise
 
 
 def get_conseil_global(client, comptes, total_r, total_d, periode, langue='francais'):
