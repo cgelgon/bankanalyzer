@@ -89,6 +89,9 @@ tr.has-detail:hover{background:var(--bg)}
 .warn-box{background:#fff8e8;border:1px solid #f5d98a;border-radius:12px;padding:1rem 1.25rem;margin-bottom:1rem;font-size:13px;color:#7a5c00}
 .warn-box strong{display:block;margin-bottom:4px;font-size:13px}
 .warn-box ul{margin:6px 0 0 18px;padding:0}
+.info-box{background:#eef4ff;border:1px solid #b8cdf5;border-radius:12px;padding:1rem 1.25rem;margin-bottom:1rem;font-size:13px;color:#1d4b8f}
+.info-box strong{display:block;margin-bottom:4px;font-size:13px}
+.info-box ul{margin:6px 0 0 18px;padding:0}
 .perso-wrap{text-align:center;margin:1rem 0}
 .evo-empty{font-size:13px;color:var(--text3);text-align:center;padding:1.5rem 0}
 .patrimoine-wrap{max-width:580px;margin:1rem auto 0;text-align:left}
@@ -601,6 +604,7 @@ function renderResult(data){
     '<button class="reset-btn" onclick="reset()">'+T.nf+'</button></div>'+
 
     ((data.fichiersIgnores||[]).length>0?'<div class="warn-box"><strong>⚠️ '+T.ign+'</strong><ul>'+data.fichiersIgnores.map(f=>'<li>'+f.nom+' — '+f.raison+'</li>').join('')+'</ul></div>':'')+
+    ((data.avertissements||[]).length>0?'<div class="info-box"><strong>ℹ️ Écarts détectés avec le récapitulatif officiel du relevé :</strong><ul>'+data.avertissements.map(a=>'<li>'+a.nom+' — '+a.raison+'</li>').join('')+'</ul></div>':'')+
 
     '<div class="card anim">'+
     '<div class="card-title">'+T.ov+'</div>'+

@@ -117,6 +117,7 @@ def analyse_releve(client, text, nom_banque, langue='français'):
         '{"compte":"nom de la banque et/ou du compte tel qu\'il apparait EXPLICITEMENT sur le releve (ex: REVOLUT, BNP PARIBAS - Compte Principal, Compte Booster)",' +
         '"devise":"code devise ISO du releve tel qu\'indique dessus (EUR, JOD, USD, GBP, etc.)",' +
         '"totalRecettes":0,"totalDepenses":0,"soldeDepart":0,"soldeArrivee":0,' +
+        '"totalRecettesOfficiel":0,"totalDepensesOfficiel":0,' +
         '"recettes":[{"label":"cat","montant":0,"transactions":[{"libelle":"desc","montant":0,"date":"JJ/MM"}]}],' +
         '"depenses":[{"label":"cat","montant":0,"transactions":[{"libelle":"desc","montant":0,"date":"JJ/MM"}]}],' +
         '"top5depenses":[{"libelle":"desc","montant":0,"date":"JJ/MM"}],' +
@@ -127,6 +128,7 @@ def analyse_releve(client, text, nom_banque, langue='français'):
         '3. soldeDepart = solde debut du releve, soldeArrivee = solde fin' + chr(10) +
         '4. top5depenses = 5 plus grosses transactions sortantes individuelles avec libelle et date' + chr(10) +
         '5. Montants entiers positifs, max 5 recettes, max 7 depenses' + chr(10) +
+        '6b. Si le releve affiche un recapitulatif officiel imprime des totaux (ex: "Total des operations", "TOTAL", "Amount of Transactions", "Number/Amount of Transactions Debit/Credit"), rapporte ces totaux exacts dans totalRecettesOfficiel et totalDepensesOfficiel (arrondis a l\'entier). Si aucun recapitulatif officiel n\'est visible sur le releve, mets exactement les memes valeurs que totalRecettes et totalDepenses.' + chr(10) +
         '6. Pour CHAQUE categorie de recettes et de depenses, liste dans "transactions" jusqu\'a 5 transactions individuelles les plus importantes qui la composent (libelle, montant, date)' + chr(10) +
         '7. "banque" doit etre le nom reel de la banque et/ou de l\'intitule du compte tel qu\'il apparait sur le releve (jamais un nom de fichier)' + chr(10) +
         '7. Pour "compte", identifie le nom de la banque et/ou du compte TEL QU\'IL APPARAIT sur le releve (logo, en-tete, intitule de compte). Si tu ne trouves rien de clair, mets "' + nom_banque + '"' + chr(10) +
@@ -314,14 +316,32 @@ def _analyze_impl():
     comptes = []
     TAILLE_LOT = 8
 
+    avertissements = []
+    SEUIL_ECART = 0.03  # 3% d'ecart tolere avant d'avertir
+
     def analyser_un_fichier(f):
         derniere_erreur = None
         for tentative in range(2):
             try:
                 data = analyse_releve(client, f['text'], f['nom'], langue)
-                nom_detecte = (data.get('banque') or '').strip()
+                nom_detecte = (data.get('compte') or '').strip()
                 data['nom'] = nom_detecte if nom_detecte else f['nom']
                 data['periode'] = f['periode']
+
+                tr = to_num(data.get('totalRecettes', 0))
+                td = to_num(data.get('totalDepenses', 0))
+                tr_off = to_num(data.get('totalRecettesOfficiel', tr))
+                td_off = to_num(data.get('totalDepensesOfficiel', td))
+                ecarts = []
+                if tr_off > 0 and abs(tr - tr_off) / tr_off > SEUIL_ECART:
+                    ecarts.append('recettes calculees=' + str(round(tr)) + ' vs officiel=' + str(round(tr_off)))
+                if td_off > 0 and abs(td - td_off) / td_off > SEUIL_ECART:
+                    ecarts.append('depenses calculees=' + str(round(td)) + ' vs officiel=' + str(round(td_off)))
+                if ecarts:
+                    avertissements.append({
+                        'nom': data['nom'] + ' (' + f['periode'] + ')',
+                        'raison': 'Ecart avec le recapitulatif officiel du releve : ' + ' ; '.join(ecarts)
+                    })
                 return data
             except Exception as e:
                 derniere_erreur = e
@@ -488,6 +508,7 @@ def _analyze_impl():
         'isMultiMois': is_multi_mois,
         'evolution': evolution,
         'fichiersIgnores': fichiers_ignores,
+        'avertissements': avertissements,
         'patrimoine': patrimoine_resume,
         'totalRecettes': total_r,
         'totalDepenses': total_d,
