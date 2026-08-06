@@ -10,8 +10,27 @@ app = Flask(__name__)
 CORS(app)
 
 MOIS_MAP = {
+    # francais
     'janvier': 1, 'fevrier': 2, 'mars': 3, 'avril': 4, 'mai': 5, 'juin': 6,
-    'juillet': 7, 'aout': 8, 'septembre': 9, 'octobre': 10, 'novembre': 11, 'decembre': 12
+    'juillet': 7, 'aout': 8, 'septembre': 9, 'octobre': 10, 'novembre': 11, 'decembre': 12,
+    # english
+    'january': 1, 'february': 2, 'march': 3, 'april': 4, 'may': 5, 'june': 6,
+    'july': 7, 'august': 8, 'september': 9, 'october': 10, 'november': 11, 'december': 12,
+    # espanol
+    'enero': 1, 'febrero': 2, 'marzo': 3, 'abril': 4, 'mayo': 5, 'junio': 6,
+    'julio': 7, 'agosto': 8, 'septiembre': 9, 'setiembre': 9, 'octubre': 10, 'noviembre': 11, 'diciembre': 12,
+    # deutsch
+    'januar': 1, 'februar': 2, 'marz': 3, 'juni': 6, 'juli': 7,
+    'oktober': 10, 'dezember': 12,
+    # italiano
+    'gennaio': 1, 'febbraio': 2, 'aprile': 4, 'maggio': 5, 'giugno': 6, 'luglio': 7,
+    'settembre': 9, 'ottobre': 10, 'dicembre': 12,
+    # portugues
+    'janeiro': 1, 'fevereiro': 2, 'marco': 3, 'maio': 5, 'junho': 6, 'julho': 7,
+    'setembro': 9, 'outubro': 10, 'novembro': 11, 'dezembro': 12,
+    # arabe
+    'يناير': 1, 'فبراير': 2, 'مارس': 3, 'أبريل': 4, 'مايو': 5, 'يونيو': 6,
+    'يوليو': 7, 'أغسطس': 8, 'سبتمبر': 9, 'أكتوبر': 10, 'نوفمبر': 11, 'ديسمبر': 12,
 }
 
 
@@ -43,11 +62,20 @@ def extract_text_from_excel(file_bytes):
 
 
 def get_periode(text):
-    mois = r'(janvier|fevrier|mars|avril|mai|juin|juillet|aout|septembre|octobre|novembre|decembre)'
+    # Format chinois : "2026年7月" ou "7月2026年"
+    m_cn = re.search(r'(\d{4})\s*年\s*(\d{1,2})\s*月', text)
+    if m_cn:
+        return m_cn.group(2) + '/' + m_cn.group(1)
+    m_cn2 = re.search(r'(\d{1,2})\s*月\s*(\d{4})\s*年', text)
+    if m_cn2:
+        return m_cn2.group(1) + '/' + m_cn2.group(2)
+
     texte_sans_accents = sans_accents(text.lower())
-    m = re.search(mois + r'\s*\d{4}', texte_sans_accents)
+    noms_mois = '|'.join(sorted(MOIS_MAP.keys(), key=len, reverse=True))
+    m = re.search('(' + noms_mois + r')\s*\d{4}', texte_sans_accents)
     if m:
         return m.group(0).capitalize()
+
     m2 = re.search(r'(\d{1,2})[/-](\d{4})', text)
     if m2:
         return m2.group(0)
