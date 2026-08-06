@@ -101,7 +101,8 @@ def analyse_releve(client, text, nom_banque, langue='français'):
     prompt = (
         'INSTRUCTION ABSOLUE: Tu dois repondre UNIQUEMENT en ' + langue + ', y compris le score_detail, le commentaire, les titres et details des actions. Aucun mot en francais si la langue demandee est differente. Analyse ce releve bancaire (' + nom_banque + ').' + chr(10) +
         'Retourne UNIQUEMENT ce JSON sans markdown:' + chr(10) +
-        '{"totalRecettes":0,"totalDepenses":0,"soldeDepart":0,"soldeArrivee":0,' +
+        '{"compte":"nom de la banque et/ou du compte tel qu\'il apparait EXPLICITEMENT sur le releve (ex: REVOLUT, BNP PARIBAS - Compte Principal, Compte Booster)",' +
+        '"banque":"nom de la banque et/ou du compte tel qu\'indique sur le releve (ex: REVOLUT, BNP Paribas - Compte Principal)","totalRecettes":0,"totalDepenses":0,"soldeDepart":0,"soldeArrivee":0,' +
         '"recettes":[{"label":"cat","montant":0,"transactions":[{"libelle":"desc","montant":0,"date":"JJ/MM"}]}],' +
         '"depenses":[{"label":"cat","montant":0,"transactions":[{"libelle":"desc","montant":0,"date":"JJ/MM"}]}],' +
         '"top5depenses":[{"libelle":"desc","montant":0,"date":"JJ/MM"}],' +
@@ -113,6 +114,8 @@ def analyse_releve(client, text, nom_banque, langue='français'):
         '4. top5depenses = 5 plus grosses transactions sortantes individuelles avec libelle et date' + chr(10) +
         '5. Montants entiers positifs, max 5 recettes, max 7 depenses' + chr(10) +
         '6. Pour CHAQUE categorie de recettes et de depenses, liste dans "transactions" jusqu\'a 5 transactions individuelles les plus importantes qui la composent (libelle, montant, date)' + chr(10) +
+        '7. "banque" doit etre le nom reel de la banque et/ou de l\'intitule du compte tel qu\'il apparait sur le releve (jamais un nom de fichier)' + chr(10) +
+        '7. Pour "compte", identifie le nom de la banque et/ou du compte TEL QU\'IL APPARAIT sur le releve (logo, en-tete, intitule de compte). Si tu ne trouves rien de clair, mets "' + nom_banque + '"' + chr(10) +
         chr(10) + 'Releve:' + chr(10) + text[:20000]
     )
     msg = client.messages.create(
@@ -141,17 +144,30 @@ def analyse_releve(client, text, nom_banque, langue='français'):
         raise
 
 
-def get_conseil_global(client, comptes, total_r, total_d, periode, langue='francais'):
+def get_conseil_global(client, comptes, total_r, total_d, periode, langue='francais', patrimoine=None):
     comptes_str = chr(10).join(['- ' + c['nom'] + ' (' + c.get('periode', '') + '): recettes ' + str(c['totalRecettes']) + 'EUR, depenses ' + str(c['totalDepenses']) + 'EUR' for c in comptes])
     net = total_r - total_d
     taux = round(net / total_r * 100) if total_r else 0
     langue_map = {'francais': 'French', 'english': 'English', 'espanol': 'Spanish', 'deutsch': 'German', 'italiano': 'Italian', 'portugues': 'Portuguese', 'chinese': 'Chinese', 'arabic': 'Arabic'}
     langue_name = langue_map.get(langue, 'French')
+
+    patrimoine_str = ''
+    if patrimoine:
+        patrimoine_str = (
+            chr(10) + 'ADDITIONAL CONTEXT - USER-DECLARED NET WORTH (beyond the bank flows above):' + chr(10) +
+            '- Owned assets: ' + str(round(patrimoine['totalActifs'])) + 'EUR' + chr(10) +
+            '- Savings/investments: ' + str(round(patrimoine['totalEpargnes'])) + 'EUR' + chr(10) +
+            '- Remaining debts/loans: ' + str(round(patrimoine['totalDettes'])) + 'EUR' + chr(10) +
+            '- Estimated net worth: ' + str(round(patrimoine['patrimoineNet'])) + 'EUR' + chr(10) +
+            'Factor this into your score and advice: a tight monthly cash flow matters less if net worth is solid, and vice versa. Mention net worth explicitly if it materially changes the picture.' + chr(10)
+        )
+
     prompt = (
         'You are a senior financial expert. Write ALL text EXCLUSIVELY in ' + langue_name + '.' + chr(10) +
         'Financial data for ' + periode + ':' + chr(10) +
         comptes_str + chr(10) +
         'TOTAL: income=' + str(total_r) + 'EUR expenses=' + str(total_d) + 'EUR net=' + str(net) + 'EUR savings_rate=' + str(taux) + '%' + chr(10) +
+        patrimoine_str +
         'SCORING (be strict):' + chr(10) +
         '- 9-10: savings>30% AND positive net AND diversified income' + chr(10) +
         '- 7-8: savings 10-30% AND positive net' + chr(10) +
@@ -185,6 +201,35 @@ def get_conseil_global(client, comptes, total_r, total_d, periode, langue='franc
 def analyze():
     langue = request.form.get('langue', 'français')
     files = request.files.getlist('files')
+
+    patrimoine_raw = request.form.get('patrimoine', '')
+    patrimoine_resume = None
+    if patrimoine_raw:
+        try:
+            patrimoine = json.loads(patrimoine_raw)
+            emprunts = patrimoine.get('emprunts', []) or []
+            epargnes = patrimoine.get('epargnes', []) or []
+            actifs = patrimoine.get('actifs', []) or []
+            if emprunts or epargnes or actifs:
+                def to_float(v):
+                    try:
+                        return float(v)
+                    except (TypeError, ValueError):
+                        return 0.0
+                total_actifs = sum(to_float(a.get('valeur')) for a in actifs)
+                total_epargnes = sum(to_float(e.get('montant')) for e in epargnes)
+                total_dettes = sum(to_float(e.get('capitalRestantDu') or e.get('montantInitial')) for e in emprunts)
+                patrimoine_resume = {
+                    'totalActifs': total_actifs,
+                    'totalEpargnes': total_epargnes,
+                    'totalDettes': total_dettes,
+                    'patrimoineNet': total_actifs + total_epargnes - total_dettes,
+                    'emprunts': emprunts,
+                    'epargnes': epargnes,
+                    'actifs': actifs
+                }
+        except (json.JSONDecodeError, AttributeError, TypeError):
+            patrimoine_resume = None
     if not files:
         f = request.files.get('file')
         if f:
@@ -229,7 +274,8 @@ def analyze():
         for tentative in range(2):
             try:
                 data = analyse_releve(client, f['text'], f['nom'], langue)
-                data['nom'] = f['nom']
+                nom_detecte = (data.get('banque') or '').strip()
+                data['nom'] = nom_detecte if nom_detecte else f['nom']
                 data['periode'] = f['periode']
                 return data
             except Exception as e:
@@ -324,7 +370,7 @@ def analyze():
     )[:7]
 
     try:
-        conseil = get_conseil_global(client, comptes, total_r, total_d, periode_label, langue)
+        conseil = get_conseil_global(client, comptes, total_r, total_d, periode_label, langue, patrimoine_resume)
     except Exception:
         conseil = {'score': 5, 'score_detail': 'Analyse partielle', 'actions': [], 'commentaire': 'Analyse disponible.'}
 
@@ -338,6 +384,7 @@ def analyze():
         'isMultiMois': is_multi_mois,
         'evolution': evolution,
         'fichiersIgnores': fichiers_ignores,
+        'patrimoine': patrimoine_resume,
         'totalRecettes': total_r,
         'totalDepenses': total_d,
         'soldeDepart': solde_depart,
