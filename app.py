@@ -148,6 +148,7 @@ def analyze():
 
     # Etape 1 : extraction du texte de chaque fichier (rapide, local, sequentiel)
     fichiers_prepares = []
+    fichiers_ignores = []
     for file in files:
         filename = file.filename.lower()
         file_bytes = file.read()
@@ -158,12 +159,14 @@ def analyze():
         elif filename.endswith(('.xlsx', '.xls')):
             text = extract_text_from_excel(file_bytes)
         else:
+            fichiers_ignores.append({'nom': file.filename, 'raison': 'Format non supporte'})
             continue
         if not text.strip():
+            fichiers_ignores.append({'nom': file.filename, 'raison': 'Aucun texte extrait (PDF scanne/image ?)'})
             continue
         nom_banque = file.filename.replace('.pdf', '').replace('.csv', '').replace('.xlsx', '')[:30]
         periode = get_periode(text)
-        fichiers_prepares.append({'nom': nom_banque, 'periode': periode, 'text': text})
+        fichiers_prepares.append({'nom': nom_banque, 'nomFichier': file.filename, 'periode': periode, 'text': text})
 
     if not fichiers_prepares:
         return jsonify({'error': 'Aucun releve analyse'}), 500
@@ -173,10 +176,16 @@ def analyze():
     TAILLE_LOT = 8
 
     def analyser_un_fichier(f):
-        data = analyse_releve(client, f['text'], f['nom'], langue)
-        data['nom'] = f['nom']
-        data['periode'] = f['periode']
-        return data
+        derniere_erreur = None
+        for tentative in range(2):
+            try:
+                data = analyse_releve(client, f['text'], f['nom'], langue)
+                data['nom'] = f['nom']
+                data['periode'] = f['periode']
+                return data
+            except Exception as e:
+                derniere_erreur = e
+        raise derniere_erreur
 
     for i in range(0, len(fichiers_prepares), TAILLE_LOT):
         lot = fichiers_prepares[i:i + TAILLE_LOT]
@@ -188,7 +197,11 @@ def analyze():
                     comptes.append(future.result())
                 except Exception as e:
                     print('ERREUR releve', f['nom'], str(e))
+                    fichiers_ignores.append({'nom': f['nomFichier'], 'raison': "Echec de l'analyse IA apres 2 tentatives"})
                     continue
+
+    if not comptes:
+        return jsonify({'error': 'Aucun releve analyse', 'fichiersIgnores': fichiers_ignores}), 500
 
     # --- Detection automatique multi-mois vs multi-comptes ---
     periodes_uniques = sorted(
@@ -261,6 +274,7 @@ def analyze():
         'periode': periode_label,
         'isMultiMois': is_multi_mois,
         'evolution': evolution,
+        'fichiersIgnores': fichiers_ignores,
         'totalRecettes': total_r,
         'totalDepenses': total_d,
         'soldeDepart': solde_depart,
