@@ -118,7 +118,7 @@ tr:last-child td{border-bottom:none}
     <div class="drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
       <div class="upload-icon">📊</div>
       <h3>Déposez vos relevés bancaires</h3>
-      <p>Jusqu'à 5 banques simultanément</p>
+      <p>Jusqu'à 60 fichiers simultanément (multi-comptes, multi-mois)</p>
       <div class="badges">
         <span class="badge">📄 PDF</span>
         <span class="badge">📊 CSV</span>
@@ -167,7 +167,7 @@ tr:last-child td{border-bottom:none}
       </g>
     </svg>
     <p style="font-size:16px;font-weight:600;margin-bottom:4px">Analyse en cours...</p>
-    <p style="font-size:13px;color:#6e6e73">L'IA analyse vos relevés</p>
+    <p style="font-size:13px;color:#6e6e73" id="loading-hint">L'IA analyse vos relevés</p>
     <div class="steps">
       <div class="step active" id="step1"><div class="step-dot"></div>Lecture des fichiers</div>
       <div class="step" id="step2"><div class="step-dot"></div>Extraction des transactions</div>
@@ -208,10 +208,14 @@ function reset(){
   if(cT){cT.destroy();cT=null}
 }
 
-function showLoading(){
+function showLoading(nbFiles){
   document.getElementById('upload-section').style.display='none';
   document.getElementById('loading').style.display='block';
   document.getElementById('result').style.display='none';
+  const hint=document.getElementById('loading-hint');
+  if(hint){
+    hint.textContent = nbFiles>5 ? ('Analyse de '+nbFiles+' fichiers en cours, cela peut prendre plusieurs minutes...') : "L'IA analyse vos relevés";
+  }
   const steps=['step1','step2','step3','step4'];
   let i=0;
   const iv=setInterval(()=>{
@@ -389,11 +393,11 @@ function renderResult(data){
 }
 
 async function processFile(files){
-  showLoading();
+  showLoading(files.length);
   const langue=document.getElementById('langue').value;
   const fd=new FormData();
   fd.append('langue',langue);
-  for(let i=0;i<Math.min(files.length,5);i++)fd.append('files',files[i]);
+  for(let i=0;i<Math.min(files.length,60);i++)fd.append('files',files[i]);
   try{
     const resp=await fetch('https://bankanalyzer-production.up.railway.app/analyze',{method:'POST',body:fd});
     const data=await resp.json();

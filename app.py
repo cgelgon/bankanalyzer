@@ -1,4 +1,5 @@
 import os, io, json, re
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import pypdf
@@ -141,11 +142,12 @@ def analyze():
             files = [f]
         else:
             return jsonify({'error': 'Aucun fichier recu'}), 400
-    files = files[:5]
+    files = files[:60]
 
     client = anthropic.Anthropic()
-    comptes = []
 
+    # Etape 1 : extraction du texte de chaque fichier (rapide, local, sequentiel)
+    fichiers_prepares = []
     for file in files:
         filename = file.filename.lower()
         file_bytes = file.read()
@@ -159,20 +161,34 @@ def analyze():
             continue
         if not text.strip():
             continue
-
         nom_banque = file.filename.replace('.pdf', '').replace('.csv', '').replace('.xlsx', '')[:30]
         periode = get_periode(text)
-        try:
-            data = analyse_releve(client, text, nom_banque, langue)
-            data['nom'] = nom_banque
-            data['periode'] = periode
-            comptes.append(data)
-        except Exception as e:
-            print('ERREUR releve', nom_banque, str(e))
-            continue
+        fichiers_prepares.append({'nom': nom_banque, 'periode': periode, 'text': text})
 
-    if not comptes:
+    if not fichiers_prepares:
         return jsonify({'error': 'Aucun releve analyse'}), 500
+
+    # Etape 2 : appels IA en parallele (par lots pour respecter les limites de debit de l'API)
+    comptes = []
+    TAILLE_LOT = 8
+
+    def analyser_un_fichier(f):
+        data = analyse_releve(client, f['text'], f['nom'], langue)
+        data['nom'] = f['nom']
+        data['periode'] = f['periode']
+        return data
+
+    for i in range(0, len(fichiers_prepares), TAILLE_LOT):
+        lot = fichiers_prepares[i:i + TAILLE_LOT]
+        with ThreadPoolExecutor(max_workers=TAILLE_LOT) as executor:
+            futures = {executor.submit(analyser_un_fichier, f): f for f in lot}
+            for future in as_completed(futures):
+                f = futures[future]
+                try:
+                    comptes.append(future.result())
+                except Exception as e:
+                    print('ERREUR releve', f['nom'], str(e))
+                    continue
 
     # --- Detection automatique multi-mois vs multi-comptes ---
     periodes_uniques = sorted(
