@@ -1,4 +1,4 @@
-import os, io, json, re
+import os, io, json, re, unicodedata
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from flask import Flask, request, jsonify
 from flask_cors import CORS
@@ -13,6 +13,10 @@ MOIS_MAP = {
     'janvier': 1, 'fevrier': 2, 'mars': 3, 'avril': 4, 'mai': 5, 'juin': 6,
     'juillet': 7, 'aout': 8, 'septembre': 9, 'octobre': 10, 'novembre': 11, 'decembre': 12
 }
+
+
+def sans_accents(s):
+    return ''.join(c for c in unicodedata.normalize('NFD', s) if unicodedata.category(c) != 'Mn')
 
 
 def extract_text_from_pdf(file_bytes):
@@ -40,7 +44,8 @@ def extract_text_from_excel(file_bytes):
 
 def get_periode(text):
     mois = r'(janvier|fevrier|mars|avril|mai|juin|juillet|aout|septembre|octobre|novembre|decembre)'
-    m = re.search(mois + r'\s*\d{4}', text.lower())
+    texte_sans_accents = sans_accents(text.lower())
+    m = re.search(mois + r'\s*\d{4}', texte_sans_accents)
     if m:
         return m.group(0).capitalize()
     m2 = re.search(r'(\d{1,2})[/-](\d{4})', text)
@@ -53,7 +58,7 @@ def periode_sort_key(periode):
     """Retourne une cle (annee, mois) triable a partir d'une chaine periode. (0,0) si non reconnue."""
     if not periode:
         return (0, 0)
-    p_low = periode.lower()
+    p_low = sans_accents(periode.lower())
     for nom, num in MOIS_MAP.items():
         m = re.search(nom + r'\s*(\d{4})', p_low)
         if m:
