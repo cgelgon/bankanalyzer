@@ -112,6 +112,8 @@ tr.has-detail:hover{background:var(--bg)}
 .mode-option input{cursor:pointer}
 .devise-input-solo{font-size:13px;padding:9px 12px;border:1px solid var(--border);border-radius:10px;width:100%;max-width:260px;font-family:inherit;background:#fff}
 .devise-ref-label{display:block;font-size:12px;font-weight:600;color:var(--text2);margin:12px 0 6px}
+.devise-select{font-size:12px;padding:9px 8px;border:1px solid var(--border);border-radius:8px;background:#fff;font-family:inherit;cursor:pointer}
+select.devise-input-solo{max-width:280px}
 .patrimoine-toggle{display:flex;justify-content:space-between;align-items:center;background:#fff;border:1px solid var(--border);border-radius:14px;padding:12px 16px;cursor:pointer;font-size:13px;font-weight:500;color:var(--text2)}
 .patrimoine-toggle:hover{border-color:var(--blue)}
 .patrimoine-body{background:#fff;border:1px solid var(--border);border-top:none;border-radius:0 0 14px 14px;padding:1rem 1.25rem}
@@ -194,13 +196,13 @@ tr.has-detail:hover{background:var(--bg)}
 
         <div id="devise-unique-block">
           <p class="patrimoine-hint" id="dev-hint-unique">Tous vos relevés sont dans la même devise. Laquelle ?</p>
-          <input type="text" id="deviseUniqueInput" class="devise-input-solo" placeholder="Code devise (ex: EUR, MAD, USD)" value="EUR" style="text-transform:uppercase">
+          <select id="deviseUniqueInput" class="devise-input-solo devise-select"></select>
         </div>
 
         <div id="devise-multiple-block" style="display:none">
           <p class="patrimoine-hint" id="dev-hint-multi">Choisissez votre devise de référence, puis indiquez le taux de conversion pour chaque autre devise présente dans vos relevés. Sans taux fourni, ces comptes seront exclus de l'analyse.</p>
           <label class="devise-ref-label" id="dev-ref-label">Devise de référence</label>
-          <input type="text" id="deviseReferenceInput" class="devise-input-solo" placeholder="Code devise (ex: EUR)" value="EUR" style="text-transform:uppercase">
+          <select id="deviseReferenceInput" class="devise-input-solo devise-select"></select>
           <div id="devises-list" style="margin-top:12px"></div>
           <button type="button" class="add-btn" id="dev-add-btn" onclick="addDevise()">+ Ajouter une devise</button>
         </div>
@@ -389,6 +391,36 @@ function drawPerso(score){
 
 function toggleDrill(id){const el=document.getElementById(id);if(el)el.classList.toggle('open')}
 
+const CURRENCIES=[
+  {code:'EUR',name:'Euro'},{code:'USD',name:'US Dollar'},{code:'GBP',name:'British Pound'},
+  {code:'CHF',name:'Swiss Franc'},{code:'CAD',name:'Canadian Dollar'},{code:'AUD',name:'Australian Dollar'},
+  {code:'NZD',name:'New Zealand Dollar'},{code:'JPY',name:'Japanese Yen'},{code:'CNY',name:'Chinese Yuan'},
+  {code:'HKD',name:'Hong Kong Dollar'},{code:'SGD',name:'Singapore Dollar'},{code:'KRW',name:'South Korean Won'},
+  {code:'INR',name:'Indian Rupee'},{code:'THB',name:'Thai Baht'},{code:'IDR',name:'Indonesian Rupiah'},
+  {code:'MYR',name:'Malaysian Ringgit'},{code:'PHP',name:'Philippine Peso'},{code:'VND',name:'Vietnamese Dong'},
+  {code:'SEK',name:'Swedish Krona'},{code:'NOK',name:'Norwegian Krone'},{code:'DKK',name:'Danish Krone'},
+  {code:'PLN',name:'Polish Zloty'},{code:'CZK',name:'Czech Koruna'},{code:'HUF',name:'Hungarian Forint'},
+  {code:'RON',name:'Romanian Leu'},{code:'TRY',name:'Turkish Lira'},{code:'RUB',name:'Russian Ruble'},
+  {code:'UAH',name:'Ukrainian Hryvnia'},{code:'ILS',name:'Israeli Shekel'},
+  {code:'AED',name:'UAE Dirham'},{code:'SAR',name:'Saudi Riyal'},{code:'QAR',name:'Qatari Riyal'},
+  {code:'KWD',name:'Kuwaiti Dinar'},{code:'BHD',name:'Bahraini Dinar'},{code:'OMR',name:'Omani Rial'},
+  {code:'JOD',name:'Jordanian Dinar'},{code:'LBP',name:'Lebanese Pound'},{code:'EGP',name:'Egyptian Pound'},
+  {code:'MAD',name:'Moroccan Dirham'},{code:'TND',name:'Tunisian Dinar'},{code:'DZD',name:'Algerian Dinar'},
+  {code:'XOF',name:'West African CFA Franc'},{code:'XAF',name:'Central African CFA Franc'},
+  {code:'NGN',name:'Nigerian Naira'},{code:'ZAR',name:'South African Rand'},{code:'KES',name:'Kenyan Shilling'},
+  {code:'BRL',name:'Brazilian Real'},{code:'MXN',name:'Mexican Peso'},{code:'ARS',name:'Argentine Peso'},
+  {code:'CLP',name:'Chilean Peso'},{code:'COP',name:'Colombian Peso'},{code:'PKR',name:'Pakistani Rupee'},
+  {code:'BDT',name:'Bangladeshi Taka'}
+].sort((a,b)=>a.code.localeCompare(b.code));
+
+function remplirSelectsDevises(){
+  const options=CURRENCIES.map(c=>'<option value="'+c.code+'">'+c.code+' — '+c.name+'</option>').join('');
+  document.getElementById('deviseUniqueInput').innerHTML=options;
+  document.getElementById('deviseUniqueInput').value='EUR';
+  document.getElementById('deviseReferenceInput').innerHTML=options;
+  document.getElementById('deviseReferenceInput').value='EUR';
+}
+
 function onModeDeviseChange(){
   const mode=document.querySelector('input[name="modeDevise"]:checked').value;
   document.getElementById('devise-unique-block').style.display=mode==='unique'?'block':'none';
@@ -410,13 +442,20 @@ function updateDevise(idx,field,value){devisesConversion[idx][field]=value}
 
 function renderDevises(){
   const T=TR[document.getElementById('langue').value]||TR.francais;
+  const opts=CURRENCIES.map(c=>'<option value="'+c.code+'">'+c.code+' — '+c.name+'</option>').join('');
   document.getElementById('devises-list').innerHTML=devisesConversion.map((d,i)=>
     '<div class="patrimoine-row">'+
-    '<input placeholder="'+T.devCode+'" value="'+(d.code||'')+'" oninput="updateDevise('+i+',\'code\',this.value)" style="text-transform:uppercase">'+
+    '<select class="devise-select" onchange="updateDevise('+i+',\'code\',this.value)">'+
+    '<option value="">'+T.devCode+'</option>'+opts+
+    '</select>'+
     '<input placeholder="'+T.devTaux+'" type="number" step="0.0001" value="'+(d.taux||'')+'" oninput="updateDevise('+i+',\'taux\',this.value)">'+
     '<button type="button" class="rm-btn" onclick="removeDevise('+i+')">×</button>'+
     '</div>'
   ).join('');
+  devisesConversion.forEach((d,i)=>{
+    const sel=document.getElementById('devises-list').children[i].querySelector('select');
+    if(d.code)sel.value=d.code;
+  });
 }
 
 let patrimoine={epargnes:[],emprunts:[],actifs:[]};
@@ -452,8 +491,6 @@ function applyPatrimoineLang(){
   document.getElementById('dev-hint-unique').textContent=T.devHintUnique;
   document.getElementById('dev-ref-label').textContent=T.devRefLabel;
   document.getElementById('dev-hint-multi').textContent=T.devHintMulti;
-  document.getElementById('deviseUniqueInput').placeholder=T.devUniquePlaceholder;
-  document.getElementById('deviseReferenceInput').placeholder=T.devRefPlaceholder;
   document.getElementById('dev-add-btn').textContent=T.devAddBtn;
   document.getElementById('pat-title-text').textContent=T.patTitle;
   document.getElementById('pat-hint').textContent=T.patHint;
@@ -697,6 +734,7 @@ async function processFile(files){
 
 document.getElementById('fileInput').addEventListener('change',e=>{if(e.target.files.length>0)selectionnerFichiers(e.target.files)});
 document.getElementById('langue').addEventListener('change',applyPatrimoineLang);
+remplirSelectsDevises();
 loadPatrimoine();
 applyPatrimoineLang();
 const dz=document.getElementById('dropZone');
