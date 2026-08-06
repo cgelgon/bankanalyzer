@@ -255,6 +255,10 @@ def _analyze_impl():
         except (json.JSONDecodeError, AttributeError, TypeError):
             patrimoine_resume = None
 
+    mode_devise = request.form.get('modeDevise', 'unique')
+    devise_unique = (request.form.get('deviseUnique') or 'EUR').upper().strip()
+    devise_reference = (request.form.get('deviseReference') or 'EUR').upper().strip()
+
     devises_raw = request.form.get('devises', '')
     taux_par_devise = {}
     if devises_raw:
@@ -340,38 +344,35 @@ def _analyze_impl():
     if not comptes:
         return jsonify({'error': 'Aucun releve analyse', 'fichiersIgnores': fichiers_ignores}), 500
 
-    # --- Detection automatique des devises : on ne mixe jamais des montants de devises differentes ---
-    devises_presentes = set((c.get('devise') or 'EUR').upper().strip() for c in comptes)
-    devise_principale = 'EUR'
-    if 'EUR' not in devises_presentes:
-        compte_par_devise = {}
+    # --- Devise : mode choisi explicitement par l'utilisateur ---
+    def convertir_compte_devise(compte, taux, nouvelle_devise):
+        c = dict(compte)
+        for champ in ['totalRecettes', 'totalDepenses', 'soldeDepart', 'soldeArrivee']:
+            if champ in c:
+                c[champ] = to_num(c[champ]) * taux
+        for cle in ['recettes', 'depenses']:
+            nouvelles = []
+            for item in c.get(cle, []):
+                item2 = dict(item)
+                item2['montant'] = to_num(item2.get('montant', 0)) * taux
+                item2['transactions'] = [
+                    dict(t, montant=to_num(t.get('montant', 0)) * taux) for t in item.get('transactions', [])
+                ]
+                nouvelles.append(item2)
+            c[cle] = nouvelles
+        c['top5depenses'] = [
+            dict(t, montant=to_num(t.get('montant', 0)) * taux) for t in c.get('top5depenses', [])
+        ]
+        c['devise'] = nouvelle_devise
+        return c
+
+    if mode_devise == 'unique':
+        # L'utilisateur affirme que tout est deja dans une seule et meme devise : on force cette devise partout
         for c in comptes:
-            dv = (c.get('devise') or 'EUR').upper().strip()
-            compte_par_devise[dv] = compte_par_devise.get(dv, 0) + 1
-        devise_principale = max(compte_par_devise, key=compte_par_devise.get)
-
-    if len(devises_presentes) > 1:
-        def convertir_compte_devise(compte, taux):
-            c = dict(compte)
-            for champ in ['totalRecettes', 'totalDepenses', 'soldeDepart', 'soldeArrivee']:
-                if champ in c:
-                    c[champ] = to_num(c[champ]) * taux
-            for cle in ['recettes', 'depenses']:
-                nouvelles = []
-                for item in c.get(cle, []):
-                    item2 = dict(item)
-                    item2['montant'] = to_num(item2.get('montant', 0)) * taux
-                    item2['transactions'] = [
-                        dict(t, montant=to_num(t.get('montant', 0)) * taux) for t in item.get('transactions', [])
-                    ]
-                    nouvelles.append(item2)
-                c[cle] = nouvelles
-            c['top5depenses'] = [
-                dict(t, montant=to_num(t.get('montant', 0)) * taux) for t in c.get('top5depenses', [])
-            ]
-            c['devise'] = devise_principale
-            return c
-
+            c['devise'] = devise_unique
+        devise_principale = devise_unique
+    else:
+        devise_principale = devise_reference
         comptes_convertis = []
         comptes_hors_devise = []
         for c in comptes:
@@ -379,7 +380,7 @@ def _analyze_impl():
             if dv == devise_principale:
                 comptes_convertis.append(c)
             elif dv in taux_par_devise:
-                comptes_convertis.append(convertir_compte_devise(c, taux_par_devise[dv]))
+                comptes_convertis.append(convertir_compte_devise(c, taux_par_devise[dv], devise_principale))
             else:
                 comptes_hors_devise.append(c)
         for c in comptes_hors_devise:
@@ -390,7 +391,7 @@ def _analyze_impl():
         comptes = comptes_convertis
 
     if not comptes:
-        return jsonify({'error': 'Tous les fichiers etaient dans des devises differentes, aucune analyse coherente possible', 'fichiersIgnores': fichiers_ignores}), 500
+        return jsonify({'error': 'Aucun compte ne correspond a la devise choisie, aucune analyse coherente possible', 'fichiersIgnores': fichiers_ignores}), 500
 
     # --- Detection automatique multi-mois vs multi-comptes ---
     periodes_uniques = sorted(
