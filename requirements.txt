@@ -3,3 +3,5 @@ flask-cors
 pypdf
 anthropic
 openpyxl
+stripe
+psycopg2-binary
