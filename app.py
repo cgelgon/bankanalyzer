@@ -1,13 +1,106 @@
 import os, io, json, re, unicodedata
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, redirect
 from flask_cors import CORS
 import pypdf
 import anthropic
 import openpyxl
+import stripe
+import psycopg2
+from psycopg2.extras import RealDictCursor
 
 app = Flask(__name__)
 CORS(app)
+
+stripe.api_key = os.environ.get('STRIPE_SECRET_KEY', '')
+STRIPE_PRICE_ID = os.environ.get('STRIPE_PRICE_ID', '')
+STRIPE_WEBHOOK_SECRET = os.environ.get('STRIPE_WEBHOOK_SECRET', '')
+FRONTEND_URL = os.environ.get('FRONTEND_URL', 'https://bankanalyzer-nu.vercel.app')
+DATABASE_URL = os.environ.get('DATABASE_URL', '')
+
+
+def get_db():
+    conn = psycopg2.connect(DATABASE_URL, cursor_factory=RealDictCursor)
+    return conn
+
+
+def init_db():
+    if not DATABASE_URL:
+        print('DATABASE_URL non definie, la base ne sera pas initialisee')
+        return
+    try:
+        conn = get_db()
+        cur = conn.cursor()
+        cur.execute('''
+            CREATE TABLE IF NOT EXISTS users (
+                email TEXT PRIMARY KEY,
+                stripe_customer_id TEXT,
+                stripe_subscription_id TEXT,
+                subscription_status TEXT DEFAULT 'inactive',
+                created_at TIMESTAMP DEFAULT NOW(),
+                updated_at TIMESTAMP DEFAULT NOW()
+            )
+        ''')
+        conn.commit()
+        cur.close()
+        conn.close()
+        print('Base de donnees initialisee avec succes')
+    except Exception as e:
+        print('ERREUR init_db:', str(e))
+
+
+def est_pro(email):
+    if not email or not DATABASE_URL:
+        return False
+    try:
+        conn = get_db()
+        cur = conn.cursor()
+        cur.execute('SELECT subscription_status FROM users WHERE email = %s', (email.lower().strip(),))
+        row = cur.fetchone()
+        cur.close()
+        conn.close()
+        return bool(row and row['subscription_status'] == 'active')
+    except Exception as e:
+        print('ERREUR est_pro:', str(e))
+        return False
+
+
+def upsert_user(email, stripe_customer_id=None, stripe_subscription_id=None, subscription_status=None):
+    if not DATABASE_URL:
+        return
+    try:
+        conn = get_db()
+        cur = conn.cursor()
+        cur.execute('SELECT email FROM users WHERE email = %s', (email.lower().strip(),))
+        existe = cur.fetchone()
+        if existe:
+            champs = []
+            valeurs = []
+            if stripe_customer_id is not None:
+                champs.append('stripe_customer_id = %s')
+                valeurs.append(stripe_customer_id)
+            if stripe_subscription_id is not None:
+                champs.append('stripe_subscription_id = %s')
+                valeurs.append(stripe_subscription_id)
+            if subscription_status is not None:
+                champs.append('subscription_status = %s')
+                valeurs.append(subscription_status)
+            champs.append('updated_at = NOW()')
+            valeurs.append(email.lower().strip())
+            cur.execute('UPDATE users SET ' + ', '.join(champs) + ' WHERE email = %s', tuple(valeurs))
+        else:
+            cur.execute(
+                'INSERT INTO users (email, stripe_customer_id, stripe_subscription_id, subscription_status) VALUES (%s, %s, %s, %s)',
+                (email.lower().strip(), stripe_customer_id, stripe_subscription_id, subscription_status or 'inactive')
+            )
+        conn.commit()
+        cur.close()
+        conn.close()
+    except Exception as e:
+        print('ERREUR upsert_user:', str(e))
+
+
+init_db()
 
 MOIS_MAP = {
     # francais
@@ -214,6 +307,86 @@ def get_conseil_global(client, comptes, total_r, total_d, periode, langue='franc
     return json.loads(raw)
 
 
+@app.route('/create-checkout-session', methods=['POST'])
+def create_checkout_session():
+    try:
+        data = request.get_json(force=True)
+        email = (data.get('email') or '').strip().lower()
+        if not email or '@' not in email:
+            return jsonify({'error': 'Email invalide'}), 400
+
+        conn = get_db()
+        cur = conn.cursor()
+        cur.execute('SELECT stripe_customer_id FROM users WHERE email = %s', (email,))
+        row = cur.fetchone()
+        cur.close()
+        conn.close()
+
+        customer_id = row['stripe_customer_id'] if row else None
+        if not customer_id:
+            customer = stripe.Customer.create(email=email)
+            customer_id = customer.id
+            upsert_user(email, stripe_customer_id=customer_id)
+
+        session = stripe.checkout.Session.create(
+            customer=customer_id,
+            mode='subscription',
+            line_items=[{'price': STRIPE_PRICE_ID, 'quantity': 1}],
+            success_url=FRONTEND_URL + '?checkout=success',
+            cancel_url=FRONTEND_URL + '?checkout=cancel',
+        )
+        return jsonify({'url': session.url})
+    except Exception as e:
+        print('ERREUR create_checkout_session:', str(e))
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/stripe-webhook', methods=['POST'])
+def stripe_webhook():
+    payload = request.get_data()
+    sig_header = request.headers.get('Stripe-Signature')
+    try:
+        event = stripe.Webhook.construct_event(payload, sig_header, STRIPE_WEBHOOK_SECRET)
+    except Exception as e:
+        print('ERREUR signature webhook:', str(e))
+        return jsonify({'error': 'Signature invalide'}), 400
+
+    type_evenement = event['type']
+    obj = event['data']['object']
+
+    if type_evenement == 'checkout.session.completed':
+        customer_id = obj.get('customer')
+        subscription_id = obj.get('subscription')
+        email = (obj.get('customer_details') or {}).get('email') or obj.get('customer_email')
+        if email:
+            upsert_user(email, stripe_customer_id=customer_id, stripe_subscription_id=subscription_id, subscription_status='active')
+
+    elif type_evenement in ('customer.subscription.updated', 'customer.subscription.deleted'):
+        customer_id = obj.get('customer')
+        statut = obj.get('status')
+        nouveau_statut = 'active' if statut == 'active' else 'inactive'
+        try:
+            conn = get_db()
+            cur = conn.cursor()
+            cur.execute('SELECT email FROM users WHERE stripe_customer_id = %s', (customer_id,))
+            row = cur.fetchone()
+            cur.close()
+            conn.close()
+            if row:
+                upsert_user(row['email'], subscription_status=nouveau_statut)
+        except Exception as e:
+            print('ERREUR maj abonnement webhook:', str(e))
+
+    return jsonify({'received': True})
+
+
+@app.route('/check-pro-status', methods=['POST'])
+def check_pro_status():
+    data = request.get_json(force=True)
+    email = (data.get('email') or '').strip().lower()
+    return jsonify({'isPro': est_pro(email)})
+
+
 @app.route('/analyze', methods=['POST'])
 def analyze():
     try:
@@ -228,6 +401,11 @@ def analyze():
 def _analyze_impl():
     langue = request.form.get('langue', 'français')
     files = request.files.getlist('files')
+
+    email = (request.form.get('email') or '').strip().lower()
+    if not email or '@' not in email:
+        return jsonify({'error': 'Adresse email requise pour lancer une analyse.'}), 400
+    upsert_user(email)
 
     mode_devise = request.form.get('modeDevise', 'unique')
     devise_unique = (request.form.get('deviseUnique') or 'EUR').upper().strip()
@@ -290,6 +468,14 @@ def _analyze_impl():
         else:
             return jsonify({'error': 'Aucun fichier recu'}), 400
     files = files[:60]
+
+    demande_features_pro = len(files) > 1 or bool(patrimoine_resume) or mode_devise == 'multiple'
+    utilisateur_pro = est_pro(email)
+    if demande_features_pro and not utilisateur_pro:
+        return jsonify({
+            'error': "Cette analyse utilise une fonctionnalite BankAnalyzer Pro (plusieurs fichiers, patrimoine ou plusieurs devises). Passez a l'offre Pro pour y acceder.",
+            'requiresPro': True
+        }), 402
 
     client = anthropic.Anthropic()
 
@@ -566,6 +752,16 @@ def _analyze_impl():
         'commentaire': conseil.get('commentaire', ''),
         'comptes': comptes
     }
+
+    if not utilisateur_pro:
+        result['chargesFixes'] = None
+        result['isPro'] = False
+        for cle in ['recettes', 'depenses']:
+            for item in result.get(cle, []):
+                item['transactions'] = []
+    else:
+        result['isPro'] = True
+
     print('PHRASE_CHOC:', result.get('phrase_choc', 'VIDE'))
     return jsonify(result)
 
