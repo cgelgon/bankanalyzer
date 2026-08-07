@@ -27,6 +27,18 @@ header{background:rgba(255,255,255,.85);backdrop-filter:blur(20px);border-bottom
 .badge{background:var(--bg);border:1px solid var(--border);padding:4px 12px;border-radius:20px;font-size:12px;font-weight:500;color:var(--text2)}
 .hint{font-size:12px;color:var(--text3);margin-top:.75rem}
 .lang-outer{display:flex;align-items:center;justify-content:center;gap:10px;margin-top:1rem}
+.email-outer{display:flex;align-items:center;justify-content:center;gap:10px;margin-top:1rem;flex-wrap:wrap}
+.email-outer label{font-size:13px;color:var(--text2)}
+.email-input{font-size:13px;padding:8px 12px;border-radius:10px;border:1px solid var(--border);min-width:220px;font-family:inherit}
+.email-input:invalid:not(:placeholder-shown){border-color:var(--red)}
+.pro-badge{background:linear-gradient(135deg,#0071e3,#00c7ff);color:#fff;font-size:11px;font-weight:700;padding:3px 10px;border-radius:12px}
+.pro-lock{font-size:11px;color:var(--text3);font-weight:500;margin-left:6px}
+.upgrade-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:1000;padding:1rem}
+.upgrade-modal{background:#fff;border-radius:20px;padding:2rem;max-width:400px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.upgrade-modal h3{font-size:19px;font-weight:700;margin-bottom:10px}
+.upgrade-modal p{font-size:14px;color:var(--text2);line-height:1.5;margin-bottom:1.25rem}
+.upgrade-btn{width:100%;background:linear-gradient(135deg,#0071e3,#00c7ff);color:#fff;border:none;border-radius:14px;padding:14px;font-size:15px;font-weight:700;cursor:pointer;margin-bottom:10px}
+.upgrade-cancel{background:none;border:none;color:var(--text2);font-size:13px;cursor:pointer;text-decoration:underline}
 .lang-outer label{font-size:13px;color:var(--text2)}
 .lang-select{font-size:13px;padding:6px 28px 6px 12px;border-radius:10px;border:1px solid var(--border);background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236e6e73' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E") no-repeat right 10px center;color:var(--text);cursor:pointer;outline:none;-webkit-appearance:none}
 input[type=file]{display:none}
@@ -167,7 +179,7 @@ select.devise-input-solo{max-width:280px}
       <div class="drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
         <div class="upload-icon" id="dropIcon">📊</div>
         <h3 id="dropTitle">Déposez vos relevés bancaires</h3>
-        <p id="dropSubtitle">Jusqu'à 60 fichiers simultanément (multi-comptes, multi-mois)</p>
+        <p id="dropSubtitle">1 fichier gratuit · jusqu'à 60 fichiers avec Pro 🔒</p>
         <div class="badges">
           <span class="badge">📄 PDF</span>
           <span class="badge">📊 CSV</span>
@@ -177,6 +189,11 @@ select.devise-input-solo{max-width:280px}
         <p class="hint">🔒 Données confidentielles, jamais stockées</p>
       </div>
       <input type="file" id="fileInput" accept=".pdf,.csv,.xls,.xlsx" multiple>
+      <div class="email-outer">
+        <label for="emailInput">✉️ Votre email :</label>
+        <input type="email" id="emailInput" class="email-input" placeholder="vous@exemple.com" required>
+        <span class="pro-badge" id="proBadge" style="display:none">✨ Pro</span>
+      </div>
       <div class="lang-outer">
         <label>🌍 Langue :</label>
         <select id="langue" class="lang-select">
@@ -197,7 +214,7 @@ select.devise-input-solo{max-width:280px}
       <div class="step-body step-body-open" id="devises-body">
         <div class="mode-choice">
           <label class="mode-option"><input type="radio" name="modeDevise" value="unique" checked onchange="onModeDeviseChange()"> <span id="dev-mode-unique-label">Une seule devise</span></label>
-          <label class="mode-option"><input type="radio" name="modeDevise" value="multiple" onchange="onModeDeviseChange()"> <span id="dev-mode-multiple-label">Plusieurs devises</span></label>
+          <label class="mode-option"><input type="radio" name="modeDevise" value="multiple" onchange="onModeDeviseChange()"> <span id="dev-mode-multiple-label">Plusieurs devises</span> <span class="pro-lock">🔒 Pro</span></label>
         </div>
 
         <div id="devise-unique-block">
@@ -216,7 +233,7 @@ select.devise-input-solo{max-width:280px}
     </div>
 
     <div class="step-block">
-      <div class="step-head step-head-clickable" onclick="togglePatrimoine()"><span class="step-num step-num-optional">3</span><span class="step-label" id="pat-title-text">Ajouter mon patrimoine (optionnel)</span><span class="step-chevron" id="patrimoine-chevron">▾</span></div>
+      <div class="step-head step-head-clickable" onclick="togglePatrimoine()"><span class="step-num step-num-optional">3</span><span class="step-label" id="pat-title-text">Ajouter mon patrimoine (optionnel)</span><span class="pro-lock">🔒 Pro</span><span class="step-chevron" id="patrimoine-chevron">▾</span></div>
       <div class="step-body" id="patrimoine-body" style="display:none">
         <p class="patrimoine-hint" id="pat-hint">Épargne, emprunts et biens possédés. Ces informations restent dans votre navigateur et enrichissent l'analyse (patrimoine net).</p>
         <div class="patrimoine-group">
@@ -745,7 +762,7 @@ function majAffichageSelection(){
     goBtnText.textContent='Sélectionnez d\'abord vos relevés';
     dropIcon.textContent='📊';
     dropTitle.textContent='Déposez vos relevés bancaires';
-    dropSubtitle.textContent="Jusqu'à 60 fichiers simultanément (multi-comptes, multi-mois)";
+    dropSubtitle.textContent="1 fichier gratuit · jusqu'à 60 fichiers avec Pro 🔒";
   }
 }
 
@@ -779,14 +796,22 @@ function validerTauxDevises(){
 
 function lancerAnalyse(){
   if(fichiersSelectionnes.length===0)return;
+  const email=(document.getElementById('emailInput').value||'').trim();
+  if(!email||!email.includes('@')){
+    alert('Merci de renseigner votre email avant de lancer l\'analyse.');
+    document.getElementById('emailInput').focus();
+    return;
+  }
   if(!validerTauxDevises())return;
   processFile(fichiersSelectionnes);
 }
 
 async function processFile(files){
   showLoading(files.length);
+  const email=(document.getElementById('emailInput').value||'').trim();
   const langue=document.getElementById('langue').value;
   const fd=new FormData();
+  fd.append('email',email);
   fd.append('langue',langue);
   fd.append('patrimoine',JSON.stringify(patrimoine));
   const modeDevise=document.querySelector('input[name="modeDevise"]:checked').value;
@@ -801,7 +826,15 @@ async function processFile(files){
   try{
     const resp=await fetch('https://bankanalyzer-production.up.railway.app/analyze',{method:'POST',body:fd});
     const data=await resp.json();
-    if(data.error)throw new Error(data.error);
+    if(data.error){
+      if(data.requiresPro){
+        document.getElementById('loading').style.display='none';
+        document.getElementById('upload-section').style.display='block';
+        afficherModaleUpgrade();
+        return;
+      }
+      throw new Error(data.error);
+    }
     renderResult(data);
   }catch(e){
     document.getElementById('loading').style.display='none';
@@ -810,11 +843,86 @@ async function processFile(files){
   }
 }
 
+function afficherModaleUpgrade(){
+  const overlay=document.createElement('div');
+  overlay.className='upgrade-overlay';
+  overlay.id='upgradeOverlay';
+  overlay.innerHTML=
+    '<div class="upgrade-modal">'+
+    '<div style="font-size:40px;margin-bottom:8px">✨</div>'+
+    '<h3>Passez à BankAnalyzer Pro</h3>'+
+    '<p>Cette analyse utilise une fonctionnalité Pro (plusieurs fichiers, patrimoine ou plusieurs devises). Débloquez tout pour 9€/mois.</p>'+
+    '<button class="upgrade-btn" onclick="demarrerCheckout()">S\'abonner — 9€/mois</button>'+
+    '<button class="upgrade-cancel" onclick="document.getElementById(\'upgradeOverlay\').remove()">Plus tard</button>'+
+    '</div>';
+  document.body.appendChild(overlay);
+}
+
+async function demarrerCheckout(){
+  const email=(document.getElementById('emailInput').value||'').trim();
+  if(!email||!email.includes('@')){
+    alert('Merci de renseigner votre email.');
+    return;
+  }
+  try{
+    const resp=await fetch('https://bankanalyzer-production.up.railway.app/create-checkout-session',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({email:email})
+    });
+    const data=await resp.json();
+    if(data.url){
+      window.location.href=data.url;
+    }else{
+      alert('Erreur : '+(data.error||'impossible de démarrer le paiement'));
+    }
+  }catch(e){
+    alert('Erreur : '+e.message);
+  }
+}
+
+async function verifierStatutPro(){
+  const email=(document.getElementById('emailInput').value||'').trim();
+  const badge=document.getElementById('proBadge');
+  if(!email||!email.includes('@')){badge.style.display='none';return}
+  try{
+    const resp=await fetch('https://bankanalyzer-production.up.railway.app/check-pro-status',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({email:email})
+    });
+    const data=await resp.json();
+    badge.style.display=data.isPro?'inline-block':'none';
+  }catch(e){badge.style.display='none'}
+}
+
+function chargerEmailSauvegarde(){
+  try{
+    const saved=localStorage.getItem('bankanalyzer_email');
+    if(saved)document.getElementById('emailInput').value=saved;
+  }catch(e){}
+  verifierStatutPro();
+}
+
+function sauvegarderEmail(){
+  const email=document.getElementById('emailInput').value.trim();
+  try{localStorage.setItem('bankanalyzer_email',email)}catch(e){}
+  verifierStatutPro();
+}
+
 document.getElementById('fileInput').addEventListener('change',e=>{if(e.target.files.length>0)selectionnerFichiers(e.target.files)});
 document.getElementById('langue').addEventListener('change',applyPatrimoineLang);
 remplirSelectsDevises();
 loadPatrimoine();
 applyPatrimoineLang();
+document.getElementById('emailInput').addEventListener('change',sauvegarderEmail);
+document.getElementById('emailInput').addEventListener('blur',sauvegarderEmail);
+chargerEmailSauvegarde();
+
+const paramsUrl=new URLSearchParams(window.location.search);
+if(paramsUrl.get('checkout')==='success'){
+  setTimeout(()=>alert('🎉 Abonnement activé ! Vous pouvez maintenant utiliser toutes les fonctionnalités Pro.'),300);
+}
 const dz=document.getElementById('dropZone');
 dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('drag-over')});
 dz.addEventListener('dragleave',()=>dz.classList.remove('drag-over'));
