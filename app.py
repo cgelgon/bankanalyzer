@@ -236,6 +236,27 @@ def periode_sort_key(periode):
     return (0, 0)
 
 
+LIMITE_CARACTERES_RELEVE = 150000  # marge large, Claude Sonnet gere bien plus
+
+
+def _verifier_taille_et_tronquer(text):
+    """Remplace l'ancienne troncature silencieuse text[:20000].
+    Si le texte tient dans la nouvelle limite (large), on l'envoie tel quel.
+    S'il la depasse quand meme (fichier tres volumineux), on leve une
+    erreur EXPLICITE plutot que d'analyser silencieusement une fraction
+    des donnees et de presenter un resultat faux avec un score de confiance.
+    """
+    if len(text) <= LIMITE_CARACTERES_RELEVE:
+        return text
+    print('ATTENTION: fichier trop volumineux pour une analyse complete -- '
+          + str(len(text)) + ' caracteres, limite ' + str(LIMITE_CARACTERES_RELEVE))
+    raise ValueError(
+        'Ce fichier est trop volumineux pour etre analyse en une seule fois '
+        '(' + str(len(text)) + ' caracteres, limite actuelle ' + str(LIMITE_CARACTERES_RELEVE) + '). '
+        'Merci de le scinder en plusieurs fichiers (par mois ou par compte) avant de le renvoyer.'
+    )
+
+
 def analyse_releve(client, text, nom_banque, langue='français'):
     prompt = (
         'INSTRUCTION ABSOLUE: Tu dois repondre UNIQUEMENT en ' + langue + ', y compris le score_detail, le commentaire, les titres et details des actions. Aucun mot en francais si la langue demandee est differente. Analyse ce releve bancaire (' + nom_banque + ').' + chr(10) +
@@ -259,7 +280,7 @@ def analyse_releve(client, text, nom_banque, langue='français'):
         '6. Pour CHAQUE categorie de recettes et de depenses, liste dans "transactions" jusqu\'a 5 transactions individuelles les plus importantes qui la composent (libelle, montant, date)' + chr(10) +
         '7. Pour "compte", identifie le nom de la banque et/ou du compte TEL QU\'IL APPARAIT sur le releve (logo, en-tete, intitule de compte). Si tu ne trouves rien de clair, mets "' + nom_banque + '"' + chr(10) +
         '8. Identifie dans "prelevementsRecurrents" les charges probablement recurrentes/fixes de ce releve : abonnements, assurances, loyer, mensualites de credit, telephonie, energie, etc. (generalement des PRLV SEPA ou virements automatiques a montant fixe). Max 10, avec libelle et montant.' + chr(10) +
-        chr(10) + 'Releve:' + chr(10) + text[:20000]
+        chr(10) + 'Releve:' + chr(10) + _verifier_taille_et_tronquer(text)
     )
     msg = client.messages.create(
         model='claude-sonnet-4-6',
