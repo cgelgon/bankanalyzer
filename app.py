@@ -327,6 +327,13 @@ def create_checkout_session():
             customer = stripe.Customer.create(email=email)
             customer_id = customer.id
             upsert_user(email, stripe_customer_id=customer_id)
+        else:
+            # Deja un abonnement actif a ce prix ? On evite d'en creer un deuxieme (double facturation)
+            abonnements_existants = stripe.Subscription.list(customer=customer_id, status='active', limit=10)
+            for abo in abonnements_existants.data:
+                for item in abo['items']['data']:
+                    if item['price']['id'] == STRIPE_PRICE_ID:
+                        return jsonify({'error': 'Vous etes deja abonne a BankAnalyzer Pro.', 'alreadySubscribed': True}), 409
 
         session = stripe.checkout.Session.create(
             customer=customer_id,

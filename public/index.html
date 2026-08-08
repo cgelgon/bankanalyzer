@@ -875,6 +875,11 @@ async function demarrerCheckout(){
     const data=await resp.json();
     if(data.url){
       window.location.href=data.url;
+    }else if(data.alreadySubscribed){
+      alert('Vous êtes déjà abonné à BankAnalyzer Pro ✨');
+      const overlay=document.getElementById('upgradeOverlay');
+      if(overlay)overlay.remove();
+      verifierStatutPro();
     }else{
       alert('Erreur : '+(data.error||'impossible de démarrer le paiement'));
     }
