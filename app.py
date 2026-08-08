@@ -400,6 +400,34 @@ def check_pro_status():
     return jsonify({'isPro': est_pro(email)})
 
 
+@app.route('/create-portal-session', methods=['POST'])
+def create_portal_session():
+    try:
+        data = request.get_json(force=True)
+        email = (data.get('email') or '').strip().lower()
+        if not email or '@' not in email:
+            return jsonify({'error': 'Email invalide'}), 400
+
+        conn = get_db()
+        cur = conn.cursor()
+        cur.execute('SELECT stripe_customer_id FROM users WHERE email = %s', (email,))
+        row = cur.fetchone()
+        cur.close()
+        conn.close()
+
+        if not row or not row['stripe_customer_id']:
+            return jsonify({'error': "Aucun abonnement trouve pour cet email"}), 404
+
+        session = stripe.billing_portal.Session.create(
+            customer=row['stripe_customer_id'],
+            return_url=FRONTEND_URL,
+        )
+        return jsonify({'url': session.url})
+    except Exception as e:
+        print('ERREUR create_portal_session:', str(e))
+        return jsonify({'error': str(e)}), 500
+
+
 @app.route('/analyze', methods=['POST'])
 def analyze():
     try:

@@ -32,6 +32,7 @@ header{background:rgba(255,255,255,.85);backdrop-filter:blur(20px);border-bottom
 .email-input{font-size:13px;padding:8px 12px;border-radius:10px;border:1px solid var(--border);min-width:220px;font-family:inherit}
 .email-input:invalid:not(:placeholder-shown){border-color:var(--red)}
 .pro-badge{background:linear-gradient(135deg,#0071e3,#00c7ff);color:#fff;font-size:11px;font-weight:700;padding:3px 10px;border-radius:12px}
+.manage-sub-link{font-size:12px;color:var(--blue);text-decoration:underline;cursor:pointer}
 .pro-lock{font-size:11px;color:var(--text3);font-weight:500;margin-left:6px}
 .upgrade-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:1000;padding:1rem}
 .upgrade-modal{background:#fff;border-radius:20px;padding:2rem;max-width:400px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.3)}
@@ -193,6 +194,7 @@ select.devise-input-solo{max-width:280px}
         <label for="emailInput">✉️ Votre email :</label>
         <input type="email" id="emailInput" class="email-input" placeholder="vous@exemple.com" required>
         <span class="pro-badge" id="proBadge" style="display:none">✨ Pro</span>
+        <a href="#" class="manage-sub-link" id="manageSubLink" style="display:none" onclick="ouvrirPortailClient();return false;">Gérer mon abonnement</a>
       </div>
       <div class="lang-outer">
         <label>🌍 Langue :</label>
@@ -884,7 +886,8 @@ async function demarrerCheckout(){
 async function verifierStatutPro(){
   const email=(document.getElementById('emailInput').value||'').trim();
   const badge=document.getElementById('proBadge');
-  if(!email||!email.includes('@')){badge.style.display='none';return}
+  const lienGestion=document.getElementById('manageSubLink');
+  if(!email||!email.includes('@')){badge.style.display='none';lienGestion.style.display='none';return}
   try{
     const resp=await fetch('https://bankanalyzer-production.up.railway.app/check-pro-status',{
       method:'POST',
@@ -893,7 +896,28 @@ async function verifierStatutPro(){
     });
     const data=await resp.json();
     badge.style.display=data.isPro?'inline-block':'none';
-  }catch(e){badge.style.display='none'}
+    lienGestion.style.display=data.isPro?'inline':'none';
+  }catch(e){badge.style.display='none';lienGestion.style.display='none'}
+}
+
+async function ouvrirPortailClient(){
+  const email=(document.getElementById('emailInput').value||'').trim();
+  if(!email||!email.includes('@'))return;
+  try{
+    const resp=await fetch('https://bankanalyzer-production.up.railway.app/create-portal-session',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({email:email})
+    });
+    const data=await resp.json();
+    if(data.url){
+      window.location.href=data.url;
+    }else{
+      alert('Erreur : '+(data.error||"impossible d'ouvrir la gestion de l'abonnement"));
+    }
+  }catch(e){
+    alert('Erreur : '+e.message);
+  }
 }
 
 function chargerEmailSauvegarde(){
