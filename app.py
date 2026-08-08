@@ -1,4 +1,5 @@
 import os, io, json, re, unicodedata
+from datetime import datetime
 from collections import Counter
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from flask import Flask, request, jsonify, redirect
@@ -42,6 +43,8 @@ def init_db():
                 updated_at TIMESTAMP DEFAULT NOW()
             )
         ''')
+        cur.execute('ALTER TABLE users ADD COLUMN IF NOT EXISTS nb_analyses_mois_courant INTEGER DEFAULT 0')
+        cur.execute('ALTER TABLE users ADD COLUMN IF NOT EXISTS mois_reference_quota TEXT')
         conn.commit()
         cur.close()
         conn.close()
@@ -65,6 +68,59 @@ def est_pro(email):
         print('ERREUR est_pro:', str(e))
         return False
 
+
+QUOTA_ANALYSES_PRO_PAR_MOIS = 5
+
+
+def verifier_et_incrementer_quota_pro(email):
+    """Verifie que le compte Pro n'a pas depasse son quota d'analyses
+    pour le mois en cours, et incremente son compteur si l'analyse est
+    autorisee. Le quota se reinitialise automatiquement a chaque nouveau
+    mois calendaire. Sert de garde-fou contre le partage d'un meme compte
+    Pro entre plusieurs personnes (voir discussion du 08/08/2026).
+
+    Retourne (autorise: bool, nb_utilisees: int).
+    """
+    if not email or not DATABASE_URL:
+        return True, 0  # pas de DB configuree -> on n'entrave pas l'usage
+
+    mois_actuel = datetime.now().strftime('%Y-%m')
+    try:
+        conn = get_db()
+        cur = conn.cursor()
+        cur.execute(
+            'SELECT nb_analyses_mois_courant, mois_reference_quota FROM users WHERE email = %s',
+            (email.lower().strip(),)
+        )
+        row = cur.fetchone()
+        if row is None:
+            cur.close()
+            conn.close()
+            return True, 0
+
+        nb_actuel = row['nb_analyses_mois_courant'] or 0
+        mois_enregistre = row['mois_reference_quota']
+        if mois_enregistre != mois_actuel:
+            # nouveau mois calendaire : on reinitialise le compteur
+            nb_actuel = 0
+
+        if nb_actuel >= QUOTA_ANALYSES_PRO_PAR_MOIS:
+            cur.close()
+            conn.close()
+            return False, nb_actuel
+
+        nouveau_nb = nb_actuel + 1
+        cur.execute(
+            'UPDATE users SET nb_analyses_mois_courant = %s, mois_reference_quota = %s, updated_at = NOW() WHERE email = %s',
+            (nouveau_nb, mois_actuel, email.lower().strip())
+        )
+        conn.commit()
+        cur.close()
+        conn.close()
+        return True, nouveau_nb
+    except Exception as e:
+        print('ERREUR verifier_et_incrementer_quota_pro:', str(e))
+        return True, 0  # en cas d'erreur DB, on n'entrave pas l'usage (fail-open)
 
 def upsert_user(email, stripe_customer_id=None, stripe_subscription_id=None, subscription_status=None):
     if not DATABASE_URL:
@@ -184,6 +240,116 @@ def extract_text_from_excel(file_bytes):
         return chr(10).join(lines)
 
 
+def _trouver_index_colonne_date(entetes):
+    """Cherche l'index de la colonne de date la plus fiable (Date de
+    comptabilisation en priorite), en tolerant variations d'accents/casse."""
+    priorite = [
+        'date de comptabilisation', 'date operation', "date d'operation",
+        'date valeur', 'date de valeur', 'date transaction', 'date',
+    ]
+    entetes_norm = [sans_accents(str(h or '').strip().lower()) for h in entetes]
+    for candidat in priorite:
+        candidat_norm = sans_accents(candidat)
+        for i, e in enumerate(entetes_norm):
+            if candidat_norm == e or candidat_norm in e:
+                return i
+    return None
+
+
+def _parser_date_cellule(valeur):
+    """Convertit une valeur de cellule (datetime deja parse par openpyxl,
+    ou chaine issue d'un CSV) en tuple (annee, mois), ou None si non reconnue."""
+    if isinstance(valeur, datetime):
+        return (valeur.year, valeur.month)
+    if isinstance(valeur, str):
+        v = valeur.strip()
+        for fmt in ('%Y-%m-%d', '%d/%m/%Y', '%d-%m-%Y', '%d.%m.%Y', '%Y/%m/%d'):
+            try:
+                d = datetime.strptime(v[:10], fmt)
+                return (d.year, d.month)
+            except ValueError:
+                continue
+    return None
+
+
+def _decouper_lignes_par_mois(entetes, lignes_donnees):
+    """Regroupe des lignes de donnees (CSV ou Excel) par mois reellement
+    detecte dans la colonne de date la plus fiable. Retourne une liste de
+    blocs {'periode': 'MM/AAAA' ou None, 'text': texte_du_bloc}.
+
+    Si aucune colonne de date n'est identifiable, retourne UN SEUL bloc
+    contenant toutes les lignes (comportement identique a avant le patch,
+    aucune regression pour les fichiers atypiques).
+    """
+    ligne_entete_txt = ' | '.join([str(c) if c not in (None, '') else '' for c in entetes])
+    idx_date = _trouver_index_colonne_date(entetes)
+
+    if idx_date is None:
+        lignes_txt = [ligne_entete_txt] + [
+            ' | '.join([str(c) if c not in (None, '') else '' for c in ligne]) for ligne in lignes_donnees
+        ]
+        return [{'periode': None, 'text': chr(10).join(lignes_txt)}]
+
+    groupes = {}
+    ordre_apparition = []
+    for ligne in lignes_donnees:
+        valeur_date = ligne[idx_date] if idx_date < len(ligne) else None
+        cle = _parser_date_cellule(valeur_date) or ('inconnue', 0)
+        if cle not in groupes:
+            groupes[cle] = []
+            ordre_apparition.append(cle)
+        groupes[cle].append(' | '.join([str(c) if c not in (None, '') else '' for c in ligne]))
+
+    blocs = []
+    for cle in sorted(ordre_apparition, key=lambda c: (str(c[0]), c[1])):
+        annee, mois = cle
+        periode = ('%02d/%s' % (mois, annee)) if mois else None
+        texte_bloc = chr(10).join([ligne_entete_txt] + groupes[cle])
+        blocs.append({'periode': periode, 'text': texte_bloc})
+
+    return blocs
+
+
+def decouper_par_mois_excel(file_bytes):
+    """Version 'decoupage par mois' de extract_text_from_excel : au lieu
+    d'un seul bloc de texte pour tout le classeur, retourne une liste de
+    blocs, un par mois reellement detecte (voir _decouper_lignes_par_mois).
+    """
+    try:
+        wb = openpyxl.load_workbook(io.BytesIO(file_bytes))
+        ws = wb.active
+        toutes_lignes = list(ws.iter_rows(values_only=True))
+    except Exception:
+        import xlrd
+        wb = xlrd.open_workbook(file_contents=file_bytes)
+        ws = wb.sheet_by_index(0)
+        toutes_lignes = [tuple(ws.row_values(r)) for r in range(ws.nrows)]
+
+    if not toutes_lignes:
+        return [{'periode': None, 'text': ''}]
+
+    return _decouper_lignes_par_mois(toutes_lignes[0], toutes_lignes[1:])
+
+
+def decouper_par_mois_csv(file_bytes):
+    """Version 'decoupage par mois' pour les CSV : parse les lignes (au
+    lieu de renvoyer le texte brut tel quel) et regroupe par mois reellement
+    detecte, comme decouper_par_mois_excel.
+    """
+    import csv as _csv
+    texte_brut = extract_text_from_csv(file_bytes)
+    try:
+        dialecte = _csv.Sniffer().sniff(texte_brut[:2000], delimiters=';,\t')
+    except Exception:
+        dialecte = _csv.excel
+    lecteur = _csv.reader(io.StringIO(texte_brut), dialecte)
+    toutes_lignes = [tuple(ligne) for ligne in lecteur if ligne]
+
+    if not toutes_lignes:
+        return [{'periode': None, 'text': ''}]
+
+    return _decouper_lignes_par_mois(toutes_lignes[0], toutes_lignes[1:])
+
 _REGEX_DATE_ISO_DATETIME = re.compile(r'\b(\d{4})-(\d{2})-(\d{2}) \d{2}:\d{2}:\d{2}\b')
 
 
@@ -236,7 +402,8 @@ def periode_sort_key(periode):
     return (0, 0)
 
 
-LIMITE_CARACTERES_RELEVE = 150000  # marge large, Claude Sonnet gere bien plus
+LIMITE_CARACTERES_RELEVE = 500000  # marge large ; le decoupage par mois (bug 2)
+# limite deja la taille par bloc, ceci couvre les mois a fort volume (500+ transactions)
 
 
 def _verifier_taille_et_tronquer(text):
@@ -571,29 +738,24 @@ def _analyze_impl():
             return jsonify({'error': 'Aucun fichier recu'}), 400
     files = files[:60]
 
-    demande_features_pro = len(files) > 1 or bool(patrimoine_resume) or mode_devise == 'multiple'
     utilisateur_pro = est_pro(email)
-    if demande_features_pro and not utilisateur_pro:
-        return jsonify({
-            'error': "Cette analyse utilise une fonctionnalite BankAnalyzer Pro (plusieurs fichiers, patrimoine ou plusieurs devises). Passez a l'offre Pro pour y acceder.",
-            'requiresPro': True
-        }), 402
 
     client = anthropic.Anthropic()
 
-    # Etape 1 : extraction du texte de chaque fichier (rapide, local, sequentiel)
+    # Etape 1 : extraction et decoupage par mois de chaque fichier (rapide, local, sequentiel)
     fichiers_prepares = []
     fichiers_ignores = []
     for file in files:
         filename = file.filename.lower()
         file_bytes = file.read()
+        nom_banque = file.filename.replace('.pdf', '').replace('.csv', '').replace('.xlsx', '')[:30]
         try:
             if filename.endswith('.pdf'):
-                text = extract_text_from_pdf(file_bytes)
+                blocs = [{'periode': None, 'text': extract_text_from_pdf(file_bytes)}]
             elif filename.endswith('.csv'):
-                text = extract_text_from_csv(file_bytes)
+                blocs = decouper_par_mois_csv(file_bytes)
             elif filename.endswith(('.xlsx', '.xls')):
-                text = extract_text_from_excel(file_bytes)
+                blocs = decouper_par_mois_excel(file_bytes)
             else:
                 fichiers_ignores.append({'nom': file.filename, 'raison': 'Format non supporte'})
                 continue
@@ -601,15 +763,34 @@ def _analyze_impl():
             print('ERREUR extraction', file.filename, str(e))
             fichiers_ignores.append({'nom': file.filename, 'raison': "Fichier illisible/corrompu : " + str(e)[:150]})
             continue
-        if not text.strip():
+        if not blocs or all(not b['text'].strip() for b in blocs):
             fichiers_ignores.append({'nom': file.filename, 'raison': 'Aucun texte extrait (PDF scanne/image ?)'})
             continue
-        nom_banque = file.filename.replace('.pdf', '').replace('.csv', '').replace('.xlsx', '')[:30]
-        periode = get_periode(text)
-        fichiers_prepares.append({'nom': nom_banque, 'nomFichier': file.filename, 'periode': periode, 'text': text})
+        for bloc in blocs:
+            texte_bloc = bloc['text']
+            if not texte_bloc.strip():
+                continue
+            periode = bloc['periode'] or get_periode(texte_bloc)
+            nom_bloc = nom_banque if len(blocs) == 1 else (nom_banque + ' - ' + periode if periode else nom_banque)
+            fichiers_prepares.append({'nom': nom_bloc, 'nomFichier': file.filename, 'periode': periode, 'text': texte_bloc})
 
     if not fichiers_prepares:
         return jsonify({'error': 'Aucun releve analyse'}), 500
+
+    demande_features_pro = len(fichiers_prepares) > 1 or bool(patrimoine_resume) or mode_devise == 'multiple'
+    if demande_features_pro and not utilisateur_pro:
+        return jsonify({
+            'error': "Cette analyse utilise une fonctionnalite BankAnalyzer Pro (plusieurs fichiers, plusieurs mois detectes dans un meme fichier, patrimoine ou plusieurs devises). Passez a l'offre Pro pour y acceder.",
+            'requiresPro': True
+        }), 402
+
+    if utilisateur_pro:
+        quota_ok, nb_utilisees = verifier_et_incrementer_quota_pro(email)
+        if not quota_ok:
+            return jsonify({
+                'error': "Vous avez atteint votre quota de %d analyses Pro pour ce mois-ci. Il sera reinitialise le mois prochain." % QUOTA_ANALYSES_PRO_PAR_MOIS,
+                'quotaDepasse': True
+            }), 402
 
     # Etape 2 : appels IA en parallele (par lots pour respecter les limites de debit de l'API)
     comptes = []
