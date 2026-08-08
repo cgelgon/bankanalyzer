@@ -155,16 +155,32 @@ def extract_text_from_pdf(file_bytes):
 
 
 def extract_text_from_csv(file_bytes):
+    for encodage in ('utf-8-sig', 'utf-8', 'cp1252', 'latin-1'):
+        try:
+            return file_bytes.decode(encodage)
+        except (UnicodeDecodeError, LookupError):
+            continue
     return file_bytes.decode('utf-8', errors='ignore')
 
 
 def extract_text_from_excel(file_bytes):
-    wb = openpyxl.load_workbook(io.BytesIO(file_bytes))
-    ws = wb.active
-    lines = []
-    for row in ws.iter_rows(values_only=True):
-        lines.append(' | '.join([str(c) if c else '' for c in row]))
-    return chr(10).join(lines)
+    try:
+        wb = openpyxl.load_workbook(io.BytesIO(file_bytes))
+        ws = wb.active
+        lines = []
+        for row in ws.iter_rows(values_only=True):
+            lines.append(' | '.join([str(c) if c else '' for c in row]))
+        return chr(10).join(lines)
+    except Exception:
+        # Ancien format .xls (binaire, pas gere par openpyxl) : on tente avec xlrd
+        import xlrd
+        wb = xlrd.open_workbook(file_contents=file_bytes)
+        ws = wb.sheet_by_index(0)
+        lines = []
+        for r in range(ws.nrows):
+            row = ws.row_values(r)
+            lines.append(' | '.join([str(c) if c not in (None, '') else '' for c in row]))
+        return chr(10).join(lines)
 
 
 def get_periode(text):
@@ -533,14 +549,19 @@ def _analyze_impl():
     for file in files:
         filename = file.filename.lower()
         file_bytes = file.read()
-        if filename.endswith('.pdf'):
-            text = extract_text_from_pdf(file_bytes)
-        elif filename.endswith('.csv'):
-            text = extract_text_from_csv(file_bytes)
-        elif filename.endswith(('.xlsx', '.xls')):
-            text = extract_text_from_excel(file_bytes)
-        else:
-            fichiers_ignores.append({'nom': file.filename, 'raison': 'Format non supporte'})
+        try:
+            if filename.endswith('.pdf'):
+                text = extract_text_from_pdf(file_bytes)
+            elif filename.endswith('.csv'):
+                text = extract_text_from_csv(file_bytes)
+            elif filename.endswith(('.xlsx', '.xls')):
+                text = extract_text_from_excel(file_bytes)
+            else:
+                fichiers_ignores.append({'nom': file.filename, 'raison': 'Format non supporte'})
+                continue
+        except Exception as e:
+            print('ERREUR extraction', file.filename, str(e))
+            fichiers_ignores.append({'nom': file.filename, 'raison': "Fichier illisible/corrompu : " + str(e)[:150]})
             continue
         if not text.strip():
             fichiers_ignores.append({'nom': file.filename, 'raison': 'Aucun texte extrait (PDF scanne/image ?)'})
