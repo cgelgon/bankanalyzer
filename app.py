@@ -1,4 +1,5 @@
 import os, io, json, re, unicodedata
+from collections import Counter
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from flask import Flask, request, jsonify, redirect
 from flask_cors import CORS
@@ -183,7 +184,23 @@ def extract_text_from_excel(file_bytes):
         return chr(10).join(lines)
 
 
+_REGEX_DATE_ISO_DATETIME = re.compile(r'\b(\d{4})-(\d{2})-(\d{2}) \d{2}:\d{2}:\d{2}\b')
+
+
 def get_periode(text):
+    # PRIORITE 1 : dates ISO issues des vraies colonnes de date (CSV/XLSX).
+    # str(datetime) produit "YYYY-MM-DD HH:MM:SS" -- format fiable qui
+    # n'apparait jamais par hasard dans du texte libre (notes, references
+    # de facture type "Juin 2026", "TSP 06.2026", etc.). On prend le mois
+    # le PLUS FREQUENT parmi toutes les dates trouvees, jamais la 1ere.
+    matches_iso = _REGEX_DATE_ISO_DATETIME.findall(text)
+    if matches_iso:
+        mois_annees = [(int(a), int(m)) for a, m, j in matches_iso if 1 <= int(m) <= 12]
+        if mois_annees:
+            (annee, mois), _occurrences = Counter(mois_annees).most_common(1)[0]
+            return f"{mois:02d}/{annee}"
+
+    # ---- reste du code EXISTANT inchange (fallback pour PDF texte pur) ----
     # Format chinois : "2026年7月" ou "7月2026年"
     m_cn = re.search(r'(\d{4})\s*年\s*(\d{1,2})\s*月', text)
     if m_cn:
