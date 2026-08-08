@@ -341,6 +341,15 @@ def create_checkout_session():
         return jsonify({'error': str(e)}), 500
 
 
+def valeur_stripe(obj, cle, defaut=None):
+    """Accede a un champ d'un objet Stripe (pas un dict standard, .get() n'est pas supporte)."""
+    try:
+        v = obj[cle]
+        return v if v is not None else defaut
+    except (KeyError, TypeError):
+        return defaut
+
+
 @app.route('/stripe-webhook', methods=['POST'])
 def stripe_webhook():
     payload = request.get_data()
@@ -355,15 +364,19 @@ def stripe_webhook():
     obj = event['data']['object']
 
     if type_evenement == 'checkout.session.completed':
-        customer_id = obj.get('customer')
-        subscription_id = obj.get('subscription')
-        email = (obj.get('customer_details') or {}).get('email') or obj.get('customer_email')
+        customer_id = valeur_stripe(obj, 'customer')
+        subscription_id = valeur_stripe(obj, 'subscription')
+        customer_details = valeur_stripe(obj, 'customer_details') or {}
+        email = valeur_stripe(customer_details, 'email') or valeur_stripe(obj, 'customer_email')
         if email:
             upsert_user(email, stripe_customer_id=customer_id, stripe_subscription_id=subscription_id, subscription_status='active')
+            print('Abonnement active pour', email)
+        else:
+            print('ATTENTION : aucun email trouve dans le checkout.session.completed')
 
     elif type_evenement in ('customer.subscription.updated', 'customer.subscription.deleted'):
-        customer_id = obj.get('customer')
-        statut = obj.get('status')
+        customer_id = valeur_stripe(obj, 'customer')
+        statut = valeur_stripe(obj, 'status')
         nouveau_statut = 'active' if statut == 'active' else 'inactive'
         try:
             conn = get_db()
