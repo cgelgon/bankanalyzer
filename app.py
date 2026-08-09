@@ -1054,39 +1054,53 @@ def _analyze_impl():
     )
     is_multi_mois = len(periodes_uniques) > 1
 
+    def _sommer_solde(liste_comptes, champ):
+        """Comme sum(to_num(...)) mais renvoie None si AUCUN compte de la
+        liste n'a de valeur connue pour ce champ (evite qu'un solde
+        veritablement inconnu ne se transforme silencieusement en 0)."""
+        valeurs = [c.get(champ) for c in liste_comptes]
+        if valeurs and all(v is None for v in valeurs):
+            return None
+        return sum(to_num(v) for v in valeurs)
+
     evolution = []
     if is_multi_mois:
         premiere_periode = periodes_uniques[0]
         derniere_periode = periodes_uniques[-1]
         comptes_premiere = [c for c in comptes if c.get('periode', 'Periode inconnue') == premiere_periode]
         comptes_derniere = [c for c in comptes if c.get('periode', 'Periode inconnue') == derniere_periode]
-        solde_depart = sum(to_num(c.get('soldeDepart', 0)) for c in comptes_premiere)
-        solde_arrivee = sum(to_num(c.get('soldeArrivee', 0)) for c in comptes_derniere)
+        solde_depart = _sommer_solde(comptes_premiere, 'soldeDepart')
+        solde_arrivee = _sommer_solde(comptes_derniere, 'soldeArrivee')
         periode_label = premiere_periode + ' -> ' + derniere_periode
 
-        # Point de depart : solde d'ouverture du tout premier mois, avant tout mouvement
-        evolution.append({
-            'periode': 'Debut ' + premiere_periode,
-            'totalRecettes': 0,
-            'totalDepenses': 0,
-            'net': 0,
-            'soldeArrivee': solde_depart
-        })
-        for p in periodes_uniques:
-            comptes_p = [c for c in comptes if c.get('periode', 'Periode inconnue') == p]
-            tr_p = sum(to_num(c.get('totalRecettes', 0)) for c in comptes_p)
-            td_p = sum(to_num(c.get('totalDepenses', 0)) for c in comptes_p)
-            sa_p = sum(to_num(c.get('soldeArrivee', 0)) for c in comptes_p)
+        if solde_depart is not None:
+            # Point de depart : solde d'ouverture du tout premier mois, avant tout mouvement
             evolution.append({
-                'periode': p,
-                'totalRecettes': tr_p,
-                'totalDepenses': td_p,
-                'net': tr_p - td_p,
-                'soldeArrivee': sa_p
+                'periode': 'Debut ' + premiere_periode,
+                'totalRecettes': 0,
+                'totalDepenses': 0,
+                'net': 0,
+                'soldeArrivee': solde_depart
             })
+            for p in periodes_uniques:
+                comptes_p = [c for c in comptes if c.get('periode', 'Periode inconnue') == p]
+                tr_p = sum(to_num(c.get('totalRecettes', 0)) for c in comptes_p)
+                td_p = sum(to_num(c.get('totalDepenses', 0)) for c in comptes_p)
+                sa_p = _sommer_solde(comptes_p, 'soldeArrivee')
+                evolution.append({
+                    'periode': p,
+                    'totalRecettes': tr_p,
+                    'totalDepenses': td_p,
+                    'net': tr_p - td_p,
+                    'soldeArrivee': sa_p if sa_p is not None else 0
+                })
+        # Si solde_depart est None (aucune donnee de solde disponible pour ce
+        # type d'export), evolution reste vide : le frontend affiche alors son
+        # message "en attente de plus de mois" existant plutot qu'un
+        # graphique plat trompeur -- aucune modification frontend requise.
     else:
-        solde_depart = sum(to_num(c.get('soldeDepart', 0)) for c in comptes)
-        solde_arrivee = sum(to_num(c.get('soldeArrivee', 0)) for c in comptes)
+        solde_depart = _sommer_solde(comptes, 'soldeDepart')
+        solde_arrivee = _sommer_solde(comptes, 'soldeArrivee')
         periode_label = periodes_uniques[0] if periodes_uniques else 'Periode inconnue'
 
     # Vue d'ensemble = toujours la somme de TOUS les mois/comptes envoyes
@@ -1116,14 +1130,43 @@ def _analyze_impl():
     def top_transactions(liste):
         return normaliser_montants(sorted(liste, key=lambda x: -to_num(x.get('montant', 0)))[:8])
 
-    rec_global = sorted(
-        [{'label': k, 'montant': v, 'transactions': top_transactions(all_rec_tx.get(k, []))} for k, v in all_rec.items()],
-        key=lambda x: -to_num(x['montant'])
-    )[:5]
-    dep_global = sorted(
-        [{'label': k, 'montant': v, 'transactions': top_transactions(all_dep_tx.get(k, []))} for k, v in all_dep.items()],
-        key=lambda x: -to_num(x['montant'])
-    )[:7]
+    def _finaliser_categories_fusionnees(items_dict, items_tx, total, limite):
+        """Construit la liste finale de categories fusionnees (max
+        `limite`), TOUJOURS reconciliee exactement avec `total`. Une place
+        est toujours reservee pour 'Autres' si necessaire, plutot que de
+        risquer qu'elle soit ecartee par un simple tri par montant."""
+        def _est_autres(label):
+            return sans_accents(str(label or '').strip().lower()) in ('autres', 'autre', 'divers')
+
+        montant_autres_deja = sum(v for k, v in items_dict.items() if _est_autres(k))
+        items = sorted(
+            [(k, v) for k, v in items_dict.items() if not _est_autres(k)],
+            key=lambda kv: -kv[1]
+        )
+
+        principales = items[:limite]
+        resultat = [
+            {'label': k, 'montant': round(v, 2), 'transactions': top_transactions(items_tx.get(k, []))}
+            for k, v in principales
+        ]
+
+        somme_affichee = sum(x['montant'] for x in resultat)
+        ecart = round(total - somme_affichee, 2)
+        if ecart > 1 or montant_autres_deja > 1:
+            ecart_total = round(ecart, 2) if ecart > 1 else round(montant_autres_deja, 2)
+            if len(resultat) < limite:
+                resultat.append({'label': 'Autres', 'montant': ecart_total, 'transactions': []})
+            else:
+                idx_min = min(range(len(resultat)), key=lambda i: resultat[i]['montant'])
+                resultat[idx_min] = {
+                    'label': 'Autres',
+                    'montant': round(resultat[idx_min]['montant'] + ecart_total, 2),
+                    'transactions': [],
+                }
+        return resultat
+
+    rec_global = _finaliser_categories_fusionnees(all_rec, all_rec_tx, total_r, 5)
+    dep_global = _finaliser_categories_fusionnees(all_dep, all_dep_tx, total_d, 7)
 
     try:
         conseil = get_conseil_global(client, comptes, total_r, total_d, periode_label, langue, patrimoine_resume, devise_principale)
