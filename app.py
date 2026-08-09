@@ -272,40 +272,99 @@ def _parser_date_cellule(valeur):
     return None
 
 
+def _trouver_colonnes_montant(entetes):
+    """Cherche les colonnes Debit/Credit (ou a defaut une colonne Montant
+    signee) pour pouvoir calculer les totaux exacts en Python plutot que
+    de laisser l'IA les estimer."""
+    entetes_norm = [sans_accents(str(h or '').strip().lower()) for h in entetes]
+    idx_debit = None
+    idx_credit = None
+    idx_montant = None
+    for i, e in enumerate(entetes_norm):
+        if idx_debit is None and ('debit' in e):
+            idx_debit = i
+        elif idx_credit is None and ('credit' in e):
+            idx_credit = i
+        elif idx_montant is None and e == 'montant':
+            idx_montant = i
+    return idx_debit, idx_credit, idx_montant
+
+
+def _totaux_ligne(ligne, idx_debit, idx_credit, idx_montant):
+    """Retourne (recette, depense) pour une ligne de donnees, calcules
+    a partir des colonnes Debit/Credit ou Montant identifiees."""
+    recette = 0.0
+    depense = 0.0
+    if idx_credit is not None and idx_credit < len(ligne):
+        recette = to_num(ligne[idx_credit])
+    if idx_debit is not None and idx_debit < len(ligne):
+        depense = abs(to_num(ligne[idx_debit]))
+    if idx_credit is None and idx_debit is None and idx_montant is not None and idx_montant < len(ligne):
+        m = to_num(ligne[idx_montant])
+        if m >= 0:
+            recette = m
+        else:
+            depense = abs(m)
+    return recette, depense
+
+
 def _decouper_lignes_par_mois(entetes, lignes_donnees):
     """Regroupe des lignes de donnees (CSV ou Excel) par mois reellement
-    detecte dans la colonne de date la plus fiable. Retourne une liste de
-    blocs {'periode': 'MM/AAAA' ou None, 'text': texte_du_bloc}.
+    detecte dans la colonne de date la plus fiable, ET calcule en Python
+    les totaux recettes/depenses exacts de chaque mois (voir
+    _trouver_colonnes_montant). Retourne une liste de blocs
+    {'periode': 'MM/AAAA' ou None, 'text': texte_du_bloc,
+    'totauxVerifies': {'totalRecettes': x, 'totalDepenses': y} ou None}.
 
-    Si aucune colonne de date n'est identifiable, retourne UN SEUL bloc
-    contenant toutes les lignes (comportement identique a avant le patch,
-    aucune regression pour les fichiers atypiques).
+    Si aucune colonne de date n'est identifiable, retourne UN SEUL bloc.
+    Si aucune colonne Debit/Credit/Montant n'est identifiable,
+    'totauxVerifies' vaut None (comportement inchange, l'IA estime comme avant).
     """
     ligne_entete_txt = ' | '.join([str(c) if c not in (None, '') else '' for c in entetes])
     idx_date = _trouver_index_colonne_date(entetes)
+    idx_debit, idx_credit, idx_montant = _trouver_colonnes_montant(entetes)
+    colonnes_montant_ok = idx_debit is not None or idx_credit is not None or idx_montant is not None
 
     if idx_date is None:
         lignes_txt = [ligne_entete_txt] + [
             ' | '.join([str(c) if c not in (None, '') else '' for c in ligne]) for ligne in lignes_donnees
         ]
-        return [{'periode': None, 'text': chr(10).join(lignes_txt)}]
+        totaux = None
+        if colonnes_montant_ok:
+            r_tot, d_tot = 0.0, 0.0
+            for ligne in lignes_donnees:
+                r, d = _totaux_ligne(ligne, idx_debit, idx_credit, idx_montant)
+                r_tot += r
+                d_tot += d
+            totaux = {'totalRecettes': round(r_tot, 2), 'totalDepenses': round(d_tot, 2)}
+        return [{'periode': None, 'text': chr(10).join(lignes_txt), 'totauxVerifies': totaux}]
 
     groupes = {}
+    totaux_groupes = {}
     ordre_apparition = []
     for ligne in lignes_donnees:
         valeur_date = ligne[idx_date] if idx_date < len(ligne) else None
         cle = _parser_date_cellule(valeur_date) or ('inconnue', 0)
         if cle not in groupes:
             groupes[cle] = []
+            totaux_groupes[cle] = [0.0, 0.0]
             ordre_apparition.append(cle)
         groupes[cle].append(' | '.join([str(c) if c not in (None, '') else '' for c in ligne]))
+        if colonnes_montant_ok:
+            r, d = _totaux_ligne(ligne, idx_debit, idx_credit, idx_montant)
+            totaux_groupes[cle][0] += r
+            totaux_groupes[cle][1] += d
 
     blocs = []
     for cle in sorted(ordre_apparition, key=lambda c: (str(c[0]), c[1])):
         annee, mois = cle
         periode = ('%02d/%s' % (mois, annee)) if mois else None
         texte_bloc = chr(10).join([ligne_entete_txt] + groupes[cle])
-        blocs.append({'periode': periode, 'text': texte_bloc})
+        totaux = None
+        if colonnes_montant_ok:
+            r_tot, d_tot = totaux_groupes[cle]
+            totaux = {'totalRecettes': round(r_tot, 2), 'totalDepenses': round(d_tot, 2)}
+        blocs.append({'periode': periode, 'text': texte_bloc, 'totauxVerifies': totaux})
 
     return blocs
 
@@ -424,8 +483,20 @@ def _verifier_taille_et_tronquer(text):
     )
 
 
-def analyse_releve(client, text, nom_banque, langue='français'):
+def analyse_releve(client, text, nom_banque, langue='français', totaux_verifies=None):
+    prefixe_totaux_verifies = ''
+    if totaux_verifies:
+        prefixe_totaux_verifies = (
+            'IMPORTANT: Les totaux suivants ont deja ete calcules avec precision a partir des '
+            'donnees structurees de ce releve et DOIVENT etre utilises TELS QUELS (ne les '
+            'recalcule surtout pas toi-meme) pour totalRecettes, totalDepenses, '
+            'totalRecettesOfficiel et totalDepensesOfficiel, et pour toute mention de ces '
+            'montants dans le commentaire, le score_detail et les actions prioritaires : '
+            'Recettes = ' + str(totaux_verifies.get('totalRecettes')) + ' EUR, Depenses = ' +
+            str(totaux_verifies.get('totalDepenses')) + ' EUR.' + chr(10) + chr(10)
+        )
     prompt = (
+        prefixe_totaux_verifies +
         'INSTRUCTION ABSOLUE: Tu dois repondre UNIQUEMENT en ' + langue + ', y compris le score_detail, le commentaire, les titres et details des actions. Aucun mot en francais si la langue demandee est differente. Analyse ce releve bancaire (' + nom_banque + ').' + chr(10) +
         'Retourne UNIQUEMENT ce JSON sans markdown:' + chr(10) +
         '{"compte":"nom de la banque et/ou du compte tel qu\'il apparait EXPLICITEMENT sur le releve (ex: REVOLUT, BNP PARIBAS - Compte Principal, Compte Booster)",' +
@@ -772,7 +843,7 @@ def _analyze_impl():
                 continue
             periode = bloc['periode'] or get_periode(texte_bloc)
             nom_bloc = nom_banque if len(blocs) == 1 else (nom_banque + ' - ' + periode if periode else nom_banque)
-            fichiers_prepares.append({'nom': nom_bloc, 'nomFichier': file.filename, 'periode': periode, 'text': texte_bloc})
+            fichiers_prepares.append({'nom': nom_bloc, 'nomFichier': file.filename, 'periode': periode, 'text': texte_bloc, 'totauxVerifies': bloc.get('totauxVerifies')})
 
     if not fichiers_prepares:
         return jsonify({'error': 'Aucun releve analyse'}), 500
@@ -803,10 +874,20 @@ def _analyze_impl():
         derniere_erreur = None
         for tentative in range(2):
             try:
-                data = analyse_releve(client, f['text'], f['nom'], langue)
+                totaux_verifies = f.get('totauxVerifies')
+                data = analyse_releve(client, f['text'], f['nom'], langue, totaux_verifies=totaux_verifies)
                 nom_detecte = (data.get('compte') or '').strip()
                 data['nom'] = nom_detecte if nom_detecte else f['nom']
                 data['periode'] = f['periode']
+
+                if totaux_verifies:
+                    # Filet de securite : on ecrase les totaux de l'IA par les
+                    # totaux calcules en Python, au cas ou l'instruction du
+                    # prompt n'aurait pas ete suivie a la lettre.
+                    data['totalRecettes'] = totaux_verifies['totalRecettes']
+                    data['totalDepenses'] = totaux_verifies['totalDepenses']
+                    data['totalRecettesOfficiel'] = totaux_verifies['totalRecettes']
+                    data['totalDepensesOfficiel'] = totaux_verifies['totalDepenses']
 
                 tr = to_num(data.get('totalRecettes', 0))
                 td = to_num(data.get('totalDepenses', 0))
