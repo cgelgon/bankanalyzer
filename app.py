@@ -45,6 +45,15 @@ def init_db():
         ''')
         cur.execute('ALTER TABLE users ADD COLUMN IF NOT EXISTS nb_analyses_mois_courant INTEGER DEFAULT 0')
         cur.execute('ALTER TABLE users ADD COLUMN IF NOT EXISTS mois_reference_quota TEXT')
+        cur.execute('''
+            CREATE TABLE IF NOT EXISTS banques_detectees (
+                id SERIAL PRIMARY KEY,
+                nom_banque TEXT,
+                format TEXT,
+                periode TEXT,
+                created_at TIMESTAMP DEFAULT NOW()
+            )
+        ''')
         conn.commit()
         cur.close()
         conn.close()
@@ -121,6 +130,28 @@ def verifier_et_incrementer_quota_pro(email):
     except Exception as e:
         print('ERREUR verifier_et_incrementer_quota_pro:', str(e))
         return True, 0  # en cas d'erreur DB, on n'entrave pas l'usage (fail-open)
+
+def _logger_banque_detectee(nom_banque, nom_fichier, periode):
+    """Enregistre discretement la banque detectee par l'IA pour chaque
+    analyse, sans rien demander a l'utilisateur -- sert uniquement a
+    prioriser plus tard les formats meritant un parseur dedie (comme
+    celui deja fait pour Revolut), en fonction de l'usage reel observe.
+    """
+    if not DATABASE_URL:
+        return
+    extension = (nom_fichier or '').lower().rsplit('.', 1)[-1] if '.' in (nom_fichier or '') else '?'
+    try:
+        conn = get_db()
+        cur = conn.cursor()
+        cur.execute(
+            'INSERT INTO banques_detectees (nom_banque, format, periode) VALUES (%s, %s, %s)',
+            ((nom_banque or 'Inconnu')[:100], extension, periode or '')
+        )
+        conn.commit()
+        cur.close()
+        conn.close()
+    except Exception as e:
+        print('ERREUR log banque detectee:', str(e))
 
 def upsert_user(email, stripe_customer_id=None, stripe_subscription_id=None, subscription_status=None):
     if not DATABASE_URL:
@@ -976,6 +1007,9 @@ def _analyze_impl():
                         'nom': data['nom'] + ' (' + f['periode'] + ')',
                         'raison': 'Ecart avec le recapitulatif officiel du releve : ' + ' ; '.join(ecarts)
                     })
+
+                _logger_banque_detectee(data.get('nom'), f.get('nomFichier'), f.get('periode'))
+
                 return data
             except Exception as e:
                 derniere_erreur = e
