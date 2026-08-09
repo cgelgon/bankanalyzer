@@ -498,17 +498,55 @@ def _verifier_taille_et_tronquer(text):
 
 
 def _completer_avec_categorie_autres(data):
-    """Ajoute une categorie 'Autres' qui absorbe l'ecart entre le total
-    affiche et la somme des categories detaillees par l'IA (plafonnees a
-    5-7 categories), pour que le detail affiche se recoupe toujours avec
-    le total en haut de page."""
+    """Fait en sorte que la somme des categories affichees (recettes/
+    depenses) corresponde toujours exactement au total affiche, SANS
+    jamais depasser le nombre maximal de categories (5 recettes / 7
+    depenses) pour ne pas risquer qu'une categorie soit coupee par le
+    frontend :
+    - Si l'IA a deja mis sa propre categorie 'Autres' (approximative),
+      on remplace son montant par le reste exact.
+    - Sinon, si on est sous la limite, on ajoute une categorie 'Autres'.
+    - Sinon (deja au maximum), on fusionne l'ecart dans la plus petite
+      categorie existante, renommee 'Autres'.
+    """
+    limites = {'recettes': 5, 'depenses': 7}
     for cle_total, cle_categories in (('totalRecettes', 'recettes'), ('totalDepenses', 'depenses')):
         total = to_num(data.get(cle_total, 0))
-        categories = data.get(cle_categories) or []
+        categories = list(data.get(cle_categories) or [])
+        if not categories:
+            continue
+
+        def _est_autres(c):
+            return sans_accents(str(c.get('label') or '').strip().lower()) in ('autres', 'autre', 'divers')
+
+        indices_autres = [i for i, c in enumerate(categories) if _est_autres(c)]
+        if indices_autres:
+            idx = indices_autres[0]
+            somme_hors_autres = sum(to_num(c.get('montant', 0)) for i, c in enumerate(categories) if i != idx)
+            categories = [c for i, c in enumerate(categories) if i == idx or i not in indices_autres]
+            for c in categories:
+                if _est_autres(c):
+                    c['montant'] = round(total - somme_hors_autres, 2)
+                    break
+            data[cle_categories] = categories
+            continue
+
         somme_categories = sum(to_num(c.get('montant', 0)) for c in categories)
         ecart = round(total - somme_categories, 2)
-        if ecart > 1:
-            data[cle_categories] = list(categories) + [{'label': 'Autres', 'montant': ecart, 'transactions': []}]
+        if ecart <= 1:
+            continue
+
+        limite = limites.get(cle_categories, 999)
+        if len(categories) < limite:
+            categories.append({'label': 'Autres', 'montant': ecart, 'transactions': []})
+        else:
+            idx_min = min(range(len(categories)), key=lambda i: to_num(categories[i].get('montant', 0)))
+            categories[idx_min] = {
+                'label': 'Autres',
+                'montant': round(to_num(categories[idx_min].get('montant', 0)) + ecart, 2),
+                'transactions': [],
+            }
+        data[cle_categories] = categories
     return data
 
 def analyse_releve(client, text, nom_banque, langue='français', totaux_verifies=None):
