@@ -325,6 +325,20 @@ def _decouper_lignes_par_mois(entetes, lignes_donnees):
     idx_debit, idx_credit, idx_montant = _trouver_colonnes_montant(entetes)
     colonnes_montant_ok = idx_debit is not None or idx_credit is not None or idx_montant is not None
 
+    # On retire les transactions annulees AVANT tout regroupement : elles ne
+    # se sont jamais reellement produites, ne doivent pas compter dans les
+    # totaux, et ne doivent plus former un bloc "periode inconnue" a part.
+    idx_etat = None
+    for i, entete in enumerate(entetes):
+        if sans_accents(str(entete or '').strip().lower()) == 'etat':
+            idx_etat = i
+            break
+    if idx_etat is not None:
+        lignes_donnees = [
+            ligne for ligne in lignes_donnees
+            if not (idx_etat < len(ligne) and sans_accents(str(ligne[idx_etat] or '').strip().lower()) == 'annule')
+        ]
+
     if idx_date is None:
         lignes_txt = [ligne_entete_txt] + [
             ' | '.join([str(c) if c not in (None, '') else '' for c in ligne]) for ligne in lignes_donnees
@@ -482,6 +496,20 @@ def _verifier_taille_et_tronquer(text):
         'Merci de le scinder en plusieurs fichiers (par mois ou par compte) avant de le renvoyer.'
     )
 
+
+def _completer_avec_categorie_autres(data):
+    """Ajoute une categorie 'Autres' qui absorbe l'ecart entre le total
+    affiche et la somme des categories detaillees par l'IA (plafonnees a
+    5-7 categories), pour que le detail affiche se recoupe toujours avec
+    le total en haut de page."""
+    for cle_total, cle_categories in (('totalRecettes', 'recettes'), ('totalDepenses', 'depenses')):
+        total = to_num(data.get(cle_total, 0))
+        categories = data.get(cle_categories) or []
+        somme_categories = sum(to_num(c.get('montant', 0)) for c in categories)
+        ecart = round(total - somme_categories, 2)
+        if ecart > 1:
+            data[cle_categories] = list(categories) + [{'label': 'Autres', 'montant': ecart, 'transactions': []}]
+    return data
 
 def analyse_releve(client, text, nom_banque, langue='français', totaux_verifies=None):
     prefixe_totaux_verifies = ''
@@ -888,6 +916,13 @@ def _analyze_impl():
                     data['totalDepenses'] = totaux_verifies['totalDepenses']
                     data['totalRecettesOfficiel'] = totaux_verifies['totalRecettes']
                     data['totalDepensesOfficiel'] = totaux_verifies['totalDepenses']
+                    # Ce type d'export (CSV/XLSX avec colonnes Debit/Credit) n'a
+                    # pas de colonne solde : on ne sait pas soldeDepart/soldeArrivee,
+                    # donc on le dit explicitement (null) plutot que de laisser 0.
+                    data['soldeDepart'] = None
+                    data['soldeArrivee'] = None
+
+                data = _completer_avec_categorie_autres(data)
 
                 tr = to_num(data.get('totalRecettes', 0))
                 td = to_num(data.get('totalDepenses', 0))
