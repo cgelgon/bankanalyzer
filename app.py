@@ -232,6 +232,45 @@ def to_num(v):
         return 0.0
 
 
+_REGEX_5_MONTANTS_EUR = re.compile(
+    r'(-?\d[\d\s\u202f]*,\d{2})€\s*(-?\d[\d\s\u202f]*,\d{2})€\s*(-?\d[\d\s\u202f]*,\d{2})€\s*(-?\d[\d\s\u202f]*,\d{2})€\s*(-?\d[\d\s\u202f]*,\d{2})€'
+)
+
+
+def _extraire_soldes_ouverture_cloture_texte(text):
+    """Cherche 'Solde d'ouverture' / 'Solde de cloture' dans un texte
+    de releve (present et fiable sur le format Revolut)."""
+    m_ouv = re.search(r"Solde d'ouverture\s*(-?\d[\d\s\u202f]*,\d{2})\s*€", text)
+    m_clo = re.search(r"Solde de cl[oô]ture\s*(-?\d[\d\s\u202f]*,\d{2})\s*€", text)
+    if m_ouv and m_clo:
+        return to_num(m_ouv.group(1)), to_num(m_clo.group(1))
+    return None, None
+
+
+def calculer_totaux_verifies_pdf(text):
+    """Essaie de calculer des totaux exacts pour certains formats de PDF
+    reconnus (actuellement : Revolut 'Releve personnalise'), plutot que
+    de laisser l'IA les estimer. Retourne None si le format n'est pas
+    reconnu (comportement inchange, aucune regression)."""
+    if 'Revolut' in text and ('Relevé des transactions' in text or ('Argent' in text and 'entrant' in text)):
+        matches = _REGEX_5_MONTANTS_EUR.findall(text)
+        if matches:
+            recettes = 0.0
+            depenses = 0.0
+            for groupe in matches:
+                m = to_num(groupe[0])
+                if m >= 0:
+                    recettes += m
+                else:
+                    depenses += -m
+            totaux = {'totalRecettes': round(recettes, 2), 'totalDepenses': round(depenses, 2)}
+            solde_ouv, solde_clo = _extraire_soldes_ouverture_cloture_texte(text)
+            if solde_ouv is not None:
+                totaux['soldeDepart'] = solde_ouv
+                totaux['soldeArrivee'] = solde_clo
+            return totaux
+    return None
+
 def extract_text_from_pdf(file_bytes):
     text = ''
     reader = pypdf.PdfReader(io.BytesIO(file_bytes))
@@ -919,7 +958,8 @@ def _analyze_impl():
         nom_banque = file.filename.replace('.pdf', '').replace('.csv', '').replace('.xlsx', '')[:30]
         try:
             if filename.endswith('.pdf'):
-                blocs = [{'periode': None, 'text': extract_text_from_pdf(file_bytes)}]
+                texte_pdf_extrait = extract_text_from_pdf(file_bytes)
+                blocs = [{'periode': None, 'text': texte_pdf_extrait, 'totauxVerifies': calculer_totaux_verifies_pdf(texte_pdf_extrait)}]
             elif filename.endswith('.csv'):
                 blocs = decouper_par_mois_csv(file_bytes)
             elif filename.endswith(('.xlsx', '.xls')):
@@ -985,11 +1025,17 @@ def _analyze_impl():
                     data['totalDepenses'] = totaux_verifies['totalDepenses']
                     data['totalRecettesOfficiel'] = totaux_verifies['totalRecettes']
                     data['totalDepensesOfficiel'] = totaux_verifies['totalDepenses']
-                    # Ce type d'export (CSV/XLSX avec colonnes Debit/Credit) n'a
-                    # pas de colonne solde : on ne sait pas soldeDepart/soldeArrivee,
-                    # donc on le dit explicitement (null) plutot que de laisser 0.
-                    data['soldeDepart'] = None
-                    data['soldeArrivee'] = None
+                    if 'soldeDepart' in totaux_verifies:
+                        # Certains formats (Revolut) fournissent un vrai solde
+                        # d'ouverture/cloture fiable : on l'utilise tel quel.
+                        data['soldeDepart'] = totaux_verifies['soldeDepart']
+                        data['soldeArrivee'] = totaux_verifies['soldeArrivee']
+                    else:
+                        # Sinon (CSV/XLSX avec colonnes Debit/Credit uniquement),
+                        # on ne sait pas soldeDepart/soldeArrivee : on le dit
+                        # explicitement (null) plutot que de laisser 0.
+                        data['soldeDepart'] = None
+                        data['soldeArrivee'] = None
 
                 data = _completer_avec_categorie_autres(data)
 
