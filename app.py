@@ -474,6 +474,36 @@ def decouper_par_mois_excel(file_bytes):
     return _decouper_lignes_par_mois(toutes_lignes[0], toutes_lignes[1:])
 
 
+def _detecter_delimiteur_csv(texte_brut):
+    """Comme csv.Sniffer(), mais avec un filet de securite : si le Sniffer
+    echoue (frequent sur les exports bancaires reels), on teste nous-memes
+    les delimiteurs candidats en comptant leurs occurrences sur les
+    premieres lignes, et on retient celui dont le compte est non nul ET
+    constant sur toutes les lignes -- signe fiable du vrai separateur.
+    Sans ca, le comportement par defaut de Python bascule sur la virgule,
+    ce qui casse silencieusement tout export francais (point-virgule).
+    """
+    import csv as _csv
+    try:
+        return _csv.Sniffer().sniff(texte_brut[:4096], delimiters=';,\t')
+    except Exception:
+        pass
+    lignes_echantillon = [l for l in texte_brut.splitlines()[:5] if l.strip()]
+    meilleur_delim = ';'
+    meilleur_score = 0
+    for delim in (';', ',', '\t'):
+        comptes = [ligne.count(delim) for ligne in lignes_echantillon]
+        if comptes and min(comptes) > 0 and len(set(comptes)) == 1:
+            if comptes[0] > meilleur_score:
+                meilleur_score = comptes[0]
+                meilleur_delim = delim
+
+    class _DialecteManuel(_csv.excel):
+        delimiter = meilleur_delim
+
+    return _DialecteManuel
+
+
 def decouper_par_mois_csv(file_bytes):
     """Version 'decoupage par mois' pour les CSV : parse les lignes (au
     lieu de renvoyer le texte brut tel quel) et regroupe par mois reellement
@@ -481,10 +511,7 @@ def decouper_par_mois_csv(file_bytes):
     """
     import csv as _csv
     texte_brut = extract_text_from_csv(file_bytes)
-    try:
-        dialecte = _csv.Sniffer().sniff(texte_brut[:2000], delimiters=';,\t')
-    except Exception:
-        dialecte = _csv.excel
+    dialecte = _detecter_delimiteur_csv(texte_brut)
     lecteur = _csv.reader(io.StringIO(texte_brut), dialecte)
     toutes_lignes = [tuple(ligne) for ligne in lecteur if ligne]
 
