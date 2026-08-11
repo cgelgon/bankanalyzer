@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>BankAnalyzer</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
 :root{--blue:#0071e3;--green:#1baf7a;--red:#e34948;--orange:#f5a623;--bg:#f5f5f7;--white:#fff;--text:#1d1d1f;--text2:#6e6e73;--text3:#aeaeb2;--border:#e5e5ea;--r:16px;--sh:0 2px 20px rgba(0,0,0,.06);--sh2:0 8px 40px rgba(0,0,0,.12)}
 *{box-sizing:border-box;margin:0;padding:0}
@@ -108,12 +107,6 @@ tr.has-detail:hover{background:var(--bg)}
 .info-box ul{margin:6px 0 0 18px;padding:0}
 .perso-wrap{text-align:center;margin:1rem 0}
 .evo-empty{font-size:13px;color:var(--text3);text-align:center;padding:1.5rem 0}
-.export-btn{background:#1d1d1f;color:#fff;border:none;padding:8px 16px;border-radius:20px;font-size:13px;font-weight:600;cursor:pointer}
-.export-btn:hover{background:#0071e3}
-.drill-row{align-items:center}
-.drill-right{display:flex;align-items:center;gap:8px;flex-shrink:0}
-.drill-amount{font-weight:500}
-.recat-select{font-size:11px;padding:3px 6px;border-radius:6px;border:1px solid var(--border);background:#fff;color:var(--text2);max-width:150px}
 .patrimoine-wrap{max-width:580px;margin:1rem auto 0;text-align:left}
 .step-block{max-width:580px;margin:1rem auto 0;text-align:left}
 .step-head{display:flex;align-items:center;gap:10px;padding:2px 0 10px}
@@ -309,8 +302,8 @@ select.devise-input-solo{max-width:280px}
 
 <script>
 const TR = {
-  francais:{ov:'Vue d\'ensemble',rec:'Recettes',dep:'Dépenses',net:'Résultat net',ep:'Taux d\'épargne',sd:'Solde départ',sa:'Solde arrivée',sc:'Score de gestion',ac:'3 actions prioritaires',dr:'Détail recettes',dd:'Détail dépenses',t5:'Top 5 dépenses',ai:'✦ Notre analyse',cat:'Catégorie',mt:'Montant',nf:'↩ Nouveau fichier',nd:'Non disponible',ex:'🌟 Excellente gestion',bon:'✅ Bonne gestion',am:'⚠️ À améliorer',cr:'🔴 Situation critique',evo:'Évolution du solde',evoWait:'Déposez plusieurs mois du même compte (ex : mai, juin, juillet) pour voir votre évolution.',ign:'Fichiers ignorés :',ecart:'ℹ️ Écarts détectés avec le récapitulatif officiel du relevé :',patTitle:'📊 Ajouter mon patrimoine (optionnel)',patHint:'Épargne, emprunts et biens possédés. Ces informations restent dans votre navigateur et enrichissent l\'analyse (patrimoine net).',patEpargneTitle:'💰 Épargne / Placements',patAddEpargne:'+ Ajouter un placement',patEmpruntTitle:'🏦 Emprunts',patAddEmprunt:'+ Ajouter un emprunt',patActifTitle:'🏠 Actifs possédés',patAddActif:'+ Ajouter un actif',patLibelleEpargne:'Libellé (ex: Livret A)',patMontantPlace:'Montant placé (€)',patTaux:'Taux (%)',patLibelleEmprunt:'Libellé (ex: Prêt immo)',patMontantInitial:'Montant initial (€)',patCapitalRestant:'Capital restant dû (€)',patDebut:'Début',patAssurance:'Assurance (€/mois)',patLibelleActif:'Libellé (ex: Appartement)',patValeur:'Valeur estimée (€)',patStatutPaye:'Payé entièrement',patStatutEncours:'En cours de remboursement',patNetTitle:'Patrimoine net',patActifsLabel:'Actifs',patEpargneLabel:'Épargne',patDettesLabel:'Dettes',patNetLabel:'Patrimoine net',devTitle:'Devise(s) de vos relevés',devHint:'Si certains relevés ne sont pas en euros, indiquez le code devise et le taux de conversion vers l\'euro (ex: JOD, 1.41). Sans taux fourni, ces comptes seront exclus de l\'analyse pour ne pas fausser les totaux.',devAddBtn:'+ Ajouter une devise',devCode:'Code (ex: JOD)',devTaux:'Taux vers EUR (ex: 1.41)',devModeUnique:'Une seule devise',devModeMultiple:'Plusieurs devises',devHintUnique:'Tous vos relevés sont dans la même devise. Laquelle ?',devRefLabel:'Devise de référence',devHintMulti:'Choisissez votre devise de référence, puis indiquez le taux de conversion pour chaque autre devise présente dans vos relevés. Sans taux fourni, ces comptes seront exclus de l\'analyse.',devUniquePlaceholder:'Code devise (ex: EUR, MAD, USD)',devRefPlaceholder:'Code devise (ex: EUR)',chgTitle:'💳 Prélèvements & charges fixes',chgSeen:'vu sur {n} mois',chgPct:'des dépenses',exportBtn:'⬇️ Exporter en Excel',recatNouvelle:'Nouvelle catégorie',recatPrompt:'Nom de la nouvelle catégorie :'},
-  english:{ov:'Overview',rec:'Income',dep:'Expenses',net:'Net result',ep:'Savings rate',sd:'Opening balance',sa:'Closing balance',sc:'Financial score',ac:'3 priority actions',dr:'Income breakdown',dd:'Expense breakdown',t5:'Top 5 expenses',ai:'✦ Our analysis',cat:'Category',mt:'Amount',nf:'↩ New file',nd:'Not available',ex:'🌟 Excellent',bon:'✅ Good',am:'⚠️ Needs work',cr:'🔴 Critical',evo:'Balance evolution',evoWait:'Upload several months of the same account (e.g. May, June, July) to see your trend.',ign:'Skipped files:',ecart:'ℹ️ Discrepancies found with the official statement summary:',patTitle:'📊 Add my net worth (optional)',patHint:'Savings, loans and owned assets. This stays in your browser and enriches the analysis (net worth).',patEpargneTitle:'💰 Savings / Investments',patAddEpargne:'+ Add a savings account',patEmpruntTitle:'🏦 Loans',patAddEmprunt:'+ Add a loan',patActifTitle:'🏠 Owned assets',patAddActif:'+ Add an asset',patLibelleEpargne:'Label (e.g. Savings account)',patMontantPlace:'Amount saved ($)',patTaux:'Rate (%)',patLibelleEmprunt:'Label (e.g. Mortgage)',patMontantInitial:'Initial amount ($)',patCapitalRestant:'Remaining balance ($)',patDebut:'Start date',patAssurance:'Insurance ($/month)',patLibelleActif:'Label (e.g. Apartment)',patValeur:'Estimated value ($)',patStatutPaye:'Fully paid off',patStatutEncours:'Still being paid off',patNetTitle:'Net worth',patActifsLabel:'Assets',patEpargneLabel:'Savings',patDettesLabel:'Debts',patNetLabel:'Net worth',devTitle:'Currency of your statements',devHint:'If some statements aren\'t in euros, enter the currency code and the conversion rate to euro (e.g. JOD, 1.41). Without a rate, these accounts are excluded from the analysis to avoid skewing totals.',devAddBtn:'+ Add a currency',devCode:'Code (e.g. JOD)',devTaux:'Rate to EUR (e.g. 1.41)',devModeUnique:'One single currency',devModeMultiple:'Several currencies',devHintUnique:'All your statements are in the same currency. Which one?',devRefLabel:'Reference currency',devHintMulti:'Choose your reference currency, then enter the conversion rate for each other currency in your statements. Without a rate, those accounts are excluded from the analysis.',devUniquePlaceholder:'Currency code (e.g. EUR, MAD, USD)',devRefPlaceholder:'Currency code (e.g. EUR)',chgTitle:'💳 Recurring charges & subscriptions',chgSeen:'seen over {n} months',chgPct:'of expenses',exportBtn:'⬇️ Export to Excel',recatNouvelle:'New category',recatPrompt:'Name of the new category:'},
+  francais:{ov:'Vue d\'ensemble',rec:'Recettes',dep:'Dépenses',net:'Résultat net',ep:'Taux d\'épargne',sd:'Solde départ',sa:'Solde arrivée',sc:'Score de gestion',ac:'3 actions prioritaires',dr:'Détail recettes',dd:'Détail dépenses',t5:'Top 5 dépenses',ai:'✦ Notre analyse',cat:'Catégorie',mt:'Montant',nf:'↩ Nouveau fichier',nd:'Non disponible',ex:'🌟 Excellente gestion',bon:'✅ Bonne gestion',am:'⚠️ À améliorer',cr:'🔴 Situation critique',evo:'Évolution du solde',evoWait:'Déposez plusieurs mois du même compte (ex : mai, juin, juillet) pour voir votre évolution.',ign:'Fichiers ignorés :',ecart:'ℹ️ Écarts détectés avec le récapitulatif officiel du relevé :',patTitle:'📊 Ajouter mon patrimoine (optionnel)',patHint:'Épargne, emprunts et biens possédés. Ces informations restent dans votre navigateur et enrichissent l\'analyse (patrimoine net).',patEpargneTitle:'💰 Épargne / Placements',patAddEpargne:'+ Ajouter un placement',patEmpruntTitle:'🏦 Emprunts',patAddEmprunt:'+ Ajouter un emprunt',patActifTitle:'🏠 Actifs possédés',patAddActif:'+ Ajouter un actif',patLibelleEpargne:'Libellé (ex: Livret A)',patMontantPlace:'Montant placé (€)',patTaux:'Taux (%)',patLibelleEmprunt:'Libellé (ex: Prêt immo)',patMontantInitial:'Montant initial (€)',patCapitalRestant:'Capital restant dû (€)',patDebut:'Début',patAssurance:'Assurance (€/mois)',patLibelleActif:'Libellé (ex: Appartement)',patValeur:'Valeur estimée (€)',patStatutPaye:'Payé entièrement',patStatutEncours:'En cours de remboursement',patNetTitle:'Patrimoine net',patActifsLabel:'Actifs',patEpargneLabel:'Épargne',patDettesLabel:'Dettes',patNetLabel:'Patrimoine net',devTitle:'Devise(s) de vos relevés',devHint:'Si certains relevés ne sont pas en euros, indiquez le code devise et le taux de conversion vers l\'euro (ex: JOD, 1.41). Sans taux fourni, ces comptes seront exclus de l\'analyse pour ne pas fausser les totaux.',devAddBtn:'+ Ajouter une devise',devCode:'Code (ex: JOD)',devTaux:'Taux vers EUR (ex: 1.41)',devModeUnique:'Une seule devise',devModeMultiple:'Plusieurs devises',devHintUnique:'Tous vos relevés sont dans la même devise. Laquelle ?',devRefLabel:'Devise de référence',devHintMulti:'Choisissez votre devise de référence, puis indiquez le taux de conversion pour chaque autre devise présente dans vos relevés. Sans taux fourni, ces comptes seront exclus de l\'analyse.',devUniquePlaceholder:'Code devise (ex: EUR, MAD, USD)',devRefPlaceholder:'Code devise (ex: EUR)',chgTitle:'💳 Prélèvements & charges fixes',chgSeen:'vu sur {n} mois',chgPct:'des dépenses'},
+  english:{ov:'Overview',rec:'Income',dep:'Expenses',net:'Net result',ep:'Savings rate',sd:'Opening balance',sa:'Closing balance',sc:'Financial score',ac:'3 priority actions',dr:'Income breakdown',dd:'Expense breakdown',t5:'Top 5 expenses',ai:'✦ Our analysis',cat:'Category',mt:'Amount',nf:'↩ New file',nd:'Not available',ex:'🌟 Excellent',bon:'✅ Good',am:'⚠️ Needs work',cr:'🔴 Critical',evo:'Balance evolution',evoWait:'Upload several months of the same account (e.g. May, June, July) to see your trend.',ign:'Skipped files:',ecart:'ℹ️ Discrepancies found with the official statement summary:',patTitle:'📊 Add my net worth (optional)',patHint:'Savings, loans and owned assets. This stays in your browser and enriches the analysis (net worth).',patEpargneTitle:'💰 Savings / Investments',patAddEpargne:'+ Add a savings account',patEmpruntTitle:'🏦 Loans',patAddEmprunt:'+ Add a loan',patActifTitle:'🏠 Owned assets',patAddActif:'+ Add an asset',patLibelleEpargne:'Label (e.g. Savings account)',patMontantPlace:'Amount saved ($)',patTaux:'Rate (%)',patLibelleEmprunt:'Label (e.g. Mortgage)',patMontantInitial:'Initial amount ($)',patCapitalRestant:'Remaining balance ($)',patDebut:'Start date',patAssurance:'Insurance ($/month)',patLibelleActif:'Label (e.g. Apartment)',patValeur:'Estimated value ($)',patStatutPaye:'Fully paid off',patStatutEncours:'Still being paid off',patNetTitle:'Net worth',patActifsLabel:'Assets',patEpargneLabel:'Savings',patDettesLabel:'Debts',patNetLabel:'Net worth',devTitle:'Currency of your statements',devHint:'If some statements aren\'t in euros, enter the currency code and the conversion rate to euro (e.g. JOD, 1.41). Without a rate, these accounts are excluded from the analysis to avoid skewing totals.',devAddBtn:'+ Add a currency',devCode:'Code (e.g. JOD)',devTaux:'Rate to EUR (e.g. 1.41)',devModeUnique:'One single currency',devModeMultiple:'Several currencies',devHintUnique:'All your statements are in the same currency. Which one?',devRefLabel:'Reference currency',devHintMulti:'Choose your reference currency, then enter the conversion rate for each other currency in your statements. Without a rate, those accounts are excluded from the analysis.',devUniquePlaceholder:'Currency code (e.g. EUR, MAD, USD)',devRefPlaceholder:'Currency code (e.g. EUR)',chgTitle:'💳 Recurring charges & subscriptions',chgSeen:'seen over {n} months',chgPct:'of expenses'},
   espanol:{ov:'Resumen',rec:'Ingresos',dep:'Gastos',net:'Resultado neto',ep:'Tasa de ahorro',sd:'Saldo inicial',sa:'Saldo final',sc:'Puntuación',ac:'3 acciones prioritarias',dr:'Detalle ingresos',dd:'Detalle gastos',t5:'Top 5 gastos',ai:'✦ Nuestro análisis',cat:'Categoría',mt:'Importe',nf:'↩ Nuevo',nd:'No disponible',ex:'🌟 Excelente',bon:'✅ Bien',am:'⚠️ Mejorable',cr:'🔴 Crítico',evo:'Evolución del saldo',evoWait:'Sube varios meses de la misma cuenta (ej: mayo, junio, julio) para ver tu evolución.',ign:'Archivos ignorados:',ecart:'ℹ️ Discrepancias detectadas con el resumen oficial del extracto:',patTitle:'📊 Añadir mi patrimonio (opcional)',patHint:'Ahorros, préstamos y bienes propios. Esta información permanece en tu navegador y enriquece el análisis (patrimonio neto).',patEpargneTitle:'💰 Ahorros / Inversiones',patAddEpargne:'+ Añadir una cuenta de ahorro',patEmpruntTitle:'🏦 Préstamos',patAddEmprunt:'+ Añadir un préstamo',patActifTitle:'🏠 Bienes propios',patAddActif:'+ Añadir un bien',patLibelleEpargne:'Nombre (ej: Cuenta de ahorro)',patMontantPlace:'Importe ahorrado (€)',patTaux:'Tasa (%)',patLibelleEmprunt:'Nombre (ej: Hipoteca)',patMontantInitial:'Importe inicial (€)',patCapitalRestant:'Capital pendiente (€)',patDebut:'Fecha inicio',patAssurance:'Seguro (€/mes)',patLibelleActif:'Nombre (ej: Piso)',patValeur:'Valor estimado (€)',patStatutPaye:'Pagado por completo',patStatutEncours:'En proceso de pago',patNetTitle:'Patrimonio neto',patActifsLabel:'Bienes',patEpargneLabel:'Ahorros',patDettesLabel:'Deudas',patNetLabel:'Patrimonio neto',devTitle:'Divisa(s) de tus extractos',devHint:'Si algunos extractos no están en euros, indica el código de la divisa y la tasa de conversión a euro (ej: JOD, 1.41). Sin tasa, estas cuentas se excluyen del análisis para no falsear los totales.',devAddBtn:'+ Añadir una divisa',devCode:'Código (ej: JOD)',devTaux:'Tasa a EUR (ej: 1.41)',devModeUnique:'Una sola divisa',devModeMultiple:'Varias divisas',devHintUnique:'Todos tus extractos están en la misma divisa. ¿Cuál?',devRefLabel:'Divisa de referencia',devHintMulti:'Elige tu divisa de referencia y luego indica la tasa de conversión para cada otra divisa presente en tus extractos. Sin tasa, esas cuentas se excluyen del análisis.',devUniquePlaceholder:'Código de divisa (ej: EUR, MAD, USD)',devRefPlaceholder:'Código de divisa (ej: EUR)',chgTitle:'💳 Cargos recurrentes y suscripciones',chgSeen:'visto en {n} meses',chgPct:'de los gastos'},
   deutsch:{ov:'Überblick',rec:'Einnahmen',dep:'Ausgaben',net:'Nettoresultat',ep:'Sparquote',sd:'Anfangssaldo',sa:'Endsaldo',sc:'Finanzbewertung',ac:'3 Maßnahmen',dr:'Einnahmen',dd:'Ausgaben Details',t5:'Top 5 Ausgaben',ai:'✦ Unsere Analyse',cat:'Kategorie',mt:'Betrag',nf:'↩ Neue Datei',nd:'Nicht verfügbar',ex:'🌟 Ausgezeichnet',bon:'✅ Gut',am:'⚠️ Verbesserung',cr:'🔴 Kritisch',evo:'Saldoentwicklung',evoWait:'Lade mehrere Monate desselben Kontos hoch (z.B. Mai, Juni, Juli), um deinen Verlauf zu sehen.',ign:'Übersprungene Dateien:',ecart:'ℹ️ Abweichungen zur offiziellen Zusammenfassung des Kontoauszugs festgestellt:',patTitle:'📊 Mein Vermögen hinzufügen (optional)',patHint:'Ersparnisse, Kredite und Vermögenswerte. Diese Angaben bleiben in deinem Browser und bereichern die Analyse (Nettovermögen).',patEpargneTitle:'💰 Ersparnisse / Investitionen',patAddEpargne:'+ Sparkonto hinzufügen',patEmpruntTitle:'🏦 Kredite',patAddEmprunt:'+ Kredit hinzufügen',patActifTitle:'🏠 Vermögenswerte',patAddActif:'+ Vermögenswert hinzufügen',patLibelleEpargne:'Bezeichnung (z.B. Sparkonto)',patMontantPlace:'Angelegter Betrag (€)',patTaux:'Zinssatz (%)',patLibelleEmprunt:'Bezeichnung (z.B. Immobilienkredit)',patMontantInitial:'Anfangsbetrag (€)',patCapitalRestant:'Restschuld (€)',patDebut:'Beginn',patAssurance:'Versicherung (€/Monat)',patLibelleActif:'Bezeichnung (z.B. Wohnung)',patValeur:'Geschätzter Wert (€)',patStatutPaye:'Vollständig bezahlt',patStatutEncours:'Wird noch abbezahlt',patNetTitle:'Nettovermögen',patActifsLabel:'Vermögenswerte',patEpargneLabel:'Ersparnisse',patDettesLabel:'Schulden',patNetLabel:'Nettovermögen',devTitle:'Währung(en) deiner Kontoauszüge',devHint:'Falls manche Kontoauszüge nicht in Euro sind, gib den Währungscode und den Umrechnungskurs zu Euro an (z.B. JOD, 1.41). Ohne Kurs werden diese Konten von der Analyse ausgeschlossen.',devAddBtn:'+ Währung hinzufügen',devCode:'Code (z.B. JOD)',devTaux:'Kurs zu EUR (z.B. 1.41)',devModeUnique:'Nur eine Währung',devModeMultiple:'Mehrere Währungen',devHintUnique:'Alle deine Kontoauszüge sind in derselben Währung. Welche?',devRefLabel:'Referenzwährung',devHintMulti:'Wähle deine Referenzwährung und gib dann den Umrechnungskurs für jede andere Währung in deinen Auszügen an. Ohne Kurs werden diese Konten von der Analyse ausgeschlossen.',devUniquePlaceholder:'Währungscode (z.B. EUR, MAD, USD)',devRefPlaceholder:'Währungscode (z.B. EUR)',chgTitle:'💳 Wiederkehrende Kosten & Abos',chgSeen:'gesehen in {n} Monaten',chgPct:'der Ausgaben'},
   italiano:{ov:'Panoramica',rec:'Entrate',dep:'Uscite',net:'Risultato netto',ep:'Tasso risparmio',sd:'Saldo iniziale',sa:'Saldo finale',sc:'Punteggio',ac:'3 azioni prioritarie',dr:'Dettaglio entrate',dd:'Dettaglio uscite',t5:'Top 5 spese',ai:'✦ La nostra analisi',cat:'Categoria',mt:'Importo',nf:'↩ Nuovo',nd:'Non disponibile',ex:'🌟 Eccellente',bon:'✅ Buono',am:'⚠️ Da migliorare',cr:'🔴 Critico',evo:'Evoluzione del saldo',evoWait:'Carica più mesi dello stesso conto (es: maggio, giugno, luglio) per vedere il tuo andamento.',ign:'File ignorati:',ecart:'ℹ️ Discrepanze rilevate rispetto al riepilogo ufficiale dell\'estratto conto:',patTitle:'📊 Aggiungi il mio patrimonio (opzionale)',patHint:'Risparmi, prestiti e beni posseduti. Queste informazioni restano nel tuo browser e arricchiscono l\'analisi (patrimonio netto).',patEpargneTitle:'💰 Risparmi / Investimenti',patAddEpargne:'+ Aggiungi un risparmio',patEmpruntTitle:'🏦 Prestiti',patAddEmprunt:'+ Aggiungi un prestito',patActifTitle:'🏠 Beni posseduti',patAddActif:'+ Aggiungi un bene',patLibelleEpargne:'Nome (es: Conto risparmio)',patMontantPlace:'Importo risparmiato (€)',patTaux:'Tasso (%)',patLibelleEmprunt:'Nome (es: Mutuo)',patMontantInitial:'Importo iniziale (€)',patCapitalRestant:'Capitale residuo (€)',patDebut:'Inizio',patAssurance:'Assicurazione (€/mese)',patLibelleActif:'Nome (es: Appartamento)',patValeur:'Valore stimato (€)',patStatutPaye:'Pagato interamente',patStatutEncours:'In fase di rimborso',patNetTitle:'Patrimonio netto',patActifsLabel:'Beni',patEpargneLabel:'Risparmi',patDettesLabel:'Debiti',patNetLabel:'Patrimonio netto',devTitle:'Valuta/e dei tuoi estratti',devHint:'Se alcuni estratti conto non sono in euro, indica il codice valuta e il tasso di conversione in euro (es: JOD, 1.41). Senza tasso, questi conti saranno esclusi dall\'analisi.',devAddBtn:'+ Aggiungi una valuta',devCode:'Codice (es: JOD)',devTaux:'Tasso verso EUR (es: 1.41)',devModeUnique:'Una sola valuta',devModeMultiple:'Più valute',devHintUnique:'Tutti i tuoi estratti sono nella stessa valuta. Quale?',devRefLabel:'Valuta di riferimento',devHintMulti:'Scegli la tua valuta di riferimento, poi indica il tasso di conversione per ogni altra valuta presente nei tuoi estratti. Senza tasso, questi conti saranno esclusi dall\'analisi.',devUniquePlaceholder:'Codice valuta (es: EUR, MAD, USD)',devRefPlaceholder:'Codice valuta (es: EUR)',chgTitle:'💳 Spese ricorrenti e abbonamenti',chgSeen:'visto in {n} mesi',chgPct:'delle spese'},
@@ -321,7 +314,6 @@ const TR = {
 const CR=['#2a78d6','#1baf7a','#eda100','#4a3aa7','#34c759'];
 const CD=['#e34948','#eb6834','#e87ba4','#898781','#4a3aa7','#eda100','#1baf7a'];
 let cR,cD,cS,cT;
-let dernierResultat=null;
 
 let deviseActuelle='EUR';
 function fmt(n){
@@ -619,108 +611,21 @@ function onChartSliceClick(elements,tableId){
   if(row)row.scrollIntoView({behavior:'smooth',block:'center'});
 }
 
-function categoriesVisibles(items){
-  return (items||[]).filter(it=>it.transactions&&it.transactions.length?true:Math.abs(it.montant)>0.01);
-}
-
-function echapperHtml(s){
-  return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
-
-function buildTable(itemsBruts,colors,id,T,type){
-  const items=categoriesVisibles(itemsBruts);
+function buildTable(items,colors,id,T){
   const total=items.reduce((s,i)=>s+i.montant,0);
-  const optionsCategories=items.map(it=>it.label);
   let h='<table><thead><tr><th>'+T.cat+'</th><th style="text-align:right">'+T.mt+'</th><th style="text-align:right">%</th></tr></thead><tbody>';
   items.forEach((item,i)=>{
     const did='drill-'+id+'-'+i;
     const has=item.transactions&&item.transactions.length>0;
     h+='<tr id="row-'+id+'-'+i+'"'+(has?' class="has-detail" onclick="toggleDrill(\''+did+'\')"':'')+'><td><span class="dot" style="background:'+colors[i]+'"></span>'+item.label;
-    if(has){
-      h+='<span class="drill-toggle">▾ detail</span><div class="drill-content" id="'+did+'" onclick="event.stopPropagation()">';
-      h+=item.transactions.map((t,ti)=>{
-        let optsHtml='';
-        optionsCategories.forEach(l=>{optsHtml+='<option value="'+echapperHtml(l)+'"'+(l===item.label?' selected':'')+'>'+echapperHtml(l)+'</option>';});
-        optsHtml+='<option value="__nouvelle__">'+(type?(T.recatNouvelle||'Nouvelle categorie'):'')+'…</option>';
-        const select=type?('<select class="recat-select" onchange="changerCategorieTransaction(\''+type+'\','+i+','+ti+',this.value,\''+id+'\')">'+optsHtml+'</select>'):'';
-        return '<div class="drill-row"><span>'+(t.date||'')+' '+echapperHtml(t.libelle)+'</span><span class="drill-right"><span class="drill-amount">'+fmt(t.montant)+'</span>'+select+'</span></div>';
-      }).join('');
-      h+='</div>';
-    }
-    h+='</td><td style="text-align:right;font-weight:500">'+fmt(item.montant)+'</td><td style="text-align:right;color:#aeaeb2">'+(total?Math.round(item.montant/total*100):0)+'%</td></tr>';
+    if(has)h+='<span class="drill-toggle">▾ detail</span><div class="drill-content" id="'+did+'">'+item.transactions.map(t=>'<div class="drill-row"><span>'+(t.date||'')+' '+t.libelle+'</span><span>'+fmt(t.montant)+'</span></div>').join('')+'</div>';
+    h+='</td><td style="text-align:right;font-weight:500">'+fmt(item.montant)+'</td><td style="text-align:right;color:#aeaeb2">'+Math.round(item.montant/total*100)+'%</td></tr>';
   });
   h+='</tbody></table>';
   document.getElementById(id).innerHTML=h;
 }
 
-function changerCategorieTransaction(type,catIndex,txIndex,nouveauLabelBrut,tableId){
-  const T=TR[document.getElementById('langue').value]||TR.francais;
-  let nouveauLabel=nouveauLabelBrut;
-  if(nouveauLabel==='__nouvelle__'){
-    nouveauLabel=(prompt(T.recatPrompt||'Nom de la nouvelle categorie :')||'').trim();
-    if(!nouveauLabel){rafraichirApresRecategorisation();return;}
-  }
-  const categories=dernierResultat[type];
-  const items=categoriesVisibles(categories);
-  const catSource=items[catIndex];
-  const transaction=catSource.transactions[txIndex];
-  if(!catSource||!transaction||catSource.label===nouveauLabel){rafraichirApresRecategorisation();return;}
-
-  catSource.transactions.splice(txIndex,1);
-  catSource.montant=Math.round((catSource.montant-transaction.montant)*100)/100;
-
-  let catCible=categories.find(c=>c.label===nouveauLabel);
-  if(!catCible){
-    catCible={label:nouveauLabel,montant:0,transactions:[]};
-    categories.push(catCible);
-  }
-  catCible.transactions.push(transaction);
-  catCible.montant=Math.round((catCible.montant+transaction.montant)*100)/100;
-
-  rafraichirApresRecategorisation();
-}
-
-function rafraichirApresRecategorisation(){
-  const langue=document.getElementById('langue').value;
-  const T=TR[langue]||TR.francais;
-  const recVisibles=categoriesVisibles(dernierResultat.recettes);
-  const depVisibles=categoriesVisibles(dernierResultat.depenses);
-  if(cR)cR.destroy();
-  if(cD)cD.destroy();
-  cR=new Chart(document.getElementById('chartR'),{type:'doughnut',data:{labels:recVisibles.map(r=>r.label),datasets:[{data:recVisibles.map(r=>r.montant),backgroundColor:CR.slice(0,recVisibles.length),borderWidth:3,borderColor:'#fff'}]},options:{responsive:true,onClick:(evt,elements)=>onChartSliceClick(elements,'tbl-r'),plugins:{legend:{position:'bottom',labels:{font:{size:11},padding:12}}},animation:{duration:400}}});
-  cD=new Chart(document.getElementById('chartD'),{type:'doughnut',data:{labels:depVisibles.map(d=>d.label),datasets:[{data:depVisibles.map(d=>d.montant),backgroundColor:CD.slice(0,depVisibles.length),borderWidth:3,borderColor:'#fff'}]},options:{responsive:true,onClick:(evt,elements)=>onChartSliceClick(elements,'tbl-d'),plugins:{legend:{position:'bottom',labels:{font:{size:11},padding:12}}},animation:{duration:400}}});
-  buildTable(dernierResultat.recettes,CR,'tbl-r',T,'recettes');
-  buildTable(dernierResultat.depenses,CD,'tbl-d',T,'depenses');
-}
-
-function exporterExcel(){
-  if(!dernierResultat||typeof XLSX==='undefined')return;
-  const lignes=[];
-  ['recettes','depenses'].forEach(type=>{
-    const libelleType=type==='recettes'?'Recette':'Depense';
-    (dernierResultat[type]||[]).forEach(cat=>{
-      (cat.transactions||[]).forEach(t=>{
-        lignes.push({
-          Date:t.date||'',
-          'Libelle':t.libelle||'',
-          'Montant (EUR)':type==='depenses'?-Math.abs(t.montant):Math.abs(t.montant),
-          Type:libelleType,
-          'Categorie':cat.label
-        });
-      });
-    });
-  });
-  if(!lignes.length)return;
-  const ws=XLSX.utils.json_to_sheet(lignes);
-  ws['!cols']=[{wch:12},{wch:38},{wch:14},{wch:10},{wch:28}];
-  const wb=XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb,ws,'Transactions');
-  const suffixe=(dernierResultat.periode||'export').replace(/[^0-9a-zA-Z]+/g,'_');
-  XLSX.writeFile(wb,'bankanalyzer_'+suffixe+'.xlsx');
-}
-
 function renderResult(data){
-  dernierResultat=data;
   const langue=document.getElementById('langue').value;
   const T=TR[langue]||TR.francais;
   deviseActuelle=data.devise||'EUR';
@@ -784,9 +689,6 @@ function renderResult(data){
     '<div class="chart-card"><div class="chart-label">'+T.dep+'</div><canvas id="chartD"></canvas></div>'+
     '</div>'+
 
-    '<div class="anim" style="display:flex;justify-content:flex-end;margin-bottom:.75rem;">'+
-    '<button class="export-btn" onclick="exporterExcel()">'+(T.exportBtn||'⬇️ Export')+'</button>'+
-    '</div>'+
     '<div class="tables-grid anim">'+
     '<div class="card"><div class="card-title">'+T.dr+'</div><div id="tbl-r"></div></div>'+
     '<div class="card"><div class="card-title">'+T.dd+'</div><div id="tbl-d"></div></div>'+
@@ -839,8 +741,8 @@ function renderResult(data){
     cT=new Chart(document.getElementById('chartT5'),{type:'bar',data:{labels:data.top5depenses.map(t=>t.libelle),datasets:[{data:data.top5depenses.map(t=>t.montant),backgroundColor:'#e34948',borderRadius:6}]},options:{indexAxis:'y',responsive:true,plugins:{legend:{display:false}},scales:{x:{ticks:{callback:v=>fmt(v)}}}}});
   }
 
-  buildTable(data.recettes,CR,'tbl-r',T,'recettes');
-  buildTable(data.depenses,CD,'tbl-d',T,'depenses');
+  buildTable(data.recettes,CR,'tbl-r',T);
+  buildTable(data.depenses,CD,'tbl-d',T);
 }
 
 let fichiersSelectionnes=[];
@@ -1055,12 +957,5 @@ dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('drag-ove
 dz.addEventListener('dragleave',()=>dz.classList.remove('drag-over'));
 dz.addEventListener('drop',e=>{e.preventDefault();dz.classList.remove('drag-over');if(e.dataTransfer.files.length>0)selectionnerFichiers(e.dataTransfer.files)});
 </script>
-<footer style="text-align:center;padding:32px 16px;font-size:13px;color:#86868b;">
-  <a href="/mentions-legales.html" style="color:#86868b;text-decoration:none;margin:0 8px;">Mentions légales</a>
-  ·
-  <a href="/politique-confidentialite.html" style="color:#86868b;text-decoration:none;margin:0 8px;">Politique de confidentialité</a>
-  ·
-  <a href="/cgv.html" style="color:#86868b;text-decoration:none;margin:0 8px;">CGV</a>
-</footer>
 </body>
 </html>

@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CGV — BankAnalyzer</title>
+<style>
+  :root {
+    --text: #1d1d1f;
+    --muted: #6e6e73;
+    --accent: #0071e3;
+    --border: #e5e5ea;
+    --bg-callout: #fff8e6;
+    --border-callout: #f0c674;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    color: var(--text);
+    background: #fafafa;
+    line-height: 1.6;
+  }
+  .page {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 48px 24px 96px;
+  }
+  .back-link {
+    display: inline-block;
+    margin-bottom: 32px;
+    color: var(--accent);
+    text-decoration: none;
+    font-size: 15px;
+  }
+  .back-link:hover { text-decoration: underline; }
+  h1 {
+    font-size: 32px;
+    font-weight: 700;
+    margin: 0 0 8px;
+  }
+  h2 {
+    font-size: 20px;
+    font-weight: 600;
+    margin: 40px 0 12px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+  }
+  h2:first-of-type { border-top: none; padding-top: 0; }
+  p, li { font-size: 15px; color: var(--text); }
+  em { color: var(--muted); font-size: 14px; }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 14px;
+  }
+  th, td {
+    text-align: left;
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+  th { color: var(--muted); font-weight: 600; }
+  blockquote {
+    margin: 20px 0;
+    padding: 14px 18px;
+    background: var(--bg-callout);
+    border-left: 4px solid var(--border-callout);
+    border-radius: 6px;
+    font-size: 14px;
+  }
+  blockquote p { margin: 0; font-size: 14px; }
+  a { color: var(--accent); }
+  code { background: #f0f0f0; padding: 2px 6px; border-radius: 4px; font-size: 13px; }
+</style>
+</head>
+<body>
+<div class="page">
+<a class="back-link" href="/">‹ Retour à BankAnalyzer</a>
+<h1>Conditions générales de vente</h1>
+<p><em>Dernière mise à jour : [À COMPLÉTER — date de publication]</em></p>
+<h2>1. Objet</h2>
+<p>Les présentes conditions générales de vente ("CGV") régissent l'abonnement au service BankAnalyzer, édité par Cyrille Gelgon (CG Conseils) — voir <a href="#">mentions légales</a>. Elles s'appliquent à toute souscription à l'offre payante "BankAnalyzer Pro".</p>
+<h2>2. Description des offres</h2>
+<ul>
+<li><strong>Offre Gratuite</strong> : 1 fichier de données par mois, fonctionnalités de base d'analyse financière.</li>
+<li><strong>Offre Pro (9€ TTC/mois)</strong> : upload multi-fichiers, prise en charge des fichiers multi-mois, module patrimoine, mode multi-devises, jusqu'à 5 analyses Pro par mois et par compte.</li>
+</ul>
+<h2>3. Prix</h2>
+<p>Le prix de l'offre Pro est de <strong>9€ TTC par mois</strong>, prélevé automatiquement chaque mois à la date anniversaire de la souscription. Le prix peut être révisé ; toute modification vous sera notifiée à l'avance et ne s'appliquera qu'à compter du renouvellement suivant votre acceptation, ou entraînera votre droit de résilier sans frais si vous refusez.</p>
+<h2>4. Paiement</h2>
+<p>Le paiement est traité exclusivement par notre prestataire <strong>Stripe</strong>. BankAnalyzer ne collecte ni ne conserve aucune donnée de carte bancaire. Le renouvellement est automatique et mensuel, sauf résiliation de votre part.</p>
+<h2>5. Durée et résiliation</h2>
+<p>L'abonnement Pro est <strong>sans engagement de durée minimale</strong>. Vous pouvez le résilier à tout moment depuis votre espace client (portail Stripe accessible depuis le site). La résiliation prend effet à la fin de la période mensuelle déjà payée : vous conservez l'accès Pro jusqu'à cette date, sans reconduction ultérieure ni remboursement au prorata de la période en cours.</p>
+<h2>6. Droit de rétractation</h2>
+<p>Conformément à l'article L221-28 du Code de la consommation, le droit de rétractation de 14 jours ne s'applique pas aux contrats de fourniture de services pleinement exécutés avant la fin du délai de rétractation, lorsque l'exécution a commencé avec votre accord préalable exprès et votre renoncement exprès à ce droit.</p>
+<p>En souscrivant à l'offre Pro, vous demandez l'exécution immédiate du service (déblocage immédiat des fonctionnalités Pro) et renoncez expressément à votre droit de rétractation dès le premier paiement.</p>
+<blockquote>
+<p>⚠️ <strong>Action produit requise, pas seulement légale</strong> : pour que cette clause soit valable, il faut recueillir ce consentement explicite <em>avant</em> le paiement — typiquement une case à cocher du type <em>"Je demande l'exécution immédiate du service et renonce à mon droit de rétractation de 14 jours"</em> affichée avant le bouton menant à Stripe Checkout. Ce n'est pas encore implémenté côté produit à ce stade — à ajouter avant une mise en vente réelle pour que cette clause soit opposable.</p>
+</blockquote>
+<h2>7. Usage loyal du compte</h2>
+<p>Le quota de 5 analyses Pro par mois et par compte est strictement personnel. Le partage d'un même compte entre plusieurs utilisateurs distincts n'est pas autorisé et peut entraîner la suspension du compte.</p>
+<h2>8. Responsabilité</h2>
+<p>BankAnalyzer fournit une analyse automatisée à titre informatif. Elle ne constitue ni un conseil financier, comptable ou fiscal personnalisé, ni une garantie d'exactitude absolue, notamment pour les formats de relevés bancaires non couverts par un calcul exact (voir mentions légales). L'éditeur ne saurait être tenu responsable des décisions prises sur la base de cette analyse.</p>
+<h2>9. Propriété des données</h2>
+<p>Vous restez à tout moment propriétaire des fichiers et données que vous transmettez. BankAnalyzer ne revendique aucun droit sur le contenu de vos relevés bancaires.</p>
+<h2>10. Modification des CGV</h2>
+<p>Les présentes CGV peuvent être modifiées. La version applicable est celle en vigueur au moment de la souscription ou du renouvellement de votre abonnement.</p>
+<h2>11. Médiation à la consommation</h2>
+<p>Conformément à l'article L616-1 du Code de la consommation, vous pouvez recourir gratuitement à un médiateur de la consommation en cas de litige non résolu avec nous. Vous pouvez également utiliser la plateforme européenne de règlement en ligne des litiges : <a href="https://ec.europa.eu/consumers/odr">ec.europa.eu/consumers/odr</a>.</p>
+<blockquote>
+<p>⚠️ <strong>À compléter avant publication</strong> : les coordonnées d'un médiateur de la consommation agréé doivent être indiquées ici. Cela nécessite une inscription préalable auprès d'un organisme de médiation reconnu (ex. CNPM Médiation Consommation) — non fait à ce stade.</p>
+</blockquote>
+<h2>12. Droit applicable et juridiction</h2>
+<p>Les présentes CGV sont soumises au droit français. Tout litige relève des tribunaux français compétents, sous réserve des règles impératives de protection des consommateurs.</p>
+</div>
+</body>
+</html>

@@ -1055,12 +1055,5 @@ dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('drag-ove
 dz.addEventListener('dragleave',()=>dz.classList.remove('drag-over'));
 dz.addEventListener('drop',e=>{e.preventDefault();dz.classList.remove('drag-over');if(e.dataTransfer.files.length>0)selectionnerFichiers(e.dataTransfer.files)});
 </script>
-<footer style="text-align:center;padding:32px 16px;font-size:13px;color:#86868b;">
-  <a href="/mentions-legales.html" style="color:#86868b;text-decoration:none;margin:0 8px;">Mentions légales</a>
-  ·
-  <a href="/politique-confidentialite.html" style="color:#86868b;text-decoration:none;margin:0 8px;">Politique de confidentialité</a>
-  ·
-  <a href="/cgv.html" style="color:#86868b;text-decoration:none;margin:0 8px;">CGV</a>
-</footer>
 </body>
 </html>
