@@ -139,7 +139,7 @@ Contact pour toute question relative à vos données : cgelgon@gmail.com</p>
 <ul>
 <li><strong>Anthropic (API Claude)</strong> — États-Unis. Le contenu textuel extrait de vos relevés (transactions, montants, libellés) est transmis à Anthropic pour l'extraction, la catégorisation automatique et la génération de l'analyse. Anthropic agit en tant que sous-traitant et n'utilise pas ces données pour entraîner ses modèles. <em>[À vérifier avant publication : mécanisme exact de transfert hors UE mis en œuvre par Anthropic (clauses contractuelles types et/ou Data Privacy Framework) — voir trust.anthropic.com, et durée de conservation exacte de leur côté.]</em></li>
 <li><strong>Stripe</strong> — traitement des paiements. BankAnalyzer ne reçoit jamais votre numéro de carte bancaire.</li>
-<li><strong>Railway</strong> — hébergement du backend et de la base de données (comptes, statut d'abonnement). <em>Infrastructure hébergée en région UE. Railway Corporation (société américaine) a désigné un représentant UE au titre du RGPD : DP-Dock GmbH (Hambourg, Allemagne).</em></li>
+<li><strong>Railway</strong> — hébergement du backend et de la base de données (comptes, statut d'abonnement). <em>[À vérifier : région d'hébergement (UE ou hors UE) pour confirmer si un mécanisme de transfert est nécessaire.]</em></li>
 <li><strong>Vercel</strong> — hébergement du site (frontend). Le contenu de vos relevés ne transite pas par ce prestataire : l'upload va directement au backend, et l'export Excel est généré localement dans votre navigateur.</li>
 </ul>
 <p>Aucune donnée n'est vendue ni partagée à des fins publicitaires.</p>

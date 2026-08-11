@@ -952,7 +952,6 @@ function afficherModaleUpgrade(){
     '<div style="font-size:40px;margin-bottom:8px">✨</div>'+
     '<h3>Passez à BankAnalyzer Pro</h3>'+
     '<p>Cette analyse utilise une fonctionnalité Pro (plusieurs fichiers, patrimoine ou plusieurs devises). Débloquez tout pour 9€/mois.</p>'+
-    '<label style="display:flex;align-items:flex-start;gap:8px;text-align:left;font-size:12px;color:var(--text2);margin-bottom:14px;cursor:pointer"><input type="checkbox" id="cguCheckbox" style="margin-top:2px"><span>J\'accepte les <a href="/cgv.html" target="_blank" style="color:inherit;text-decoration:underline">CGV</a> et je demande l\'exécution immédiate du service, renonçant à mon droit de rétractation de 14 jours.</span></label>'+
     '<button class="upgrade-btn" onclick="demarrerCheckout()">S\'abonner — 9€/mois</button>'+
     '<button class="upgrade-cancel" onclick="document.getElementById(\'upgradeOverlay\').remove()">Plus tard</button>'+
     '</div>';
@@ -960,11 +959,6 @@ function afficherModaleUpgrade(){
 }
 
 async function demarrerCheckout(){
-  const cguCheckbox=document.getElementById('cguCheckbox');
-  if(!cguCheckbox||!cguCheckbox.checked){
-    alert('Merci d\'accepter les CGV pour continuer.');
-    return;
-  }
   const email=(document.getElementById('emailInput').value||'').trim();
   if(!email||!email.includes('@')){
     alert('Merci de renseigner votre email.');
