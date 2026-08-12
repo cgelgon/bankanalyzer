@@ -1423,6 +1423,10 @@ def _analyze_impl():
             return sans_accents(str(label or '').strip().lower()) in ('autres', 'autre', 'divers')
 
         montant_autres_deja = sum(v for k, v in items_dict.items() if _est_autres(k))
+        transactions_autres_deja = []
+        for k in items_dict:
+            if _est_autres(k):
+                transactions_autres_deja.extend(items_tx.get(k, []))
         items = sorted(
             [(k, v) for k, v in items_dict.items() if not _est_autres(k)],
             key=lambda kv: -kv[1]
@@ -1438,14 +1442,16 @@ def _analyze_impl():
         ecart = round(total - somme_affichee, 2)
         if ecart > 1 or montant_autres_deja > 1:
             ecart_total = round(ecart, 2) if ecart > 1 else round(montant_autres_deja, 2)
+            transactions_autres_finales = normaliser_montants(transactions_autres_deja)
             if len(resultat) < limite:
-                resultat.append({'label': 'Autres', 'montant': ecart_total, 'transactions': []})
+                resultat.append({'label': 'Autres', 'montant': ecart_total, 'transactions': transactions_autres_finales})
             else:
                 idx_min = min(range(len(resultat)), key=lambda i: resultat[i]['montant'])
+                transactions_fusionnees = resultat[idx_min].get('transactions', []) + transactions_autres_finales
                 resultat[idx_min] = {
                     'label': 'Autres',
                     'montant': round(resultat[idx_min]['montant'] + ecart_total, 2),
-                    'transactions': [],
+                    'transactions': transactions_fusionnees,
                 }
         return resultat
 
