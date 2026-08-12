@@ -638,6 +638,105 @@ def _verifier_taille_et_tronquer(text):
     )
 
 
+SEUIL_TRANSACTIONS_CATEGORISATION_EXHAUSTIVE = 300
+
+
+def categoriser_contreparties_par_categories(client, langue, categories_recettes, categories_depenses, contreparties_recettes, contreparties_depenses):
+    """Appel IA dedie et peu couteux : assigne chaque contrepartie unique a
+    UNE des categories DEJA DECIDEES par l'analyse principale (jamais de
+    nouvelle categorie inventee -- garantit la coherence avec ce qui est
+    deja affiche a l'ecran). Beaucoup moins couteux qu'une categorisation
+    transaction par transaction sur les gros relevees."""
+    if not contreparties_recettes and not contreparties_depenses:
+        return {'mapping_recettes': {}, 'mapping_depenses': {}}
+    prompt = (
+        'INSTRUCTION ABSOLUE: reponds UNIQUEMENT en JSON valide, sans markdown, sans texte avant/apres.' + chr(10) +
+        'Categories de RECETTES deja identifiees (n\'en invente JAMAIS d\'autres, recopie a l\'identique) : ' + json.dumps(categories_recettes, ensure_ascii=False) + chr(10) +
+        'Categories de DEPENSES deja identifiees (n\'en invente JAMAIS d\'autres, recopie a l\'identique) : ' + json.dumps(categories_depenses, ensure_ascii=False) + chr(10) +
+        'Contreparties RECETTES a classer : ' + json.dumps(contreparties_recettes, ensure_ascii=False) + chr(10) +
+        'Contreparties DEPENSES a classer : ' + json.dumps(contreparties_depenses, ensure_ascii=False) + chr(10) +
+        'Pour CHAQUE contrepartie listee, assigne EXACTEMENT une categorie parmi celles fournies ci-dessus (recopie le libelle a l\'identique, caractere pour caractere). ' +
+        'Si aucune ne convient clairement, utilise "Autres". Reponds UNIQUEMENT avec ce JSON :' + chr(10) +
+        '{"mapping_recettes":{"nom_contrepartie":"categorie"},"mapping_depenses":{"nom_contrepartie":"categorie"}}'
+    )
+    msg = client.messages.create(
+        model='claude-sonnet-4-6',
+        max_tokens=16000,
+        system='Tu classes des contreparties bancaires dans des categories deja fournies. Tu ne reponds qu avec du JSON valide, rien d autre, sans markdown.',
+        messages=[{'role': 'user', 'content': prompt}],
+    )
+    texte = ''.join(b.text for b in msg.content if hasattr(b, 'text')).strip()
+    if texte.startswith('```'):
+        texte = texte.split(chr(10), 1)[1] if chr(10) in texte else texte
+        texte = texte.rsplit('```', 1)[0]
+    return json.loads(texte)
+
+
+def _appliquer_categorisation_exhaustive_si_necessaire(client, f, data, langue):
+    """Si ce bloc a suffisamment de transactions structurees (CSV/XLSX avec
+    colonne contrepartie detectee -- voir _decouper_lignes_par_mois),
+    remplace les listes de transactions tronquees (5 par categorie, voir
+    analyse_releve) par des listes EXHAUSTIVES.
+
+    SECURITE : best-effort total. Toute erreur laisse `data` EXACTEMENT
+    inchange -- ne casse jamais l'analyse principale. En dessous du seuil,
+    ne fait strictement rien (comportement actuel preserve)."""
+    transactions_structurees = f.get('transactionsStructurees')
+    if not transactions_structurees or len(transactions_structurees) < SEUIL_TRANSACTIONS_CATEGORISATION_EXHAUSTIVE:
+        return
+    try:
+        categories_recettes = [c.get('label') for c in (data.get('recettes') or []) if c.get('label')]
+        categories_depenses = [c.get('label') for c in (data.get('depenses') or []) if c.get('label')]
+        if not categories_recettes and not categories_depenses:
+            return
+
+        contreparties_recettes = sorted({t['contrepartie'] for t in transactions_structurees if t.get('recette', 0) > 0})
+        contreparties_depenses = sorted({t['contrepartie'] for t in transactions_structurees if t.get('depense', 0) > 0})
+
+        mapping = categoriser_contreparties_par_categories(
+            client, langue, categories_recettes, categories_depenses,
+            contreparties_recettes, contreparties_depenses
+        )
+        mapping_recettes = mapping.get('mapping_recettes') or {}
+        mapping_depenses = mapping.get('mapping_depenses') or {}
+
+        recettes_par_cat = {}
+        depenses_par_cat = {}
+        for t in transactions_structurees:
+            cp = t.get('contrepartie')
+            r = t.get('recette', 0) or 0
+            d = t.get('depense', 0) or 0
+            if r > 0:
+                cat = mapping_recettes.get(cp)
+                cat = cat if cat in categories_recettes else 'Autres'
+                recettes_par_cat.setdefault(cat, {'montant': 0.0, 'transactions': []})
+                recettes_par_cat[cat]['montant'] += r
+                recettes_par_cat[cat]['transactions'].append({'libelle': cp, 'montant': round(r, 2)})
+            if d > 0:
+                cat = mapping_depenses.get(cp)
+                cat = cat if cat in categories_depenses else 'Autres'
+                depenses_par_cat.setdefault(cat, {'montant': 0.0, 'transactions': []})
+                depenses_par_cat[cat]['montant'] += d
+                depenses_par_cat[cat]['transactions'].append({'libelle': cp, 'montant': round(d, 2)})
+
+        # On ne remplace QUE les categories deja presentes dans data (jamais
+        # de nouvelle categorie ajoutee a l'ecran a ce stade). Une categorie
+        # sans aucune contrepartie mappee (ex. "Autres" si personne n'y a
+        # ete assigne) garde son contenu original -- comportement de repli
+        # volontaire, jamais de donnee effacee.
+        for categorie_liste, par_cat in ((data.get('recettes'), recettes_par_cat), (data.get('depenses'), depenses_par_cat)):
+            if not categorie_liste:
+                continue
+            for entry in categorie_liste:
+                label = entry.get('label')
+                if label in par_cat:
+                    entry['transactions'] = par_cat[label]['transactions']
+                    entry['montant'] = round(par_cat[label]['montant'], 2)
+    except Exception as e:
+        print('AVERTISSEMENT categorisation exhaustive ignoree (repli sur comportement actuel):', str(e))
+        return
+
+
 def _completer_avec_categorie_autres(data):
     """Fait en sorte que la somme des categories affichees (recettes/
     depenses) corresponde toujours exactement au total affiche, SANS
@@ -1051,7 +1150,7 @@ def _analyze_impl():
                 continue
             periode = bloc['periode'] or get_periode(texte_bloc)
             nom_bloc = nom_banque if len(blocs) == 1 else (nom_banque + ' - ' + periode if periode else nom_banque)
-            fichiers_prepares.append({'nom': nom_bloc, 'nomFichier': file.filename, 'periode': periode, 'text': texte_bloc, 'totauxVerifies': bloc.get('totauxVerifies')})
+            fichiers_prepares.append({'nom': nom_bloc, 'nomFichier': file.filename, 'periode': periode, 'text': texte_bloc, 'totauxVerifies': bloc.get('totauxVerifies'), 'transactionsStructurees': bloc.get('transactionsStructurees')})
 
     if not fichiers_prepares:
         return jsonify({'error': 'Aucun releve analyse'}), 500
@@ -1087,6 +1186,7 @@ def _analyze_impl():
                 nom_detecte = (data.get('compte') or '').strip()
                 data['nom'] = nom_detecte if nom_detecte else f['nom']
                 data['periode'] = f['periode']
+                _appliquer_categorisation_exhaustive_si_necessaire(client, f, data, langue)
 
                 if totaux_verifies:
                     # Filet de securite : on ecrase les totaux de l'IA par les
