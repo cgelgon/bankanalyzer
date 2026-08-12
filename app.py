@@ -1384,13 +1384,15 @@ def _analyze_impl():
     all_dep_labels = {}
     for c in comptes:
         for r in c.get('recettes', []):
-            cle = _normaliser_cle_categorie(r['label'])
-            all_rec_labels.setdefault(cle, r['label'])
+            label_r = r.get('label')
+            cle = _normaliser_cle_categorie(label_r)
+            all_rec_labels.setdefault(cle, label_r or 'Autres')
             all_rec[cle] = all_rec.get(cle, 0) + to_num(r.get('montant', 0))
             all_rec_tx.setdefault(cle, []).extend(r.get('transactions', []))
         for d in c.get('depenses', []):
-            cle = _normaliser_cle_categorie(d['label'])
-            all_dep_labels.setdefault(cle, d['label'])
+            label_d = d.get('label')
+            cle = _normaliser_cle_categorie(label_d)
+            all_dep_labels.setdefault(cle, label_d or 'Autres')
             all_dep[cle] = all_dep.get(cle, 0) + to_num(d.get('montant', 0))
             all_dep_tx.setdefault(cle, []).extend(d.get('transactions', []))
 
