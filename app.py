@@ -700,6 +700,26 @@ def _appliquer_categorisation_exhaustive_si_necessaire(client, f, data, langue):
         mapping_recettes = mapping.get('mapping_recettes') or {}
         mapping_depenses = mapping.get('mapping_depenses') or {}
 
+        # --- DIAGNOSTIC TEMPORAIRE ---
+        manquantes_r = [c for c in contreparties_recettes if c not in mapping_recettes]
+        manquantes_d = [c for c in contreparties_depenses if c not in mapping_depenses]
+        autres_r = [c for c in contreparties_recettes if mapping_recettes.get(c) not in categories_recettes]
+        autres_d = [c for c in contreparties_depenses if mapping_depenses.get(c) not in categories_depenses]
+        print(
+            'DIAGNOSTIC categorisation exhaustive -- '
+            'recettes: ' + str(len(contreparties_recettes)) + ' contreparties, '
+            + str(len(manquantes_r)) + ' absentes du mapping IA, '
+            + str(len(autres_r)) + ' classees Autres | '
+            'depenses: ' + str(len(contreparties_depenses)) + ' contreparties, '
+            + str(len(manquantes_d)) + ' absentes du mapping IA, '
+            + str(len(autres_d)) + ' classees Autres'
+        )
+        if manquantes_r:
+            print('  Exemples manquantes (recettes):', manquantes_r[:5])
+        if manquantes_d:
+            print('  Exemples manquantes (depenses):', manquantes_d[:5])
+        # --- FIN DIAGNOSTIC TEMPORAIRE ---
+
         recettes_par_cat = {}
         depenses_par_cat = {}
         for t in transactions_structurees:
