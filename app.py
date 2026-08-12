@@ -725,13 +725,24 @@ def _appliquer_categorisation_exhaustive_si_necessaire(client, f, data, langue):
         # ete assigne) garde son contenu original -- comportement de repli
         # volontaire, jamais de donnee effacee.
         for categorie_liste, par_cat in ((data.get('recettes'), recettes_par_cat), (data.get('depenses'), depenses_par_cat)):
-            if not categorie_liste:
+            if categorie_liste is None:
                 continue
             for entry in categorie_liste:
                 label = entry.get('label')
                 if label in par_cat:
                     entry['transactions'] = par_cat[label]['transactions']
                     entry['montant'] = round(par_cat[label]['montant'], 2)
+            # Si des contreparties ont ete classees "Autres" mais qu'aucune
+            # entree 'Autres' n'existe deja pour ce mois (l'IA avait rempli
+            # toutes ses categories sans laisser de reste), on l'ajoute
+            # plutot que de perdre ces transactions silencieusement.
+            labels_existants = {e.get('label') for e in categorie_liste}
+            if 'Autres' in par_cat and 'Autres' not in labels_existants:
+                categorie_liste.append({
+                    'label': 'Autres',
+                    'montant': round(par_cat['Autres']['montant'], 2),
+                    'transactions': par_cat['Autres']['transactions'],
+                })
     except Exception as e:
         print('AVERTISSEMENT categorisation exhaustive ignoree (repli sur comportement actuel):', str(e))
         return
