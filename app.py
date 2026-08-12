@@ -326,6 +326,26 @@ def _trouver_index_colonne_date(entetes):
     return None
 
 
+def _trouver_index_colonne_contrepartie(entetes):
+    """Cherche l'index de la colonne identifiant le tiers d'une transaction
+    (contrepartie/beneficiaire/libelle), en tolerant variations
+    d'accents/casse. Retourne None si aucune colonne fiable n'est trouvee --
+    dans ce cas l'appelant DOIT retomber sur le comportement actuel, jamais
+    deviner."""
+    priorite = [
+        'contrepartie', 'beneficiaire', 'tiers', 'nom du tiers',
+        'libelle operation', "libelle de l'operation", 'libelle',
+        'description', 'intitule',
+    ]
+    entetes_norm = [sans_accents(str(h or '').strip().lower()) for h in entetes]
+    for candidat in priorite:
+        candidat_norm = sans_accents(candidat)
+        for i, e in enumerate(entetes_norm):
+            if candidat_norm == e or candidat_norm in e:
+                return i
+    return None
+
+
 def _parser_date_cellule(valeur):
     """Convertit une valeur de cellule (datetime deja parse par openpyxl,
     ou chaine issue d'un CSV) en tuple (annee, mois), ou None si non reconnue."""
@@ -394,6 +414,7 @@ def _decouper_lignes_par_mois(entetes, lignes_donnees):
     idx_date = _trouver_index_colonne_date(entetes)
     idx_debit, idx_credit, idx_montant = _trouver_colonnes_montant(entetes)
     colonnes_montant_ok = idx_debit is not None or idx_credit is not None or idx_montant is not None
+    idx_cp = _trouver_index_colonne_contrepartie(entetes)
 
     # On retire les transactions annulees AVANT tout regroupement : elles ne
     # se sont jamais reellement produites, ne doivent pas compter dans les
@@ -409,6 +430,20 @@ def _decouper_lignes_par_mois(entetes, lignes_donnees):
             if not (idx_etat < len(ligne) and sans_accents(str(ligne[idx_etat] or '').strip().lower()) == 'annule')
         ]
 
+    def _extraire_tx_structuree(ligne):
+        # Retourne un dict {'contrepartie','recette','depense'} exploitable
+        # en Python (sans passer par l'IA), ou None si pas exploitable pour
+        # cette ligne -- jamais de valeur inventee.
+        if idx_cp is None or not colonnes_montant_ok:
+            return None
+        contrepartie = str(ligne[idx_cp]).strip() if idx_cp < len(ligne) and ligne[idx_cp] else ''
+        if not contrepartie:
+            return None
+        r, d = _totaux_ligne(ligne, idx_debit, idx_credit, idx_montant)
+        if r == 0 and d == 0:
+            return None
+        return {'contrepartie': contrepartie, 'recette': round(r, 2), 'depense': round(d, 2)}
+
     if idx_date is None:
         lignes_txt = [ligne_entete_txt] + [
             ' | '.join([str(c) if c not in (None, '') else '' for c in ligne]) for ligne in lignes_donnees
@@ -421,10 +456,14 @@ def _decouper_lignes_par_mois(entetes, lignes_donnees):
                 r_tot += r
                 d_tot += d
             totaux = {'totalRecettes': round(r_tot, 2), 'totalDepenses': round(d_tot, 2)}
-        return [{'periode': None, 'text': chr(10).join(lignes_txt), 'totauxVerifies': totaux}]
+        transactions_structurees = None
+        if idx_cp is not None and colonnes_montant_ok:
+            transactions_structurees = [t for t in (_extraire_tx_structuree(l) for l in lignes_donnees) if t]
+        return [{'periode': None, 'text': chr(10).join(lignes_txt), 'totauxVerifies': totaux, 'transactionsStructurees': transactions_structurees}]
 
     groupes = {}
     totaux_groupes = {}
+    tx_structurees_groupes = {}
     ordre_apparition = []
     for ligne in lignes_donnees:
         valeur_date = ligne[idx_date] if idx_date < len(ligne) else None
@@ -432,12 +471,16 @@ def _decouper_lignes_par_mois(entetes, lignes_donnees):
         if cle not in groupes:
             groupes[cle] = []
             totaux_groupes[cle] = [0.0, 0.0]
+            tx_structurees_groupes[cle] = []
             ordre_apparition.append(cle)
         groupes[cle].append(' | '.join([str(c) if c not in (None, '') else '' for c in ligne]))
         if colonnes_montant_ok:
             r, d = _totaux_ligne(ligne, idx_debit, idx_credit, idx_montant)
             totaux_groupes[cle][0] += r
             totaux_groupes[cle][1] += d
+        tx = _extraire_tx_structuree(ligne)
+        if tx:
+            tx_structurees_groupes[cle].append(tx)
 
     blocs = []
     for cle in sorted(ordre_apparition, key=lambda c: (str(c[0]), c[1])):
@@ -448,7 +491,8 @@ def _decouper_lignes_par_mois(entetes, lignes_donnees):
         if colonnes_montant_ok:
             r_tot, d_tot = totaux_groupes[cle]
             totaux = {'totalRecettes': round(r_tot, 2), 'totalDepenses': round(d_tot, 2)}
-        blocs.append({'periode': periode, 'text': texte_bloc, 'totauxVerifies': totaux})
+        transactions_structurees = tx_structurees_groupes[cle] if (idx_cp is not None and colonnes_montant_ok) else None
+        blocs.append({'periode': periode, 'text': texte_bloc, 'totauxVerifies': totaux, 'transactionsStructurees': transactions_structurees})
 
     return blocs
 
