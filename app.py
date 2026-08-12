@@ -1430,7 +1430,7 @@ def _analyze_impl():
 
         principales = items[:limite]
         resultat = [
-            {'label': k, 'montant': round(v, 2), 'transactions': top_transactions(items_tx.get(k, []))}
+            {'label': k, 'montant': round(v, 2), 'transactions': normaliser_montants(items_tx.get(k, []))}
             for k, v in principales
         ]
 
