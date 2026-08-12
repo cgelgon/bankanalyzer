@@ -1214,17 +1214,48 @@ def _analyze_impl():
     total_r = sum(to_num(c.get('totalRecettes', 0)) for c in comptes)
     total_d = sum(to_num(c.get('totalDepenses', 0)) for c in comptes)
 
+    # Table de synonymes connus : mots de racines differentes designant la
+    # meme realite (ex. "echeance" et "remboursement" pour un pret).
+    # Cle et valeur en minuscules, sans accents. Extensible au fil du temps.
+    _SYNONYMES_CATEGORIE = {
+        'echeance': 'remboursement',
+    }
+    _MOTS_OUTILS_CATEGORIE = {'de', 'du', 'des', 'la', 'le', 'les', 'd', 'l', 'et', 'un', 'une'}
+
+    def _normaliser_cle_categorie(label):
+        # Cle de regroupement insensible aux accents, a la ponctuation, aux
+        # mots-outils et a quelques synonymes connus. Deux libelles qui
+        # donnent la meme cle sont consideres comme la meme categorie.
+        s = sans_accents(str(label or '')).lower()
+        s = re.sub(r"[^a-z0-9\s]", ' ', s)
+        mots = [m for m in s.split() if m and m not in _MOTS_OUTILS_CATEGORIE]
+        mots = [_SYNONYMES_CATEGORIE.get(m, m) for m in mots]
+        return ' '.join(sorted(mots))
+
     all_rec = {}
     all_rec_tx = {}
+    all_rec_labels = {}
     all_dep = {}
     all_dep_tx = {}
+    all_dep_labels = {}
     for c in comptes:
         for r in c.get('recettes', []):
-            all_rec[r['label']] = all_rec.get(r['label'], 0) + to_num(r.get('montant', 0))
-            all_rec_tx.setdefault(r['label'], []).extend(r.get('transactions', []))
+            cle = _normaliser_cle_categorie(r['label'])
+            all_rec_labels.setdefault(cle, r['label'])
+            all_rec[cle] = all_rec.get(cle, 0) + to_num(r.get('montant', 0))
+            all_rec_tx.setdefault(cle, []).extend(r.get('transactions', []))
         for d in c.get('depenses', []):
-            all_dep[d['label']] = all_dep.get(d['label'], 0) + to_num(d.get('montant', 0))
-            all_dep_tx.setdefault(d['label'], []).extend(d.get('transactions', []))
+            cle = _normaliser_cle_categorie(d['label'])
+            all_dep_labels.setdefault(cle, d['label'])
+            all_dep[cle] = all_dep.get(cle, 0) + to_num(d.get('montant', 0))
+            all_dep_tx.setdefault(cle, []).extend(d.get('transactions', []))
+
+    # On reconvertit les cles normalisees (illisibles) vers le premier
+    # libelle original rencontre, pour l'affichage final.
+    all_rec = {all_rec_labels[k]: v for k, v in all_rec.items()}
+    all_rec_tx = {all_rec_labels[k]: v for k, v in all_rec_tx.items()}
+    all_dep = {all_dep_labels[k]: v for k, v in all_dep.items()}
+    all_dep_tx = {all_dep_labels[k]: v for k, v in all_dep_tx.items()}
 
     def normaliser_montants(transactions):
         out = []
