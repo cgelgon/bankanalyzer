@@ -768,6 +768,84 @@ def _appliquer_categorisation_exhaustive_si_necessaire(client, f, data, langue):
         return
 
 
+def harmoniser_categories_multimois(client, langue, labels_recettes, labels_depenses):
+    """Appel IA dedie : regroupe des libelles de categories issus de
+    plusieurs mois qui designent probablement le meme concept sous un nom
+    canonique unique. Beaucoup moins couteux qu'une categorisation
+    complete (juste des libelles courts en entree/sortie)."""
+    if not labels_recettes and not labels_depenses:
+        return {'mapping_recettes': {}, 'mapping_depenses': {}}
+    prompt = (
+        'INSTRUCTION ABSOLUE: reponds UNIQUEMENT en JSON valide, sans markdown, sans texte avant/apres.' + chr(10) +
+        'Voici des libelles de categories de RECETTES issus de plusieurs mois d\'un meme releve bancaire, '
+        'certains designant probablement le meme concept avec une formulation differente : '
+        + json.dumps(labels_recettes, ensure_ascii=False) + chr(10) +
+        'Voici des libelles de categories de DEPENSES, meme situation : '
+        + json.dumps(labels_depenses, ensure_ascii=False) + chr(10) +
+        'Regroupe les libelles qui designent clairement le meme concept sous UN SEUL nom canonique clair et court, '
+        'vise au maximum environ 5 categories de recettes distinctes et 7 de depenses distinctes au total, sans forcer '
+        'un regroupement si deux libelles designent vraiment des choses differentes. '
+        'Reponds avec un mapping de CHAQUE libelle fourni (meme s\'il reste inchange) vers son nom canonique :' + chr(10) +
+        '{"mapping_recettes":{"libelle_original":"nom_canonique"},"mapping_depenses":{"libelle_original":"nom_canonique"}}'
+    )
+    msg = client.messages.create(
+        model='claude-sonnet-4-6',
+        max_tokens=4000,
+        system='Tu harmonises des noms de categories financieres. Tu ne reponds qu avec du JSON valide, rien d autre, sans markdown.',
+        messages=[{'role': 'user', 'content': prompt}],
+    )
+    texte = ''.join(b.text for b in msg.content if hasattr(b, 'text')).strip()
+    if texte.startswith('```'):
+        texte = texte.split(chr(10), 1)[1] if chr(10) in texte else texte
+        texte = texte.rsplit('```', 1)[0]
+    return json.loads(texte)
+
+
+def _appliquer_harmonisation_categories_si_necessaire(client, comptes, langue):
+    """Si plusieurs mois produisent des noms de categories differents pour
+    un meme concept, la limite de categories affichees (5 recettes/7
+    depenses) peut fusionner de vraies grosses categories dans "Autres" a
+    tort. Cette fonction harmonise les libelles AVANT la fusion multi-mois,
+    uniquement quand c'est necessaire (plusieurs mois ET plus de labels
+    distincts que la limite).
+
+    SECURITE : best-effort total, toute erreur laisse les labels
+    inchanges -- ne casse jamais l'analyse principale."""
+    if len(comptes) < 2:
+        return
+    labels_recettes = []
+    labels_depenses = []
+    for c in comptes:
+        for r in (c.get('recettes') or []):
+            if r.get('label'):
+                labels_recettes.append(r['label'])
+        for d in (c.get('depenses') or []):
+            if d.get('label'):
+                labels_depenses.append(d['label'])
+    distincts_recettes = set(labels_recettes)
+    distincts_depenses = set(labels_depenses)
+    if len(distincts_recettes) <= 5 and len(distincts_depenses) <= 7:
+        return
+    try:
+        mapping = harmoniser_categories_multimois(
+            client, langue, sorted(distincts_recettes), sorted(distincts_depenses)
+        )
+        mapping_recettes = mapping.get('mapping_recettes') or {}
+        mapping_depenses = mapping.get('mapping_depenses') or {}
+        for c in comptes:
+            for r in (c.get('recettes') or []):
+                label = r.get('label')
+                if label in mapping_recettes:
+                    r['label'] = mapping_recettes[label]
+            for d in (c.get('depenses') or []):
+                label = d.get('label')
+                if label in mapping_depenses:
+                    d['label'] = mapping_depenses[label]
+    except Exception as e:
+        print('AVERTISSEMENT harmonisation categories ignoree (repli sur labels originaux):', repr(e))
+        return
+
+
 def _completer_avec_categorie_autres(data):
     """Fait en sorte que la somme des categories affichees (recettes/
     depenses) corresponde toujours exactement au total affiche, SANS
@@ -1406,6 +1484,8 @@ def _analyze_impl():
         mots = [m for m in s.split() if m and m not in _MOTS_OUTILS_CATEGORIE]
         mots = [_SYNONYMES_CATEGORIE.get(m, m) for m in mots]
         return ' '.join(sorted(mots))
+
+    _appliquer_harmonisation_categories_si_necessaire(client, comptes, langue)
 
     all_rec = {}
     all_rec_tx = {}
