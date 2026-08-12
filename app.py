@@ -1326,7 +1326,7 @@ def _analyze_impl():
             montant = to_num(p.get('montant', 0))
             if montant <= 0:
                 continue
-            key = label.lower()
+            key = _normaliser_cle_categorie(label)
             if key not in charges_dict:
                 charges_dict[key] = {'libelle': label, 'total': 0.0, 'mois': set(), 'montants': []}
             charges_dict[key]['total'] += montant
