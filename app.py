@@ -1471,7 +1471,8 @@ def _analyze_impl():
 
     try:
         conseil = get_conseil_global(client, comptes, total_r, total_d, periode_label, langue, patrimoine_resume, devise_principale)
-    except Exception:
+    except Exception as e:
+        print('AVERTISSEMENT get_conseil_global a echoue:', repr(e))
         conseil = {'score': 5, 'score_detail': 'Analyse partielle', 'actions': [], 'commentaire': 'Analyse disponible.'}
 
     all_top5 = []
