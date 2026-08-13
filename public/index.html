@@ -68,7 +68,7 @@ input[type=file]{display:none}
 .score-info h3{font-size:16px;font-weight:600;margin-bottom:4px}
 .score-info p{font-size:13px;color:var(--text2);line-height:1.5}
 .actions{display:flex;flex-direction:column;gap:10px}
-.action{display:flex;gap:1rem;background:var(--bg);border-radius:12px;padding:1rem 1.25rem;border-left:3px solid var(--blue);transition:all .2s}
+.action{display:flex;gap:1rem;background:var(--bg);border-radius:12px;padding:1rem 1.25rem;border-left:3px solid var(--blue);transition:all .2s;break-inside:avoid;page-break-inside:avoid}
 .action:hover{background:#e8f1fc;transform:translateX(4px)}
 .action-num{font-size:20px;font-weight:700;color:var(--blue);flex-shrink:0}
 .action h4{font-size:14px;font-weight:600;margin-bottom:3px}
@@ -107,7 +107,7 @@ tr.has-detail:hover{background:var(--bg)}
 .info-box{background:#eef4ff;border:1px solid #b8cdf5;border-radius:12px;padding:1rem 1.25rem;margin-bottom:1rem;font-size:13px;color:#1d4b8f}
 .info-box strong{display:block;margin-bottom:4px;font-size:13px}
 .info-box ul{margin:6px 0 0 18px;padding:0}
-.perso-wrap{text-align:center;margin:1rem 0}
+.perso-wrap{text-align:center;margin:1rem 0;break-inside:avoid;page-break-inside:avoid}
 .evo-empty{font-size:13px;color:var(--text3);text-align:center;padding:1.5rem 0}
 .export-btn{background:#1d1d1f;color:#fff;border:none;padding:8px 16px;border-radius:20px;font-size:13px;font-weight:600;cursor:pointer}
 .export-btn:hover{background:#0071e3}
@@ -120,6 +120,8 @@ tr.has-detail:hover{background:var(--bg)}
 @keyframes billet-fly{0%{transform:translate(-50%,-50%) rotate(0deg) scale(1);opacity:1}100%{transform:translate(calc(-50% + var(--tx)),calc(-50% - 140px)) rotate(var(--rot)) scale(.8);opacity:0}}
 .billet{position:fixed;left:0;top:0;font-size:22px;pointer-events:none;z-index:9999;animation:billet-fly .9s cubic-bezier(.2,.8,.3,1) forwards}
 .pdf-freeze,.pdf-freeze *{animation:none !important;transition:none !important}
+.pdf-only{display:none}
+.pdf-mode .pdf-only{display:block}
 @media(max-width:480px){.dl-float{bottom:12px;right:12px}.dl-fun-btn{padding:5px 16px 5px 6px;font-size:13px}}
 .drill-row{align-items:center}
 .drill-right{display:flex;align-items:center;gap:8px;flex-shrink:0}
@@ -739,7 +741,8 @@ function telechargerRapportPDF(){
   const sx=window.scrollX, sy=window.scrollY;
   window.scrollTo(0,0);
   el.classList.add('pdf-freeze');
-  const restaurer=()=>{el.classList.remove('pdf-freeze');window.scrollTo(sx,sy);};
+  el.classList.add('pdf-mode');
+  const restaurer=()=>{el.classList.remove('pdf-freeze');el.classList.remove('pdf-mode');window.scrollTo(sx,sy);};
   return new Promise(resolve=>setTimeout(resolve,80)).then(()=>html2pdf().set({
     margin:[10,8,10,8],
     filename:'bankanalyzer_rapport_'+suffixe+'.pdf',
@@ -752,7 +755,7 @@ function telechargerRapportPDF(){
       ignoreElements:node=>node.classList&&node.classList.contains('no-pdf')
     },
     jsPDF:{unit:'mm',format:'a4',orientation:'portrait'},
-    pagebreak:{mode:'avoid-all'}
+    pagebreak:{mode:['css','avoid-all']}
   }).from(el).save()).then(restaurer).catch(restaurer);
 }
 
@@ -833,7 +836,7 @@ function renderResult(data){
 
     '<div class="card anim">'+
     '<div class="card-title">'+T.evo+'</div>'+
-    (showEvo?'<canvas id="chartS" height="90"></canvas>':'<div class="evo-empty">'+T.evoWait+'</div>')+
+    (showEvo?'<canvas id="chartS" height="90" class="no-pdf"></canvas><div class="pdf-only" style="font-size:13px;line-height:1.9;padding:.5rem 0">'+evolution.map(e=>'<div>'+e.periode+' : '+fmt(e.soldeArrivee)+'</div>').join('')+'</div>':'<div class="evo-empty">'+T.evoWait+'</div>')+
     '</div>'+
 
     '<div class="card anim">'+
