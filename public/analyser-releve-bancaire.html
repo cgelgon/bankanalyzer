@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fin de mois serrée ? Découvrez où part votre argent — BankAnalyzer</title>
+<meta name="description" content="Vous ne savez même pas combien vous avez dépensé ce mois-ci, ni où, ni pourquoi. Analysez votre relevé bancaire en 1 clic, sans connecter votre compte. Gratuit.">
+<meta property="og:title" content="Fin de mois serrée ? Découvrez où part votre argent — BankAnalyzer">
+<meta property="og:description" content="Analysez votre relevé bancaire en 1 clic, sans connecter votre compte. Gratuit, en quelques secondes.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://bankanalyzer.fr/analyser-releve-bancaire.html">
+<meta name="twitter:card" content="summary_large_image">
+<style>
+:root{
+  --blue:#0071e3;--blue2:#00c7ff;--green:#1baf7a;--red:#e34948;--orange:#f5a623;
+  --bg:#f5f5f7;--dark:#15151a;--white:#fff;--text:#1d1d1f;--text2:#6e6e73;--text3:#9a9a9f;
+  --border:#e5e5ea;--r:18px;--sh:0 2px 24px rgba(0,0,0,.06);--sh2:0 16px 48px rgba(0,0,0,.14);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;background:var(--bg);color:var(--text);line-height:1.5;overflow-x:hidden}
+img,svg{max-width:100%;display:block}
+.wrap{max-width:760px;margin:0 auto;padding:0 1.5rem}
+a{color:inherit}
+
+/* header */
+header{padding:1.5rem 0}
+.logo{display:flex;align-items:center;gap:10px;justify-content:center}
+.logo-icon{width:30px;height:30px;background:linear-gradient(135deg,var(--blue),var(--blue2));border-radius:9px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:14px}
+.logo span{font-size:17px;font-weight:600;letter-spacing:-.2px}
+
+/* hero */
+.hero{text-align:center;padding:2.5rem 0 3.5rem}
+.eyebrow{display:inline-flex;align-items:center;gap:9px;background:#fff;border:1px solid var(--border);border-radius:100px;padding:8px 18px;font-size:12.5px;font-weight:600;color:var(--text2);box-shadow:var(--sh);margin-bottom:1.75rem}
+.eyebrow .dot{color:var(--green);font-weight:700}
+.hero h1{font-size:clamp(32px,7vw,52px);font-weight:800;letter-spacing:-1.3px;line-height:1.08;margin-bottom:18px}
+.hero h1 .soft{display:block;font-size:.62em;font-weight:600;color:var(--text2);letter-spacing:-.3px;margin-top:10px}
+.hero .payoff{font-size:19px;font-weight:600;color:var(--text);max-width:480px;margin:0 auto 2.25rem}
+.hero .payoff b{color:var(--blue)}
+
+.cta-btn{display:inline-flex;align-items:center;gap:10px;background:linear-gradient(135deg,var(--blue),var(--blue2));color:#fff;border:none;border-radius:100px;padding:17px 32px;font-size:17px;font-weight:700;text-decoration:none;box-shadow:0 14px 32px rgba(0,113,227,.35);transition:transform .15s ease,box-shadow .15s ease}
+.cta-btn:hover{transform:translateY(-2px);box-shadow:0 18px 40px rgba(0,113,227,.45)}
+.cta-sub{margin-top:14px;font-size:13px;color:var(--text3)}
+
+/* pain section - the one bold dark moment */
+.pain{background:var(--dark);color:#fff;padding:4rem 0 4.5rem;margin-top:1rem}
+.pain h2{text-align:center;font-size:clamp(24px,5vw,32px);font-weight:700;letter-spacing:-.5px;margin-bottom:2.5rem;color:#fff}
+.pain-list{display:flex;flex-direction:column;gap:1px;background:rgba(255,255,255,.08);border-radius:var(--r);overflow:hidden;margin-bottom:3rem}
+.pain-item{background:#1d1d24;padding:1.15rem 1.4rem;font-size:16.5px;font-weight:500;color:#d8d8dc;display:flex;gap:14px;align-items:flex-start}
+.pain-item span{opacity:.55;flex-shrink:0}
+.mascotte-wrap{display:flex;justify-content:center;margin-bottom:.5rem}
+.mascotte-caption{text-align:center;font-size:14px;color:var(--text3);font-style:italic}
+
+/* bridge */
+.bridge{text-align:center;padding:3.5rem 0 3rem}
+.bridge h2{font-size:clamp(26px,5.5vw,36px);font-weight:800;letter-spacing:-.8px;background:linear-gradient(135deg,var(--text),var(--text2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+
+/* solution cards */
+.cards{display:grid;grid-template-columns:1fr 1fr;gap:1rem;padding-bottom:1rem}
+.card{background:#fff;border-radius:var(--r);padding:1.5rem;box-shadow:var(--sh);border:1px solid var(--border)}
+.card .badge{width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;margin-bottom:14px}
+.card h3{font-size:15.5px;font-weight:700;margin-bottom:6px}
+.card p{font-size:13.5px;color:var(--text2);line-height:1.5}
+.b1{background:#e8f6ee}.b2{background:#fdece9}.b3{background:#fef4e3}.b4{background:#e8f2fe}
+
+/* how it works - numbered because it IS a real sequence */
+.steps{padding:4rem 0}
+.steps h2{text-align:center;font-size:clamp(24px,5vw,32px);font-weight:700;letter-spacing:-.5px;margin-bottom:2.5rem}
+.step{display:flex;gap:1.25rem;align-items:flex-start;padding:1.25rem 0;border-bottom:1px solid var(--border)}
+.step:last-child{border-bottom:none}
+.step-num{width:34px;height:34px;border-radius:50%;background:var(--text);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;flex-shrink:0}
+.step h3{font-size:16.5px;font-weight:700;margin-bottom:3px}
+.step p{font-size:14px;color:var(--text2)}
+
+/* trust */
+.trust{background:#fff;border:1px solid var(--border);border-radius:var(--r);padding:1.75rem;display:flex;gap:1rem;align-items:flex-start;box-shadow:var(--sh);margin:1rem 0 3.5rem}
+.trust .icon{font-size:26px;flex-shrink:0}
+.trust h3{font-size:15.5px;font-weight:700;margin-bottom:4px}
+.trust p{font-size:14px;color:var(--text2);line-height:1.55}
+
+/* social proof */
+.proof{text-align:center;padding-bottom:3rem}
+.proof p{font-size:14.5px;color:var(--text2);font-weight:500}
+.proof p b{color:var(--text)}
+
+/* final cta */
+.final{background:linear-gradient(180deg,#fff,var(--bg));text-align:center;padding:3.5rem 0 4.5rem;border-top:1px solid var(--border)}
+.final h2{font-size:clamp(26px,5.5vw,34px);font-weight:800;letter-spacing:-.8px;margin-bottom:1rem}
+.final p{font-size:16px;color:var(--text2);margin-bottom:2rem}
+
+footer{text-align:center;padding:2.5rem 1.5rem;font-size:12.5px;color:var(--text3)}
+footer a{text-decoration:underline;margin:0 6px}
+
+@media(max-width:600px){
+  .cards{grid-template-columns:1fr}
+  .pain-item{font-size:15px}
+}
+@media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">B</div>
+    <span>BankAnalyzer</span>
+  </div>
+</header>
+
+<section class="hero">
+  <div class="wrap">
+    <div class="eyebrow"><span>✦ Gratuit</span><span class="dot">&bull;</span><span>Sans connexion bancaire</span><span class="dot">&bull;</span><span>En quelques secondes</span></div>
+    <h1>Fin de mois serrée ?
+      <span class="soft">Vous ne savez même pas combien vous avez dépensé ce mois-ci. Ni où. Ni pourquoi.</span>
+    </h1>
+    <p class="payoff">Ce n'est pas une fatalité, c'est <b>un manque de visibilité</b>.</p>
+    <a href="https://bankanalyzer.fr/" class="cta-btn">1 clic pour enfin savoir →</a>
+    <div class="cta-sub">Aucune carte bancaire requise · Aucune connexion à votre banque</div>
+  </div>
+</section>
+
+<section class="pain">
+  <div class="wrap">
+    <h2>Ça vous parle ?</h2>
+    <div class="pain-list">
+      <div class="pain-item"><span>—</span> Un virement tombe, et il a déjà disparu.</div>
+      <div class="pain-item"><span>—</span> Vous n'avez jamais ouvert votre relevé bancaire en entier.</div>
+      <div class="pain-item"><span>—</span> Vous vous dites "ce mois-ci je fais attention"… sans savoir à quoi.</div>
+      <div class="pain-item"><span>—</span> Votre appli bancaire vous montre un solde. Pas une explication.</div>
+    </div>
+    <div class="mascotte-wrap">
+      <svg width="130" height="169" viewBox="0 0 80 120" style="filter:drop-shadow(0 8px 20px rgba(0,0,0,.35))">
+        <g>
+          <text x="58" y="30" font-size="14">💧</text>
+          <text x="5" y="42" font-size="14">💧</text>
+          <text x="30" y="115" font-size="10" fill="#e34948">😰</text>
+          <circle cx="40" cy="25" r="18" fill="#FFD93D" stroke="#333" stroke-width="2"/>
+          <ellipse cx="33" cy="22" rx="4" ry="4" fill="white"/>
+          <ellipse cx="47" cy="22" rx="4" ry="4" fill="white"/>
+          <circle cx="34" cy="23" r="2.5" fill="#333"/>
+          <circle cx="48" cy="23" r="2.5" fill="#333"/>
+          <path d="M30 35 Q40 30 50 35" stroke="#333" stroke-width="2" fill="none"/>
+          <path d="M28 17 Q33 13 37 17" stroke="#333" stroke-width="2.5" fill="none"/>
+          <path d="M43 17 Q47 13 52 17" stroke="#333" stroke-width="2.5" fill="none"/>
+          <rect x="28" y="45" width="24" height="35" rx="8" fill="#e34948" stroke="#333" stroke-width="2"/>
+          <line x1="28" y1="55" x2="10" y2="45" stroke="#333" stroke-width="3" stroke-linecap="round"/>
+          <line x1="52" y1="55" x2="70" y2="45" stroke="#333" stroke-width="3" stroke-linecap="round"/>
+          <line x1="35" y1="80" x2="32" y2="108" stroke="#333" stroke-width="3" stroke-linecap="round"/>
+          <line x1="45" y1="80" x2="48" y2="108" stroke="#333" stroke-width="3" stroke-linecap="round"/>
+        </g>
+      </svg>
+    </div>
+    <p class="mascotte-caption">La plupart d'entre nous, devant notre propre argent.</p>
+  </div>
+</section>
+
+<section class="bridge">
+  <div class="wrap"><h2>Et si vous saviez, en un clic ?</h2></div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="cards">
+      <div class="card">
+        <div class="badge b1">📊</div>
+        <h3>Score de gestion sur 10</h3>
+        <p>Une note claire de votre santé financière, pas juste un solde sur un écran.</p>
+      </div>
+      <div class="card">
+        <div class="badge b2">🍕</div>
+        <h3>Dépenses par catégorie</h3>
+        <p>Où part vraiment votre argent, mois par mois, sans avoir à trier vous-même.</p>
+      </div>
+      <div class="card">
+        <div class="badge b3">🔁</div>
+        <h3>Charges fixes détectées</h3>
+        <p>Les prélèvements récurrents que vous avez fini par oublier.</p>
+      </div>
+      <div class="card">
+        <div class="badge b4">💡</div>
+        <h3>Conseils personnalisés</h3>
+        <p>3 actions concrètes pour votre situation, pas des généralités.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="steps">
+  <div class="wrap">
+    <h2>Comment ça marche</h2>
+    <div class="step">
+      <div class="step-num">1</div>
+      <div><h3>Déposez votre relevé</h3><p>PDF, CSV ou Excel — celui que vous avez déjà sur votre ordinateur.</p></div>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <div><h3>Analyse instantanée</h3><p>Quelques secondes, aucune connexion à votre compte bancaire.</p></div>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <div><h3>Votre bilan complet</h3><p>Score, graphiques, conseils — prêt à consulter ou télécharger.</p></div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="trust">
+      <div class="icon">🔒</div>
+      <div>
+        <h3>Sans connexion bancaire</h3>
+        <p>Vous déposez juste un fichier — jamais vos identifiants bancaires. Vos données restent les vôtres.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="proof">
+  <div class="wrap"><p>Déjà testé et approuvé par ses <b>premiers utilisateurs</b>.</p></div>
+</section>
+
+<section class="final">
+  <div class="wrap">
+    <svg width="110" height="143" viewBox="0 0 80 120" style="margin:0 auto 1.5rem">
+      <g>
+        <text x="48" y="14" font-size="18">🏆</text>
+        <text x="2" y="32" font-size="14">💎</text>
+        <text x="58" y="48" font-size="14">🚀</text>
+        <text x="28" y="115" font-size="10" fill="#0071e3">😎</text>
+        <circle cx="40" cy="25" r="18" fill="#FFD93D" stroke="#333" stroke-width="2"/>
+        <ellipse cx="33" cy="22" rx="4" ry="4" fill="white"/>
+        <ellipse cx="47" cy="22" rx="4" ry="4" fill="white"/>
+        <circle cx="34" cy="23" r="2.5" fill="#333"/>
+        <circle cx="48" cy="23" r="2.5" fill="#333"/>
+        <path d="M29 29 Q40 39 51 29" stroke="#333" stroke-width="2.5" fill="none"/>
+        <rect x="27" y="17" width="10" height="6" rx="2" fill="#1a1a2e"/>
+        <rect x="43" y="17" width="10" height="6" rx="2" fill="#1a1a2e"/>
+        <line x1="27" y1="20" x2="37" y2="20" stroke="#0071e3" stroke-width="1.5"/>
+        <line x1="43" y1="20" x2="53" y2="20" stroke="#0071e3" stroke-width="1.5"/>
+        <rect x="28" y="45" width="24" height="35" rx="8" fill="#0071e3" stroke="#333" stroke-width="2"/>
+        <line x1="28" y1="52" x2="10" y2="40" stroke="#333" stroke-width="3" stroke-linecap="round"/>
+        <line x1="52" y1="52" x2="70" y2="40" stroke="#333" stroke-width="3" stroke-linecap="round"/>
+        <line x1="35" y1="80" x2="32" y2="108" stroke="#333" stroke-width="3" stroke-linecap="round"/>
+        <line x1="45" y1="80" x2="48" y2="108" stroke="#333" stroke-width="3" stroke-linecap="round"/>
+      </g>
+    </svg>
+    <h2>Prêt à enfin savoir ?</h2>
+    <p>Gratuit. Sans carte bancaire. Sans connexion à votre banque.</p>
+    <a href="https://bankanalyzer.fr/" class="cta-btn">Analyser mon relevé maintenant →</a>
+  </div>
+</section>
+
+<footer>
+  BankAnalyzer — édité par CG Conseils
+  <br>
+  <a href="https://bankanalyzer.fr/mentions-legales.html">Mentions légales</a>·
+  <a href="https://bankanalyzer.fr/politique-confidentialite.html">Confidentialité</a>·
+  <a href="https://bankanalyzer.fr/cgv.html">CGV</a>
+</footer>
+
+</body>
+</html>
