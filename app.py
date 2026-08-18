@@ -1189,10 +1189,12 @@ def export_users():
 
         tampon = io.StringIO()
         ecrivain = _csv.writer(tampon)
-        ecrivain.writerow(['email', 'statut_abonnement', 'analyses_ce_mois', 'cree_le', 'maj_le'])
+        ecrivain.writerow(['email', 'type_abonnement', 'statut_abonnement', 'analyses_ce_mois', 'cree_le', 'maj_le'])
         for ligne in lignes:
+            type_abonnement = 'PRO' if ligne['subscription_status'] == 'active' else 'FREE'
             ecrivain.writerow([
                 ligne['email'],
+                type_abonnement,
                 ligne['subscription_status'],
                 ligne['nb_analyses_mois_courant'],
                 ligne['created_at'],
