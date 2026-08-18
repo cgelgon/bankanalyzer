@@ -2,7 +2,7 @@ import os, io, json, re, unicodedata
 from datetime import datetime
 from collections import Counter
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from flask import Flask, request, jsonify, redirect
+from flask import Flask, request, jsonify, redirect, Response
 from flask_cors import CORS
 import pypdf
 import anthropic
@@ -1046,6 +1046,7 @@ def create_checkout_session():
             customer=customer_id,
             mode='subscription',
             line_items=[{'price': STRIPE_PRICE_ID, 'quantity': 1}],
+            subscription_data={'trial_period_days': 30},
             success_url=FRONTEND_URL + '?checkout=success',
             cancel_url=FRONTEND_URL + '?checkout=cancel',
         )
@@ -1091,7 +1092,7 @@ def stripe_webhook():
     elif type_evenement in ('customer.subscription.updated', 'customer.subscription.deleted'):
         customer_id = valeur_stripe(obj, 'customer')
         statut = valeur_stripe(obj, 'status')
-        nouveau_statut = 'active' if statut == 'active' else 'inactive'
+        nouveau_statut = 'active' if statut in ('active', 'trialing') else 'inactive'
         try:
             conn = get_db()
             cur = conn.cursor()
@@ -1139,6 +1140,50 @@ def create_portal_session():
         return jsonify({'url': session.url})
     except Exception as e:
         print('ERREUR create_portal_session:', str(e))
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/admin/export-users', methods=['GET'])
+def export_users():
+    cle_fournie = request.args.get('key', '')
+    cle_attendue = os.environ.get('ADMIN_SECRET', '')
+    if not cle_attendue or cle_fournie != cle_attendue:
+        return jsonify({'error': 'Non autorise'}), 403
+    if not DATABASE_URL:
+        return jsonify({'error': 'Base de donnees non configuree'}), 500
+    try:
+        import csv as _csv
+        conn = get_db()
+        cur = conn.cursor()
+        cur.execute('''
+            SELECT email, subscription_status, nb_analyses_mois_courant,
+                   created_at, updated_at
+            FROM users
+            ORDER BY created_at DESC
+        ''')
+        lignes = cur.fetchall()
+        cur.close()
+        conn.close()
+
+        tampon = io.StringIO()
+        ecrivain = _csv.writer(tampon)
+        ecrivain.writerow(['email', 'statut_abonnement', 'analyses_ce_mois', 'cree_le', 'maj_le'])
+        for ligne in lignes:
+            ecrivain.writerow([
+                ligne['email'],
+                ligne['subscription_status'],
+                ligne['nb_analyses_mois_courant'],
+                ligne['created_at'],
+                ligne['updated_at'],
+            ])
+
+        return Response(
+            tampon.getvalue(),
+            mimetype='text/csv',
+            headers={'Content-Disposition': 'attachment; filename=bankanalyzer-utilisateurs.csv'}
+        )
+    except Exception as e:
+        print('ERREUR export_users:', str(e))
         return jsonify({'error': str(e)}), 500
 
 
