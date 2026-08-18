@@ -45,6 +45,7 @@ def init_db():
         ''')
         cur.execute('ALTER TABLE users ADD COLUMN IF NOT EXISTS nb_analyses_mois_courant INTEGER DEFAULT 0')
         cur.execute('ALTER TABLE users ADD COLUMN IF NOT EXISTS mois_reference_quota TEXT')
+        cur.execute('ALTER TABLE users ADD COLUMN IF NOT EXISTS trial_end TIMESTAMP')
         cur.execute('''
             CREATE TABLE IF NOT EXISTS banques_detectees (
                 id SERIAL PRIMARY KEY,
@@ -153,7 +154,7 @@ def _logger_banque_detectee(nom_banque, nom_fichier, periode):
     except Exception as e:
         print('ERREUR log banque detectee:', str(e))
 
-def upsert_user(email, stripe_customer_id=None, stripe_subscription_id=None, subscription_status=None):
+def upsert_user(email, stripe_customer_id=None, stripe_subscription_id=None, subscription_status=None, trial_end=None, maj_trial_end=False):
     if not DATABASE_URL:
         return
     try:
@@ -173,13 +174,16 @@ def upsert_user(email, stripe_customer_id=None, stripe_subscription_id=None, sub
             if subscription_status is not None:
                 champs.append('subscription_status = %s')
                 valeurs.append(subscription_status)
+            if maj_trial_end:
+                champs.append('trial_end = %s')
+                valeurs.append(trial_end)
             champs.append('updated_at = NOW()')
             valeurs.append(email.lower().strip())
             cur.execute('UPDATE users SET ' + ', '.join(champs) + ' WHERE email = %s', tuple(valeurs))
         else:
             cur.execute(
-                'INSERT INTO users (email, stripe_customer_id, stripe_subscription_id, subscription_status) VALUES (%s, %s, %s, %s)',
-                (email.lower().strip(), stripe_customer_id, stripe_subscription_id, subscription_status or 'inactive')
+                'INSERT INTO users (email, stripe_customer_id, stripe_subscription_id, subscription_status, trial_end) VALUES (%s, %s, %s, %s, %s)',
+                (email.lower().strip(), stripe_customer_id, stripe_subscription_id, subscription_status or 'inactive', trial_end if maj_trial_end else None)
             )
         conn.commit()
         cur.close()
@@ -1092,7 +1096,16 @@ def stripe_webhook():
         customer_details = valeur_stripe(obj, 'customer_details') or {}
         email = valeur_stripe(customer_details, 'email') or valeur_stripe(obj, 'customer_email')
         if email:
-            upsert_user(email, stripe_customer_id=customer_id, stripe_subscription_id=subscription_id, subscription_status='active')
+            trial_end_dt = None
+            if subscription_id:
+                try:
+                    abonnement_stripe = stripe.Subscription.retrieve(subscription_id)
+                    trial_end_ts = valeur_stripe(abonnement_stripe, 'trial_end')
+                    if trial_end_ts:
+                        trial_end_dt = datetime.utcfromtimestamp(trial_end_ts)
+                except Exception as e:
+                    print('ERREUR recuperation trial_end:', str(e))
+            upsert_user(email, stripe_customer_id=customer_id, stripe_subscription_id=subscription_id, subscription_status='active', trial_end=trial_end_dt, maj_trial_end=True)
             print('Abonnement active pour', email)
         else:
             print('ATTENTION : aucun email trouve dans le checkout.session.completed')
@@ -1101,6 +1114,8 @@ def stripe_webhook():
         customer_id = valeur_stripe(obj, 'customer')
         statut = valeur_stripe(obj, 'status')
         nouveau_statut = 'active' if statut in ('active', 'trialing') else 'inactive'
+        trial_end_ts = valeur_stripe(obj, 'trial_end')
+        trial_end_dt = datetime.utcfromtimestamp(trial_end_ts) if (trial_end_ts and statut == 'trialing') else None
         try:
             conn = get_db()
             cur = conn.cursor()
@@ -1109,7 +1124,7 @@ def stripe_webhook():
             cur.close()
             conn.close()
             if row:
-                upsert_user(row['email'], subscription_status=nouveau_statut)
+                upsert_user(row['email'], subscription_status=nouveau_statut, trial_end=trial_end_dt, maj_trial_end=True)
         except Exception as e:
             print('ERREUR maj abonnement webhook:', str(e))
 
@@ -1179,7 +1194,7 @@ def export_users():
         cur = conn.cursor()
         cur.execute('''
             SELECT email, subscription_status, nb_analyses_mois_courant,
-                   created_at, updated_at
+                   created_at, updated_at, trial_end
             FROM users
             ORDER BY created_at DESC
         ''')
@@ -1191,7 +1206,12 @@ def export_users():
         ecrivain = _csv.writer(tampon)
         ecrivain.writerow(['email', 'type_abonnement', 'statut_abonnement', 'analyses_ce_mois', 'cree_le', 'maj_le'])
         for ligne in lignes:
-            type_abonnement = 'PRO' if ligne['subscription_status'] == 'active' else 'FREE'
+            if ligne['subscription_status'] != 'active':
+                type_abonnement = 'FREE'
+            elif ligne['trial_end'] and ligne['trial_end'] > datetime.utcnow():
+                type_abonnement = 'TRIAL'
+            else:
+                type_abonnement = 'PRO'
             ecrivain.writerow([
                 ligne['email'],
                 type_abonnement,
