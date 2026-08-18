@@ -1030,7 +1030,15 @@ def create_checkout_session():
         conn.close()
 
         customer_id = row['stripe_customer_id'] if row else None
-        if not customer_id:
+        customer_valide = False
+        if customer_id:
+            try:
+                stripe.Customer.retrieve(customer_id)
+                customer_valide = True
+            except stripe.error.InvalidRequestError:
+                customer_valide = False
+
+        if not customer_valide:
             customer = stripe.Customer.create(email=email)
             customer_id = customer.id
             upsert_user(email, stripe_customer_id=customer_id)
@@ -1133,11 +1141,25 @@ def create_portal_session():
         if not row or not row['stripe_customer_id']:
             return jsonify({'error': "Aucun abonnement trouve pour cet email"}), 404
 
-        session = stripe.billing_portal.Session.create(
-            customer=row['stripe_customer_id'],
-            return_url=FRONTEND_URL,
-        )
-        return jsonify({'url': session.url})
+        try:
+            session = stripe.billing_portal.Session.create(
+                customer=row['stripe_customer_id'],
+                return_url=FRONTEND_URL,
+            )
+            return jsonify({'url': session.url})
+        except stripe.error.InvalidRequestError as e:
+            if 'No such customer' not in str(e):
+                raise
+            conn = get_db()
+            cur = conn.cursor()
+            cur.execute(
+                "UPDATE users SET stripe_customer_id = NULL, stripe_subscription_id = NULL, subscription_status = 'inactive' WHERE email = %s",
+                (email,)
+            )
+            conn.commit()
+            cur.close()
+            conn.close()
+            return jsonify({'error': "Aucun abonnement actif trouve pour cet email. Vous pouvez souscrire a nouveau."}), 404
     except Exception as e:
         print('ERREUR create_portal_session:', str(e))
         return jsonify({'error': str(e)}), 500
