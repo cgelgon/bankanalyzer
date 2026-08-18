@@ -1209,6 +1209,59 @@ def export_users():
         return jsonify({'error': str(e)}), 500
 
 
+@app.route('/admin/clean-stale-customers', methods=['GET'])
+def clean_stale_customers():
+    cle_fournie = request.args.get('key', '')
+    cle_attendue = os.environ.get('ADMIN_SECRET', '')
+    if not cle_attendue or cle_fournie != cle_attendue:
+        return jsonify({'error': 'Non autorise'}), 403
+    if not DATABASE_URL:
+        return jsonify({'error': 'Base de donnees non configuree'}), 500
+    try:
+        conn = get_db()
+        cur = conn.cursor()
+        cur.execute("SELECT email, stripe_customer_id FROM users WHERE stripe_customer_id IS NOT NULL")
+        lignes = cur.fetchall()
+        cur.close()
+        conn.close()
+
+        emails_nettoyes = []
+        emails_valides = []
+        erreurs = []
+
+        for ligne in lignes:
+            email = ligne['email']
+            customer_id = ligne['stripe_customer_id']
+            try:
+                stripe.Customer.retrieve(customer_id)
+                emails_valides.append(email)
+            except stripe.error.InvalidRequestError as e:
+                if 'No such customer' in str(e):
+                    conn2 = get_db()
+                    cur2 = conn2.cursor()
+                    cur2.execute(
+                        "UPDATE users SET stripe_customer_id = NULL, stripe_subscription_id = NULL, subscription_status = 'inactive' WHERE email = %s",
+                        (email,)
+                    )
+                    conn2.commit()
+                    cur2.close()
+                    conn2.close()
+                    emails_nettoyes.append(email)
+                else:
+                    erreurs.append({'email': email, 'erreur': str(e)})
+
+        return jsonify({
+            'total_verifies': len(lignes),
+            'valides': len(emails_valides),
+            'nettoyes': len(emails_nettoyes),
+            'emails_nettoyes': emails_nettoyes,
+            'erreurs': erreurs,
+        })
+    except Exception as e:
+        print('ERREUR clean_stale_customers:', str(e))
+        return jsonify({'error': str(e)}), 500
+
+
 @app.route('/analyze', methods=['POST'])
 def analyze():
     try:
