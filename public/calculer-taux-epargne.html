@@ -30,6 +30,10 @@ header{padding:1.5rem 0}
 .logo{display:flex;align-items:center;gap:10px;justify-content:center}
 .logo-icon{width:30px;height:30px;background:linear-gradient(135deg,var(--blue),var(--blue2));border-radius:9px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:14px}
 .logo span{font-size:17px;font-weight:600;letter-spacing:-.2px}
+.subnav{padding:0 1.5rem 1.75rem}
+.subnav-wrap{display:flex;justify-content:center;flex-wrap:wrap;gap:8px;max-width:760px;margin:0 auto}
+.subnav a{color:var(--text2);text-decoration:none;padding:7px 14px;border-radius:100px;background:#fff;border:1px solid var(--border);font-size:12.5px;font-weight:600}
+.subnav a:hover{color:var(--blue);border-color:var(--blue)}
 .hero{text-align:center;padding:2.5rem 0 3rem}
 .eyebrow{display:inline-flex;align-items:center;gap:9px;background:#fff;border:1px solid var(--border);border-radius:100px;padding:8px 18px;font-size:12.5px;font-weight:600;color:var(--text2);box-shadow:var(--sh);margin-bottom:1.75rem}
 .eyebrow .dot{color:var(--green);font-weight:700}
@@ -78,11 +82,18 @@ footer a{text-decoration:underline;margin:0 6px}
 <body>
 
 <header>
-  <div class="logo">
+  <a href="https://bankanalyzer.fr/" class="logo" style="text-decoration:none;">
     <div class="logo-icon">B</div>
     <span>BankAnalyzer</span>
-  </div>
+  </a>
 </header>
+<nav class="subnav"><div class="subnav-wrap">
+  <a href="https://bankanalyzer.fr/">Accueil</a>
+  <a href="/analyser-releve-bancaire.html">Analyser un relevé</a>
+  <a href="/faire-son-budget-sans-connecter-son-compte.html">Faire son budget</a>
+  <a href="/convertir-releve-bancaire-pdf-excel.html">Convertir PDF en Excel</a>
+  <a href="/bilan-financier-gratuit-en-ligne.html">Bilan gratuit</a>
+</div></nav>
 
 <section class="hero">
   <div class="wrap">
