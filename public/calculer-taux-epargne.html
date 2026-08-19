@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Calculer son taux d'épargne — BankAnalyzer</title>
+<meta name="description" content="Le taux d'épargne, c'est la part de vos revenus que vous mettez de côté chaque mois. Découvrez la formule, et calculez le vôtre automatiquement à partir de votre relevé bancaire.">
+<meta property="og:title" content="Calculer son taux d'épargne — BankAnalyzer">
+<meta property="og:description" content="Découvrez votre taux d'épargne réel, calculé automatiquement à partir de votre relevé bancaire.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://bankanalyzer.fr/calculer-taux-epargne.html">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="icon" type="image/x-icon" href="/favicon.ico">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="theme-color" content="#0071e3">
+<style>
+:root{
+  --blue:#0071e3;--blue2:#00c7ff;--green:#1baf7a;--red:#e34948;--orange:#f5a623;
+  --bg:#f5f5f7;--dark:#15151a;--white:#fff;--text:#1d1d1f;--text2:#6e6e73;--text3:#9a9a9f;
+  --border:#e5e5ea;--r:18px;--sh:0 2px 24px rgba(0,0,0,.06);--sh2:0 16px 48px rgba(0,0,0,.14);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;background:var(--bg);color:var(--text);line-height:1.5;overflow-x:hidden}
+img,svg{max-width:100%;display:block}
+.wrap{max-width:760px;margin:0 auto;padding:0 1.5rem}
+a{color:inherit}
+header{padding:1.5rem 0}
+.logo{display:flex;align-items:center;gap:10px;justify-content:center}
+.logo-icon{width:30px;height:30px;background:linear-gradient(135deg,var(--blue),var(--blue2));border-radius:9px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:14px}
+.logo span{font-size:17px;font-weight:600;letter-spacing:-.2px}
+.hero{text-align:center;padding:2.5rem 0 3rem}
+.eyebrow{display:inline-flex;align-items:center;gap:9px;background:#fff;border:1px solid var(--border);border-radius:100px;padding:8px 18px;font-size:12.5px;font-weight:600;color:var(--text2);box-shadow:var(--sh);margin-bottom:1.75rem}
+.eyebrow .dot{color:var(--green);font-weight:700}
+.hero h1{font-size:clamp(30px,6.5vw,46px);font-weight:800;letter-spacing:-1.2px;line-height:1.12;margin-bottom:18px}
+.hero .payoff{font-size:19px;font-weight:600;color:var(--text);max-width:500px;margin:0 auto 2.25rem}
+.hero .payoff b{color:var(--blue)}
+.cta-btn{display:inline-flex;align-items:center;gap:10px;background:linear-gradient(135deg,var(--blue),var(--blue2));color:#fff;border:none;border-radius:100px;padding:17px 32px;font-size:17px;font-weight:700;text-decoration:none;box-shadow:0 14px 32px rgba(0,113,227,.35);transition:transform .15s ease,box-shadow .15s ease}
+.cta-btn:hover{transform:translateY(-2px);box-shadow:0 18px 40px rgba(0,113,227,.45)}
+.cta-sub{margin-top:14px;font-size:13px;color:var(--text3)}
+.formula{background:var(--dark);color:#fff;border-radius:var(--r);padding:2.25rem 1.75rem;text-align:center;margin-bottom:3.5rem}
+.formula .label{font-size:12.5px;color:var(--text3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:1rem;font-weight:700}
+.formula .eq{font-size:clamp(16px,4vw,22px);font-weight:700;color:#fff;line-height:1.6}
+.formula .eq span{color:var(--blue2)}
+.formula p{margin-top:1.25rem;font-size:14px;color:#b8b8bd}
+.bridge{text-align:center;padding:1rem 0 3rem}
+.bridge h2{font-size:clamp(24px,5vw,32px);font-weight:800;letter-spacing:-.8px;background:linear-gradient(135deg,var(--text),var(--text2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.cards{display:grid;grid-template-columns:1fr 1fr;gap:1rem;padding-bottom:1rem}
+.card{background:#fff;border-radius:var(--r);padding:1.5rem;box-shadow:var(--sh);border:1px solid var(--border)}
+.card .badge{width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;margin-bottom:14px}
+.card h3{font-size:15.5px;font-weight:700;margin-bottom:6px}
+.card p{font-size:13.5px;color:var(--text2);line-height:1.5}
+.b1{background:#e8f6ee}.b2{background:#fdece9}.b3{background:#fef4e3}.b4{background:#e8f2fe}
+.steps{padding:4rem 0}
+.steps h2{text-align:center;font-size:clamp(24px,5vw,32px);font-weight:700;letter-spacing:-.5px;margin-bottom:2.5rem}
+.step{display:flex;gap:1.25rem;align-items:flex-start;padding:1.25rem 0;border-bottom:1px solid var(--border)}
+.step:last-child{border-bottom:none}
+.step-num{width:34px;height:34px;border-radius:50%;background:var(--text);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;flex-shrink:0}
+.step h3{font-size:16.5px;font-weight:700;margin-bottom:3px}
+.step p{font-size:14px;color:var(--text2)}
+.trust{background:#fff;border:1px solid var(--border);border-radius:var(--r);padding:1.75rem;display:flex;gap:1rem;align-items:flex-start;box-shadow:var(--sh);margin:1rem 0 3.5rem}
+.trust .icon{font-size:26px;flex-shrink:0}
+.trust h3{font-size:15.5px;font-weight:700;margin-bottom:4px}
+.trust p{font-size:14px;color:var(--text2);line-height:1.55}
+.proof{text-align:center;padding-bottom:3rem}
+.proof p{font-size:14.5px;color:var(--text2);font-weight:500}
+.proof p b{color:var(--text)}
+.final{background:linear-gradient(180deg,#fff,var(--bg));text-align:center;padding:3.5rem 0 4.5rem;border-top:1px solid var(--border)}
+.final h2{font-size:clamp(26px,5.5vw,34px);font-weight:800;letter-spacing:-.8px;margin-bottom:1rem}
+.final p{font-size:16px;color:var(--text2);margin-bottom:2rem}
+footer{text-align:center;padding:2.5rem 1.5rem;font-size:12.5px;color:var(--text3)}
+footer a{text-decoration:underline;margin:0 6px}
+@media(max-width:600px){.cards{grid-template-columns:1fr}}
+@media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">B</div>
+    <span>BankAnalyzer</span>
+  </div>
+</header>
+
+<section class="hero">
+  <div class="wrap">
+    <div class="eyebrow"><span>✦ Gratuit</span><span class="dot">&bull;</span><span>Calcul automatique</span><span class="dot">&bull;</span><span>En quelques secondes</span></div>
+    <h1>Calculer son taux d'épargne</h1>
+    <p class="payoff">La part de vos revenus mise de côté chaque mois. <b>Calculée pour vous, automatiquement.</b></p>
+    <a href="https://bankanalyzer.fr/" class="cta-btn">Calculer mon taux d'épargne →</a>
+    <div class="cta-sub">Aucune carte bancaire requise · Aucune connexion à votre banque</div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="formula">
+      <div class="label">La formule</div>
+      <div class="eq">Taux d'épargne = <span>(Revenus − Dépenses)</span> ÷ Revenus × 100</div>
+      <p>Un taux de 10 à 20 % est souvent considéré comme un bon repère, mais tout dépend de votre situation.</p>
+    </div>
+  </div>
+</section>
+
+<section class="bridge">
+  <div class="wrap"><h2>Pourquoi c'est plus compliqué à calculer soi-même qu'il n'y paraît</h2></div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="cards">
+      <div class="card">
+        <div class="badge b1">📊</div>
+        <h3>Le vrai chiffre, pas une estimation</h3>
+        <p>Calculé directement sur vos transactions réelles, pas sur une moyenne approximative.</p>
+      </div>
+      <div class="card">
+        <div class="badge b2">🍕</div>
+        <h3>Dépenses détaillées par catégorie</h3>
+        <p>Comprendre ce qui pèse sur votre taux d'épargne, pas juste le chiffre final.</p>
+      </div>
+      <div class="card">
+        <div class="badge b3">🔁</div>
+        <h3>Charges fixes identifiées</h3>
+        <p>Ce qui revient chaque mois, souvent la première chose à optimiser.</p>
+      </div>
+      <div class="card">
+        <div class="badge b4">💡</div>
+        <h3>Conseils pour l'améliorer</h3>
+        <p>3 actions concrètes adaptées à votre situation, pas des généralités.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="steps">
+  <div class="wrap">
+    <h2>Comment ça marche</h2>
+    <div class="step">
+      <div class="step-num">1</div>
+      <div><h3>Déposez votre relevé</h3><p>PDF, CSV ou Excel — celui que vous avez déjà sur votre ordinateur.</p></div>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <div><h3>Calcul automatique</h3><p>Revenus et dépenses identifiés, taux d'épargne calculé en quelques secondes.</p></div>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <div><h3>Votre bilan complet</h3><p>Taux d'épargne, score de gestion, et pistes concrètes pour l'améliorer.</p></div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="trust">
+      <div class="icon">🔒</div>
+      <div>
+        <h3>Sans connexion bancaire</h3>
+        <p>Vous déposez juste un fichier — jamais vos identifiants bancaires. Vos données restent les vôtres.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="proof">
+  <div class="wrap"><p>Déjà testé et approuvé par ses <b>premiers utilisateurs</b>.</p></div>
+</section>
+
+<section class="final">
+  <div class="wrap">
+    <h2>Prêt à connaître votre taux d'épargne ?</h2>
+    <p>Gratuit. Sans carte bancaire. Sans connexion à votre banque.</p>
+    <a href="https://bankanalyzer.fr/" class="cta-btn">Analyser mon relevé maintenant →</a>
+  </div>
+</section>
+
+<footer>
+  BankAnalyzer — édité par CG Conseils
+  <br>
+  <a href="https://bankanalyzer.fr/mentions-legales.html">Mentions légales</a>·
+  <a href="https://bankanalyzer.fr/politique-confidentialite.html">Confidentialité</a>·
+  <a href="https://bankanalyzer.fr/cgv.html">CGV</a>
+</footer>
+
+<!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "0eed735705d74d45bf5a71ac0d3a345b"}'></script><!-- End Cloudflare Web Analytics -->
+</body>
+</html>
