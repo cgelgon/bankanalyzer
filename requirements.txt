@@ -6,3 +6,4 @@ openpyxl
 stripe
 psycopg2-binary
 xlrd
+gunicorn
