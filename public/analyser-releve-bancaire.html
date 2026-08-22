@@ -1146,7 +1146,23 @@ function sauvegarderEmail(){
 }
 
 document.getElementById('fileInput').addEventListener('change',e=>{if(e.target.files.length>0)selectionnerFichiers(e.target.files)});
-document.getElementById('langue').addEventListener('change',applyPatrimoineLang);
+function getLangueSite(){
+  try{return localStorage.getItem('bankanalyzer_langue')||'francais';}catch(e){return 'francais';}
+}
+function setLangueSite(val){
+  try{localStorage.setItem('bankanalyzer_langue',val);}catch(e){}
+}
+(function initLangueOutil(){
+  const sel=document.getElementById('langue');
+  const saved=getLangueSite();
+  for(let i=0;i<sel.options.length;i++){
+    if(sel.options[i].value===saved){sel.value=saved;break;}
+  }
+})();
+document.getElementById('langue').addEventListener('change',function(){
+  setLangueSite(document.getElementById('langue').value);
+  applyPatrimoineLang();
+});
 remplirSelectsDevises();
 loadPatrimoine();
 applyPatrimoineLang();
