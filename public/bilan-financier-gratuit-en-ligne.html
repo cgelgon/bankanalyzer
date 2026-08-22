@@ -26,7 +26,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;ba
 img,svg{max-width:100%;display:block}
 .wrap{max-width:760px;margin:0 auto;padding:0 1.5rem}
 a{color:inherit}
-header{padding:1.5rem 0}
+header{padding:1.5rem 1.5rem;position:relative;display:flex;align-items:center;justify-content:center}
 .logo{display:flex;align-items:center;gap:10px;justify-content:center}
 .logo-icon{width:30px;height:30px;background:linear-gradient(135deg,var(--blue),var(--blue2));border-radius:9px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:14px}
 .logo span{font-size:17px;font-weight:600;letter-spacing:-.2px}
@@ -34,6 +34,11 @@ header{padding:1.5rem 0}
 .subnav-wrap{display:flex;justify-content:center;flex-wrap:wrap;gap:8px;max-width:760px;margin:0 auto}
 .subnav a{color:var(--text2);text-decoration:none;padding:7px 14px;border-radius:100px;background:#fff;border:1px solid var(--border);font-size:12.5px;font-weight:600}
 .subnav a:hover{color:var(--blue);border-color:var(--blue)}
+.site-lang-select{position:absolute;right:1.5rem;top:50%;transform:translateY(-50%);color:var(--text2);padding:7px 10px;border-radius:100px;background:#fff;border:1px solid var(--border);font-size:12.5px;font-weight:600;font-family:inherit;cursor:pointer}
+@media(max-width:600px){
+  header{flex-direction:column;gap:10px}
+  .site-lang-select{position:static;transform:none}
+}
 .hero{text-align:center;padding:2.5rem 0 3.5rem}
 .eyebrow{display:inline-flex;align-items:center;gap:9px;background:#fff;border:1px solid var(--border);border-radius:100px;padding:8px 18px;font-size:12.5px;font-weight:600;color:var(--text2);box-shadow:var(--sh);margin-bottom:1.75rem}
 .eyebrow .dot{color:var(--green);font-weight:700}
@@ -85,27 +90,37 @@ footer a{text-decoration:underline;margin:0 6px}
     <div class="logo-icon">B</div>
     <span>BankAnalyzer</span>
   </a>
+  <select id="siteLangue" class="site-lang-select">
+    <option value="francais">🇫🇷 FR</option>
+    <option value="english">🇬🇧 EN</option>
+    <option value="espanol">🇪🇸 ES</option>
+    <option value="deutsch">🇩🇪 DE</option>
+    <option value="italiano">🇮🇹 IT</option>
+    <option value="portugues">🇵🇹 PT</option>
+    <option value="chinese">🇨🇳 中文</option>
+    <option value="arabic">🇸🇦 عربي</option>
+  </select>
 </header>
 <nav class="subnav"><div class="subnav-wrap">
-  <a href="https://bankanalyzer.fr/">Accueil</a>
-  <a href="/analyser-releve-bancaire.html">Analyser un relevé</a>
-  <a href="/faire-son-budget-sans-connecter-son-compte.html">Faire son budget</a>
-  <a href="/convertir-releve-bancaire-pdf-excel.html">Convertir PDF en Excel</a>
-  <a href="/calculer-taux-epargne.html">Taux d'épargne</a>
+  <a href="https://bankanalyzer.fr/" id="subnavAccueil">Accueil</a>
+  <a href="/analyser-releve-bancaire.html" id="subnavAnalyser">Analyser un relevé</a>
+  <a href="/faire-son-budget-sans-connecter-son-compte.html" id="subnavBudget">Faire son budget</a>
+  <a href="/convertir-releve-bancaire-pdf-excel.html" id="subnavConvertir">Convertir PDF en Excel</a>
+  <a href="/calculer-taux-epargne.html" id="subnavEpargne">Taux d'épargne</a>
 </div></nav>
 
 <section class="hero">
   <div class="wrap">
-    <div class="eyebrow"><span>✦ Gratuit</span><span class="dot">&bull;</span><span>Sans connexion bancaire</span><span class="dot">&bull;</span><span>En quelques secondes</span></div>
-    <h1>Votre bilan financier<br>gratuit, en ligne</h1>
-    <p class="payoff">Déposez votre relevé bancaire, <b>obtenez votre bilan complet en 1 clic.</b></p>
-    <a href="https://bankanalyzer.fr/analyser-releve-bancaire.html" class="cta-btn">Obtenir mon bilan gratuit →</a>
-    <div class="cta-sub">Aucune carte bancaire requise · Aucune connexion à votre banque</div>
+    <div class="eyebrow"><span id="eyebrowGratuit">✦ Gratuit</span><span class="dot">&bull;</span><span id="eyebrowSansConnexion">Sans connexion bancaire</span><span class="dot">&bull;</span><span id="eyebrowSecondes">En quelques secondes</span></div>
+    <h1 id="heroH1">Votre bilan financier<br>gratuit, en ligne</h1>
+    <p class="payoff" id="heroPayoff">Déposez votre relevé bancaire, <b>obtenez votre bilan complet en 1 clic.</b></p>
+    <a href="https://bankanalyzer.fr/analyser-releve-bancaire.html" class="cta-btn" id="ctaHero">Obtenir mon bilan gratuit →</a>
+    <div class="cta-sub" id="ctaSub">Aucune carte bancaire requise · Aucune connexion à votre banque</div>
   </div>
 </section>
 
 <section class="bridge">
-  <div class="wrap"><h2>Ce que contient votre bilan</h2></div>
+  <div class="wrap"><h2 id="bridgeH2">Ce que contient votre bilan</h2></div>
 </section>
 
 <section>
@@ -113,23 +128,23 @@ footer a{text-decoration:underline;margin:0 6px}
     <div class="cards">
       <div class="card">
         <div class="badge b1">📊</div>
-        <h3>Score de gestion sur 10</h3>
-        <p>Une note claire de votre santé financière, pas juste un solde sur un écran.</p>
+        <h3 id="card1Title">Score de gestion sur 10</h3>
+        <p id="card1Text">Une note claire de votre santé financière, pas juste un solde sur un écran.</p>
       </div>
       <div class="card">
         <div class="badge b2">🍕</div>
-        <h3>Dépenses par catégorie</h3>
-        <p>Où part vraiment votre argent, mois par mois, sans avoir à trier vous-même.</p>
+        <h3 id="card2Title">Dépenses par catégorie</h3>
+        <p id="card2Text">Où part vraiment votre argent, mois par mois, sans avoir à trier vous-même.</p>
       </div>
       <div class="card">
         <div class="badge b3">🔁</div>
-        <h3>Charges fixes détectées</h3>
-        <p>Les prélèvements récurrents que vous avez fini par oublier.</p>
+        <h3 id="card3Title">Charges fixes détectées</h3>
+        <p id="card3Text">Les prélèvements récurrents que vous avez fini par oublier.</p>
       </div>
       <div class="card">
         <div class="badge b4">💡</div>
-        <h3>Conseils personnalisés</h3>
-        <p>3 actions concrètes pour votre situation, pas des généralités.</p>
+        <h3 id="card4Title">Conseils personnalisés</h3>
+        <p id="card4Text">3 actions concrètes pour votre situation, pas des généralités.</p>
       </div>
     </div>
   </div>
@@ -137,18 +152,18 @@ footer a{text-decoration:underline;margin:0 6px}
 
 <section class="steps">
   <div class="wrap">
-    <h2>Comment ça marche</h2>
+    <h2 id="stepsH2">Comment ça marche</h2>
     <div class="step">
       <div class="step-num">1</div>
-      <div><h3>Déposez votre relevé</h3><p>PDF, CSV ou Excel — celui que vous avez déjà sur votre ordinateur.</p></div>
+      <div><h3 id="step1Title">Déposez votre relevé</h3><p id="step1Text">PDF, CSV ou Excel — celui que vous avez déjà sur votre ordinateur.</p></div>
     </div>
     <div class="step">
       <div class="step-num">2</div>
-      <div><h3>Analyse instantanée</h3><p>Quelques secondes, aucune connexion à votre compte bancaire.</p></div>
+      <div><h3 id="step2Title">Analyse instantanée</h3><p id="step2Text">Quelques secondes, aucune connexion à votre compte bancaire.</p></div>
     </div>
     <div class="step">
       <div class="step-num">3</div>
-      <div><h3>Votre bilan complet</h3><p>Prêt à consulter en ligne ou à télécharger en PDF.</p></div>
+      <div><h3 id="step3Title">Votre bilan complet</h3><p id="step3Text">Prêt à consulter en ligne ou à télécharger en PDF.</p></div>
     </div>
   </div>
 </section>
@@ -156,8 +171,8 @@ footer a{text-decoration:underline;margin:0 6px}
 <section>
   <div class="wrap">
     <div class="pricing">
-      <h3>Ce qui est gratuit</h3>
-      <ul>
+      <h3 id="pricingTitle">Ce qui est gratuit</h3>
+      <ul id="pricingList">
         <li><span>✓</span>1 analyse simple par mois (1 fichier)</li>
         <li><span>✓</span>Score de gestion, catégories, charges fixes</li>
         <li><span>✓</span>Conseils personnalisés</li>
@@ -172,32 +187,86 @@ footer a{text-decoration:underline;margin:0 6px}
     <div class="trust">
       <div class="icon">🔒</div>
       <div>
-        <h3>Sans connexion bancaire</h3>
-        <p>Vous déposez juste un fichier — jamais vos identifiants bancaires. Vos données restent les vôtres.</p>
+        <h3 id="trustTitle">Sans connexion bancaire</h3>
+        <p id="trustText">Vous déposez juste un fichier — jamais vos identifiants bancaires. Vos données restent les vôtres.</p>
       </div>
     </div>
   </div>
 </section>
 
 <section class="proof">
-  <div class="wrap"><p>Déjà testé et approuvé par ses <b>premiers utilisateurs</b>.</p></div>
+  <div class="wrap"><p id="proofText">Déjà testé et approuvé par ses <b>premiers utilisateurs</b>.</p></div>
 </section>
 
 <section class="final">
   <div class="wrap">
-    <h2>Prêt à voir votre bilan ?</h2>
-    <p>Gratuit. Sans carte bancaire. Sans connexion à votre banque.</p>
-    <a href="https://bankanalyzer.fr/analyser-releve-bancaire.html" class="cta-btn">Analyser mon relevé maintenant →</a>
+    <h2 id="finalH2">Prêt à voir votre bilan ?</h2>
+    <p id="finalText">Gratuit. Sans carte bancaire. Sans connexion à votre banque.</p>
+    <a href="https://bankanalyzer.fr/analyser-releve-bancaire.html" class="cta-btn" id="ctaFinal">Analyser mon relevé maintenant →</a>
   </div>
 </section>
 
 <footer>
   BankAnalyzer — édité par CG Conseils
   <br>
-  <a href="https://bankanalyzer.fr/mentions-legales.html">Mentions légales</a>·
-  <a href="https://bankanalyzer.fr/politique-confidentialite.html">Confidentialité</a>·
-  <a href="https://bankanalyzer.fr/cgv.html">CGV</a>
+  <a href="https://bankanalyzer.fr/mentions-legales.html" id="footerMentions">Mentions légales</a>·
+  <a href="https://bankanalyzer.fr/politique-confidentialite.html" id="footerConfidentialite">Confidentialité</a>·
+  <a href="https://bankanalyzer.fr/cgv.html" id="footerCgv">CGV</a>
 </footer>
+
+<script>
+const TR_PAGE = {
+francais:{subnavAccueil:'Accueil',subnavAnalyser:'Analyser un relevé',subnavBudget:'Faire son budget',subnavConvertir:'Convertir PDF en Excel',subnavEpargne:'Taux d\'épargne',ctaSub:'Aucune carte bancaire requise · Aucune connexion à votre banque',trustTitle:'Sans connexion bancaire',trustText:'Vous déposez juste un fichier — jamais vos identifiants bancaires. Vos données restent les vôtres.',proofText:'Déjà testé et approuvé par ses <b>premiers utilisateurs</b>.',ctaFinal:'Analyser mon relevé maintenant →',footerMentions:'Mentions légales',footerConfidentialite:'Confidentialité',footerCgv:'CGV',eyebrowGratuit:'✦ Gratuit',eyebrowSecondes:'En quelques secondes',eyebrowSansConnexion:'Sans connexion bancaire',stepsH2:'Comment ça marche',heroH1:'Votre bilan financier<br>gratuit, en ligne',heroPayoff:'Déposez votre relevé bancaire, <b>obtenez votre bilan complet en 1 clic.</b>',ctaHero:'Obtenir mon bilan gratuit →',bridgeH2:'Ce que contient votre bilan',card1Title:'Score de gestion sur 10',card1Text:'Une note claire de votre santé financière, pas juste un solde sur un écran.',card2Title:'Dépenses par catégorie',card2Text:'Où part vraiment votre argent, mois par mois, sans avoir à trier vous-même.',card3Title:'Charges fixes détectées',card3Text:'Les prélèvements récurrents que vous avez fini par oublier.',card4Title:'Conseils personnalisés',card4Text:'3 actions concrètes pour votre situation, pas des généralités.',step1Title:'Déposez votre relevé',step1Text:'PDF, CSV ou Excel — celui que vous avez déjà sur votre ordinateur.',step2Title:'Analyse instantanée',step2Text:'Quelques secondes, aucune connexion à votre compte bancaire.',step3Title:'Votre bilan complet',step3Text:'Prêt à consulter en ligne ou à télécharger en PDF.',pricingTitle:'Ce qui est gratuit',finalH2:'Prêt à voir votre bilan ?',finalText:'Gratuit. Sans carte bancaire. Sans connexion à votre banque.'},
+english:{subnavAccueil:'Home',subnavAnalyser:'Analyze a statement',subnavBudget:'Build your budget',subnavConvertir:'Convert PDF to Excel',subnavEpargne:'Savings rate',ctaSub:'No credit card required · No connection to your bank',trustTitle:'No bank connection',trustText:'You just upload a file — never your bank credentials. Your data stays yours.',proofText:'Already tested and approved by its <b>first users</b>.',ctaFinal:'Analyze my statement now →',footerMentions:'Legal notice',footerConfidentialite:'Privacy',footerCgv:'Terms',eyebrowGratuit:'✦ Free',eyebrowSecondes:'In seconds',eyebrowSansConnexion:'No bank connection',stepsH2:'How it works',heroH1:'Your financial report<br>free, online',heroPayoff:'Upload your bank statement, <b>get your complete report in 1 click.</b>',ctaHero:'Get my free report →',bridgeH2:'What\'s in your report',card1Title:'Financial health score out of 10',card1Text:'A clear score of your financial health, not just a balance on a screen.',card2Title:'Spending by category',card2Text:'Where your money really goes, month by month, without sorting it yourself.',card3Title:'Fixed charges detected',card3Text:'The recurring payments you\'d stopped noticing.',card4Title:'Personalized advice',card4Text:'3 concrete actions for your situation, not generic tips.',step1Title:'Upload your statement',step1Text:'PDF, CSV or Excel — the one you already have on your computer.',step2Title:'Instant analysis',step2Text:'A few seconds, no connection to your bank account.',step3Title:'Your complete report',step3Text:'Ready to view online or download as PDF.',pricingTitle:'What\'s free',finalH2:'Ready to see your report?',finalText:'Free. No credit card. No connection to your bank.'},
+espanol:{subnavAccueil:'Inicio',subnavAnalyser:'Analizar un extracto',subnavBudget:'Hacer tu presupuesto',subnavConvertir:'Convertir PDF a Excel',subnavEpargne:'Tasa de ahorro',ctaSub:'No se requiere tarjeta · Sin conexión a tu banco',trustTitle:'Sin conexión bancaria',trustText:'Solo subes un archivo — nunca tus credenciales bancarias. Tus datos siguen siendo tuyos.',proofText:'Ya probado y aprobado por sus <b>primeros usuarios</b>.',ctaFinal:'Analizar mi extracto ahora →',footerMentions:'Aviso legal',footerConfidentialite:'Privacidad',footerCgv:'Términos',eyebrowGratuit:'✦ Gratis',eyebrowSecondes:'En segundos',eyebrowSansConnexion:'Sin conexión bancaria',stepsH2:'Cómo funciona',heroH1:'Tu balance financiero<br>gratis, en línea',heroPayoff:'Sube tu extracto bancario, <b>obtén tu balance completo en 1 clic.</b>',ctaHero:'Obtener mi balance gratis →',bridgeH2:'Lo que contiene tu balance',card1Title:'Puntuación financiera sobre 10',card1Text:'Una nota clara de tu salud financiera, no solo un saldo en pantalla.',card2Title:'Gastos por categoría',card2Text:'A dónde va realmente tu dinero, mes a mes, sin clasificarlo tú mismo.',card3Title:'Gastos fijos detectados',card3Text:'Los cargos recurrentes que habías dejado de notar.',card4Title:'Consejos personalizados',card4Text:'3 acciones concretas para tu situación, no generalidades.',step1Title:'Sube tu extracto',step1Text:'PDF, CSV o Excel — el que ya tienes en tu ordenador.',step2Title:'Análisis instantáneo',step2Text:'Unos segundos, sin conexión a tu cuenta bancaria.',step3Title:'Tu balance completo',step3Text:'Listo para consultar en línea o descargar en PDF.',pricingTitle:'Lo que es gratis',finalH2:'¿Listo para ver tu balance?',finalText:'Gratis. Sin tarjeta. Sin conexión a tu banco.'},
+deutsch:{subnavAccueil:'Startseite',subnavAnalyser:'Kontoauszug analysieren',subnavBudget:'Budget erstellen',subnavConvertir:'PDF in Excel umwandeln',subnavEpargne:'Sparquote',ctaSub:'Keine Kreditkarte nötig · Keine Verbindung zu Ihrer Bank',trustTitle:'Keine Bankverbindung',trustText:'Sie laden nur eine Datei hoch — nie Ihre Bankzugangsdaten. Ihre Daten bleiben Ihre eigenen.',proofText:'Bereits getestet und bestätigt von den <b>ersten Nutzern</b>.',ctaFinal:'Jetzt meinen Kontoauszug analysieren →',footerMentions:'Impressum',footerConfidentialite:'Datenschutz',footerCgv:'AGB',eyebrowGratuit:'✦ Kostenlos',eyebrowSecondes:'In Sekunden',eyebrowSansConnexion:'Keine Bankverbindung',stepsH2:'So funktioniert\'s',heroH1:'Ihre Finanzübersicht<br>kostenlos, online',heroPayoff:'Laden Sie Ihren Kontoauszug hoch, <b>erhalten Sie Ihre vollständige Übersicht in 1 Klick.</b>',ctaHero:'Meine kostenlose Übersicht erhalten →',bridgeH2:'Was Ihre Übersicht enthält',card1Title:'Finanz-Score von 10',card1Text:'Eine klare Bewertung Ihrer finanziellen Gesundheit, nicht nur ein Kontostand.',card2Title:'Ausgaben nach Kategorie',card2Text:'Wohin Ihr Geld wirklich fließt, Monat für Monat, ohne selbst zu sortieren.',card3Title:'Erkannte Fixkosten',card3Text:'Die wiederkehrenden Abbuchungen, die Sie längst vergessen hatten.',card4Title:'Persönliche Empfehlungen',card4Text:'3 konkrete Maßnahmen für Ihre Situation, keine Allgemeinplätze.',step1Title:'Laden Sie Ihren Kontoauszug hoch',step1Text:'PDF, CSV oder Excel — den Sie bereits auf Ihrem Computer haben.',step2Title:'Sofortige Analyse',step2Text:'Wenige Sekunden, keine Verbindung zu Ihrem Bankkonto.',step3Title:'Ihre vollständige Übersicht',step3Text:'Bereit zum Online-Ansehen oder als PDF-Download.',pricingTitle:'Was kostenlos ist',finalH2:'Bereit, Ihre Übersicht zu sehen?',finalText:'Kostenlos. Keine Kreditkarte. Keine Verbindung zu Ihrer Bank.'},
+italiano:{subnavAccueil:'Home',subnavAnalyser:'Analizza un estratto',subnavBudget:'Crea il tuo budget',subnavConvertir:'Converti PDF in Excel',subnavEpargne:'Tasso di risparmio',ctaSub:'Nessuna carta richiesta · Nessuna connessione alla tua banca',trustTitle:'Senza connessione bancaria',trustText:'Carichi solo un file — mai le tue credenziali bancarie. I tuoi dati restano tuoi.',proofText:'Già testato e approvato dai suoi <b>primi utenti</b>.',ctaFinal:'Analizza il mio estratto ora →',footerMentions:'Note legali',footerConfidentialite:'Privacy',footerCgv:'Termini',eyebrowGratuit:'✦ Gratuito',eyebrowSecondes:'In pochi secondi',eyebrowSansConnexion:'Senza connessione bancaria',stepsH2:'Come funziona',heroH1:'Il tuo bilancio finanziario<br>gratuito, online',heroPayoff:'Carica il tuo estratto conto, <b>ottieni il tuo bilancio completo in 1 clic.</b>',ctaHero:'Ottieni il mio bilancio gratuito →',bridgeH2:'Cosa contiene il tuo bilancio',card1Title:'Punteggio finanziario su 10',card1Text:'Un punteggio chiaro della tua salute finanziaria, non solo un saldo sullo schermo.',card2Title:'Spese per categoria',card2Text:'Dove va davvero il tuo denaro, mese per mese, senza doverlo ordinare tu.',card3Title:'Spese fisse rilevate',card3Text:'Gli addebiti ricorrenti che avevi smesso di notare.',card4Title:'Consigli personalizzati',card4Text:'3 azioni concrete per la tua situazione, non generalità.',step1Title:'Carica il tuo estratto',step1Text:'PDF, CSV o Excel — quello che hai già sul tuo computer.',step2Title:'Analisi istantanea',step2Text:'Pochi secondi, nessuna connessione al tuo conto bancario.',step3Title:'Il tuo bilancio completo',step3Text:'Pronto da consultare online o da scaricare in PDF.',pricingTitle:'Cosa è gratuito',finalH2:'Pronto a vedere il tuo bilancio?',finalText:'Gratuito. Nessuna carta. Nessuna connessione alla tua banca.'},
+portugues:{subnavAccueil:'Início',subnavAnalyser:'Analisar um extrato',subnavBudget:'Fazer seu orçamento',subnavConvertir:'Converter PDF em Excel',subnavEpargne:'Taxa de poupança',ctaSub:'Nenhum cartão necessário · Sem conexão com seu banco',trustTitle:'Sem conexão bancária',trustText:'Você só envia um arquivo — nunca suas credenciais bancárias. Seus dados continuam seus.',proofText:'Já testado e aprovado por seus <b>primeiros usuários</b>.',ctaFinal:'Analisar meu extrato agora →',footerMentions:'Aviso legal',footerConfidentialite:'Privacidade',footerCgv:'Termos',eyebrowGratuit:'✦ Grátis',eyebrowSecondes:'Em segundos',eyebrowSansConnexion:'Sem conexão bancária',stepsH2:'Como funciona',heroH1:'Seu balanço financeiro<br>grátis, online',heroPayoff:'Envie seu extrato bancário, <b>obtenha seu balanço completo em 1 clique.</b>',ctaHero:'Obter meu balanço grátis →',bridgeH2:'O que contém seu balanço',card1Title:'Pontuação financeira de 10',card1Text:'Uma nota clara da sua saúde financeira, não apenas um saldo na tela.',card2Title:'Gastos por categoria',card2Text:'Para onde seu dinheiro realmente vai, mês a mês, sem precisar organizar você mesmo.',card3Title:'Despesas fixas detectadas',card3Text:'Os débitos recorrentes que você tinha parado de notar.',card4Title:'Conselhos personalizados',card4Text:'3 ações concretas para sua situação, não generalidades.',step1Title:'Envie seu extrato',step1Text:'PDF, CSV ou Excel — o que você já tem no seu computador.',step2Title:'Análise instantânea',step2Text:'Poucos segundos, sem conexão com sua conta bancária.',step3Title:'Seu balanço completo',step3Text:'Pronto para consultar online ou baixar em PDF.',pricingTitle:'O que é grátis',finalH2:'Pronto para ver seu balanço?',finalText:'Grátis. Sem cartão. Sem conexão com seu banco.'},
+chinese:{subnavAccueil:'首页',subnavAnalyser:'分析对账单',subnavBudget:'制定预算',subnavConvertir:'PDF转Excel',subnavEpargne:'储蓄率',ctaSub:'无需信用卡 · 无需连接您的银行',trustTitle:'无需连接银行',trustText:'您只需上传一个文件——绝不需要您的银行凭证。您的数据始终属于您。',proofText:'已经过<b>首批用户</b>的测试和认可。',ctaFinal:'立即分析我的对账单 →',footerMentions:'法律声明',footerConfidentialite:'隐私政策',footerCgv:'条款',eyebrowGratuit:'✦ 免费',eyebrowSecondes:'几秒钟内完成',eyebrowSansConnexion:'无需连接银行',stepsH2:'使用方法',heroH1:'您的财务报告<br>免费在线获取',heroPayoff:'上传您的银行对账单，<b>一键获取完整报告。</b>',ctaHero:'获取我的免费报告 →',bridgeH2:'您的报告包含哪些内容',card1Title:'十分制财务健康评分',card1Text:'清晰的财务健康评分，而不只是屏幕上的一个余额。',card2Title:'按类别划分的支出',card2Text:'您的钱究竟花在哪里，逐月呈现，无需自己整理。',card3Title:'检测到的固定支出',card3Text:'您已经不再注意的经常性扣款。',card4Title:'个性化建议',card4Text:'针对您情况的3个具体行动，而非泛泛而谈。',step1Title:'上传您的对账单',step1Text:'PDF、CSV或Excel——您电脑上已有的文件。',step2Title:'即时分析',step2Text:'几秒钟内完成，无需连接您的银行账户。',step3Title:'您的完整报告',step3Text:'可随时在线查看或下载为PDF。',pricingTitle:'免费内容',finalH2:'准备好查看您的报告了吗？',finalText:'免费。无需信用卡。无需连接您的银行。'},
+arabic:{subnavAccueil:'الرئيسية',subnavAnalyser:'تحليل كشف حساب',subnavBudget:'إعداد ميزانيتك',subnavConvertir:'تحويل PDF إلى Excel',subnavEpargne:'معدل الادخار',ctaSub:'لا حاجة لبطاقة بنكية · بدون ربط ببنكك',trustTitle:'بدون ربط بنكي',trustText:'أنت فقط ترفع ملفًا — أبدًا بيانات اعتماد بنكك. بياناتك تبقى ملكك.',proofText:'تم اختباره واعتماده بالفعل من قبل <b>أوائل المستخدمين</b>.',ctaFinal:'حلّل كشفي الآن →',footerMentions:'الإشعار القانوني',footerConfidentialite:'الخصوصية',footerCgv:'الشروط',eyebrowGratuit:'✦ مجاني',eyebrowSecondes:'خلال ثوانٍ',eyebrowSansConnexion:'بدون ربط بنكي',stepsH2:'كيف يعمل',heroH1:'تقريرك المالي<br>مجانًا، عبر الإنترنت',heroPayoff:'ارفع كشف حسابك البنكي، <b>واحصل على تقريرك الكامل بنقرة واحدة.</b>',ctaHero:'احصل على تقريري المجاني →',bridgeH2:'ما الذي يحتويه تقريرك',card1Title:'درجة الصحة المالية من 10',card1Text:'درجة واضحة لصحتك المالية، وليس مجرد رصيد على الشاشة.',card2Title:'المصروفات حسب الفئة',card2Text:'أين يذهب مالك فعليًا، شهرًا بشهر، دون الحاجة للفرز بنفسك.',card3Title:'الرسوم الثابتة المكتشفة',card3Text:'الخصومات المتكررة التي توقفت عن ملاحظتها.',card4Title:'نصائح شخصية',card4Text:'3 إجراءات ملموسة لوضعك، وليست تعميمات.',step1Title:'ارفع كشف حسابك',step1Text:'PDF أو CSV أو Excel — الذي لديك بالفعل على حاسوبك.',step2Title:'تحليل فوري',step2Text:'ثوانٍ قليلة، بدون ربط بحسابك البنكي.',step3Title:'تقريرك الكامل',step3Text:'جاهز للعرض عبر الإنترنت أو التنزيل بصيغة PDF.',pricingTitle:'ما هو مجاني',finalH2:'هل أنت مستعد لرؤية تقريرك؟',finalText:'مجاني. بدون بطاقة بنكية. بدون ربط ببنكك.'}
+};
+const PRICING_HTML = {
+  francais: `<li><span>✓</span>1 analyse simple par mois (1 fichier)</li><li><span>✓</span>Score de gestion, catégories, charges fixes</li><li><span>✓</span>Conseils personnalisés</li><li><span>✓</span>Export PDF de votre bilan</li>`,
+  english: `<li><span>✓</span>1 simple analysis per month (1 file)</li><li><span>✓</span>Financial health score, categories, fixed charges</li><li><span>✓</span>Personalized advice</li><li><span>✓</span>PDF export of your report</li>`,
+  espanol: `<li><span>✓</span>1 análisis simple al mes (1 archivo)</li><li><span>✓</span>Puntuación financiera, categorías, gastos fijos</li><li><span>✓</span>Consejos personalizados</li><li><span>✓</span>Exportación PDF de tu balance</li>`,
+  deutsch: `<li><span>✓</span>1 einfache Analyse pro Monat (1 Datei)</li><li><span>✓</span>Finanz-Score, Kategorien, Fixkosten</li><li><span>✓</span>Persönliche Empfehlungen</li><li><span>✓</span>PDF-Export Ihrer Übersicht</li>`,
+  italiano: `<li><span>✓</span>1 analisi semplice al mese (1 file)</li><li><span>✓</span>Punteggio finanziario, categorie, spese fisse</li><li><span>✓</span>Consigli personalizzati</li><li><span>✓</span>Esportazione PDF del tuo bilancio</li>`,
+  portugues: `<li><span>✓</span>1 análise simples por mês (1 arquivo)</li><li><span>✓</span>Pontuação financeira, categorias, despesas fixas</li><li><span>✓</span>Conselhos personalizados</li><li><span>✓</span>Exportação PDF do seu balanço</li>`,
+  chinese: `<li><span>✓</span>每月1次简单分析（1个文件）</li><li><span>✓</span>财务健康评分、类别、固定支出</li><li><span>✓</span>个性化建议</li><li><span>✓</span>导出PDF报告</li>`,
+  arabic: `<li><span>✓</span>تحليل بسيط واحد شهريًا (ملف واحد)</li><li><span>✓</span>درجة الصحة المالية، الفئات، الرسوم الثابتة</li><li><span>✓</span>نصائح شخصية</li><li><span>✓</span>تصدير PDF لتقريرك</li>`,
+};
+
+function getLangueSite(){
+  return localStorage.getItem('bankanalyzer_langue') || 'francais';
+}
+function setLangueSite(val){
+  localStorage.setItem('bankanalyzer_langue', val);
+}
+function appliquerTraductionPage(){
+  const lang = getLangueSite();
+  const T = TR_PAGE[lang] || TR_PAGE.francais;
+  for (const cle in T) {
+    const el = document.getElementById(cle);
+    if (!el) continue;
+    if (T[cle].indexOf('<b>') !== -1 || T[cle].indexOf('<br>') !== -1) {
+      el.innerHTML = T[cle];
+    } else {
+      el.textContent = T[cle];
+    }
+  }
+  const pricingEl = document.getElementById('pricingList');
+  if (pricingEl) pricingEl.innerHTML = PRICING_HTML[lang] || PRICING_HTML.francais;
+}
+document.addEventListener('DOMContentLoaded', function(){
+  const select = document.getElementById('siteLangue');
+  select.value = getLangueSite();
+  appliquerTraductionPage();
+  select.addEventListener('change', function(){
+    setLangueSite(select.value);
+    appliquerTraductionPage();
+  });
+});
+</script>
 
 <!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "0eed735705d74d45bf5a71ac0d3a345b"}'></script><!-- End Cloudflare Web Analytics -->
 </body>

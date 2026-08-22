@@ -26,7 +26,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;ba
 img,svg{max-width:100%;display:block}
 .wrap{max-width:760px;margin:0 auto;padding:0 1.5rem}
 a{color:inherit}
-header{padding:1.5rem 0}
+header{padding:1.5rem 1.5rem;position:relative;display:flex;align-items:center;justify-content:center}
 .logo{display:flex;align-items:center;gap:10px;justify-content:center}
 .logo-icon{width:30px;height:30px;background:linear-gradient(135deg,var(--blue),var(--blue2));border-radius:9px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:14px}
 .logo span{font-size:17px;font-weight:600;letter-spacing:-.2px}
@@ -34,6 +34,11 @@ header{padding:1.5rem 0}
 .subnav-wrap{display:flex;justify-content:center;flex-wrap:wrap;gap:8px;max-width:760px;margin:0 auto}
 .subnav a{color:var(--text2);text-decoration:none;padding:7px 14px;border-radius:100px;background:#fff;border:1px solid var(--border);font-size:12.5px;font-weight:600}
 .subnav a:hover{color:var(--blue);border-color:var(--blue)}
+.site-lang-select{position:absolute;right:1.5rem;top:50%;transform:translateY(-50%);color:var(--text2);padding:7px 10px;border-radius:100px;background:#fff;border:1px solid var(--border);font-size:12.5px;font-weight:600;font-family:inherit;cursor:pointer}
+@media(max-width:600px){
+  header{flex-direction:column;gap:10px}
+  .site-lang-select{position:static;transform:none}
+}
 .hero{text-align:center;padding:2.5rem 0 3.5rem}
 .eyebrow{display:inline-flex;align-items:center;gap:9px;background:#fff;border:1px solid var(--border);border-radius:100px;padding:8px 18px;font-size:12.5px;font-weight:600;color:var(--text2);box-shadow:var(--sh);margin-bottom:1.75rem}
 .eyebrow .dot{color:var(--green);font-weight:700}
@@ -89,29 +94,39 @@ footer a{text-decoration:underline;margin:0 6px}
     <div class="logo-icon">B</div>
     <span>BankAnalyzer</span>
   </a>
+  <select id="siteLangue" class="site-lang-select">
+    <option value="francais">🇫🇷 FR</option>
+    <option value="english">🇬🇧 EN</option>
+    <option value="espanol">🇪🇸 ES</option>
+    <option value="deutsch">🇩🇪 DE</option>
+    <option value="italiano">🇮🇹 IT</option>
+    <option value="portugues">🇵🇹 PT</option>
+    <option value="chinese">🇨🇳 中文</option>
+    <option value="arabic">🇸🇦 عربي</option>
+  </select>
 </header>
 <nav class="subnav"><div class="subnav-wrap">
-  <a href="https://bankanalyzer.fr/">Accueil</a>
-  <a href="/analyser-releve-bancaire.html">Analyser un relevé</a>
-  <a href="/convertir-releve-bancaire-pdf-excel.html">Convertir PDF en Excel</a>
-  <a href="/calculer-taux-epargne.html">Taux d'épargne</a>
-  <a href="/bilan-financier-gratuit-en-ligne.html">Bilan gratuit</a>
+  <a href="https://bankanalyzer.fr/" id="subnavAccueil">Accueil</a>
+  <a href="/analyser-releve-bancaire.html" id="subnavAnalyser">Analyser un relevé</a>
+  <a href="/convertir-releve-bancaire-pdf-excel.html" id="subnavConvertir">Convertir PDF en Excel</a>
+  <a href="/calculer-taux-epargne.html" id="subnavEpargne">Taux d'épargne</a>
+  <a href="/bilan-financier-gratuit-en-ligne.html" id="subnavBilan">Bilan gratuit</a>
 </div></nav>
 
 <section class="hero">
   <div class="wrap">
-    <div class="eyebrow"><span>✦ Gratuit</span><span class="dot">&bull;</span><span>Sans connexion bancaire</span><span class="dot">&bull;</span><span>En quelques secondes</span></div>
-    <h1>Faire son budget <br>sans connecter son compte bancaire</h1>
-    <p class="payoff">Déposez juste votre relevé, jamais vos identifiants. <b>Votre budget en 1 clic.</b></p>
-    <a href="https://bankanalyzer.fr/analyser-releve-bancaire.html" class="cta-btn">Essayer gratuitement →</a>
-    <div class="cta-sub">Aucune carte bancaire requise · Aucune connexion à votre banque</div>
+    <div class="eyebrow"><span id="eyebrowGratuit">✦ Gratuit</span><span class="dot">&bull;</span><span id="eyebrowSansConnexion">Sans connexion bancaire</span><span class="dot">&bull;</span><span id="eyebrowSecondes">En quelques secondes</span></div>
+    <h1 id="heroH1">Faire son budget <br>sans connecter son compte bancaire</h1>
+    <p class="payoff" id="heroPayoff">Déposez juste votre relevé, jamais vos identifiants. <b>Votre budget en 1 clic.</b></p>
+    <a href="https://bankanalyzer.fr/analyser-releve-bancaire.html" class="cta-btn" id="ctaHero">Essayer gratuitement →</a>
+    <div class="cta-sub" id="ctaSub">Aucune carte bancaire requise · Aucune connexion à votre banque</div>
   </div>
 </section>
 
 <section class="compare">
   <div class="wrap">
-    <h2>Deux façons de faire son budget</h2>
-    <div class="compare-table">
+    <h2 id="compareH2">Deux façons de faire son budget</h2>
+    <div class="compare-table" id="compareTable">
       <div class="compare-row head"><div></div><div>Appli de connexion bancaire</div><div>BankAnalyzer</div></div>
       <div class="compare-row"><div>Identifiants bancaires demandés</div><div>Oui</div><div>Jamais</div></div>
       <div class="compare-row"><div>Accès en lecture à votre banque</div><div>Permanent</div><div>Aucun</div></div>
@@ -122,7 +137,7 @@ footer a{text-decoration:underline;margin:0 6px}
 </section>
 
 <section class="bridge">
-  <div class="wrap"><h2>Votre budget, sans donner vos codes à personne</h2></div>
+  <div class="wrap"><h2 id="bridgeH2">Votre budget, sans donner vos codes à personne</h2></div>
 </section>
 
 <section>
@@ -130,23 +145,23 @@ footer a{text-decoration:underline;margin:0 6px}
     <div class="cards">
       <div class="card">
         <div class="badge b1">📊</div>
-        <h3>Score de gestion sur 10</h3>
-        <p>Une note claire de votre santé financière, en un coup d'œil.</p>
+        <h3 id="card1Title">Score de gestion sur 10</h3>
+        <p id="card1Text">Une note claire de votre santé financière, en un coup d'œil.</p>
       </div>
       <div class="card">
         <div class="badge b2">🍕</div>
-        <h3>Dépenses par catégorie</h3>
-        <p>Où part vraiment votre argent, mois par mois, sans avoir à trier vous-même.</p>
+        <h3 id="card2Title">Dépenses par catégorie</h3>
+        <p id="card2Text">Où part vraiment votre argent, mois par mois, sans avoir à trier vous-même.</p>
       </div>
       <div class="card">
         <div class="badge b3">🔁</div>
-        <h3>Charges fixes détectées</h3>
-        <p>Les abonnements et prélèvements récurrents que vous avez fini par oublier.</p>
+        <h3 id="card3Title">Charges fixes détectées</h3>
+        <p id="card3Text">Les abonnements et prélèvements récurrents que vous avez fini par oublier.</p>
       </div>
       <div class="card">
         <div class="badge b4">💡</div>
-        <h3>Conseils personnalisés</h3>
-        <p>3 actions concrètes pour votre budget, pas des généralités.</p>
+        <h3 id="card4Title">Conseils personnalisés</h3>
+        <p id="card4Text">3 actions concrètes pour votre budget, pas des généralités.</p>
       </div>
     </div>
   </div>
@@ -154,18 +169,18 @@ footer a{text-decoration:underline;margin:0 6px}
 
 <section class="steps">
   <div class="wrap">
-    <h2>Comment ça marche</h2>
+    <h2 id="stepsH2">Comment ça marche</h2>
     <div class="step">
       <div class="step-num">1</div>
-      <div><h3>Téléchargez votre relevé depuis votre banque</h3><p>PDF, CSV ou Excel — vous le trouvez dans l'espace client de votre banque, en 30 secondes.</p></div>
+      <div><h3 id="step1Title">Téléchargez votre relevé depuis votre banque</h3><p id="step1Text">PDF, CSV ou Excel — vous le trouvez dans l'espace client de votre banque, en 30 secondes.</p></div>
     </div>
     <div class="step">
       <div class="step-num">2</div>
-      <div><h3>Déposez-le sur BankAnalyzer</h3><p>Aucune connexion à votre compte, aucun mot de passe demandé.</p></div>
+      <div><h3 id="step2Title">Déposez-le sur BankAnalyzer</h3><p id="step2Text">Aucune connexion à votre compte, aucun mot de passe demandé.</p></div>
     </div>
     <div class="step">
       <div class="step-num">3</div>
-      <div><h3>Récupérez votre budget complet</h3><p>Score, catégories de dépenses, charges fixes, conseils — prêt en quelques secondes.</p></div>
+      <div><h3 id="step3Title">Récupérez votre budget complet</h3><p id="step3Text">Score, catégories de dépenses, charges fixes, conseils — prêt en quelques secondes.</p></div>
     </div>
   </div>
 </section>
@@ -175,32 +190,86 @@ footer a{text-decoration:underline;margin:0 6px}
     <div class="trust">
       <div class="icon">🔒</div>
       <div>
-        <h3>Pourquoi ne pas connecter son compte ?</h3>
-        <p>Une appli connectée à votre banque garde un accès permanent à vos données, même quand vous ne l'utilisez pas. Avec BankAnalyzer, vous décidez quand vous partagez un relevé — et c'est tout ce que vous partagez.</p>
+        <h3 id="trustTitle">Pourquoi ne pas connecter son compte ?</h3>
+        <p id="trustText">Une appli connectée à votre banque garde un accès permanent à vos données, même quand vous ne l'utilisez pas. Avec BankAnalyzer, vous décidez quand vous partagez un relevé — et c'est tout ce que vous partagez.</p>
       </div>
     </div>
   </div>
 </section>
 
 <section class="proof">
-  <div class="wrap"><p>Déjà testé et approuvé par ses <b>premiers utilisateurs</b>.</p></div>
+  <div class="wrap"><p id="proofText">Déjà testé et approuvé par ses <b>premiers utilisateurs</b>.</p></div>
 </section>
 
 <section class="final">
   <div class="wrap">
-    <h2>Prêt à faire votre budget ?</h2>
-    <p>Gratuit. Sans carte bancaire. Sans connexion à votre banque.</p>
-    <a href="https://bankanalyzer.fr/analyser-releve-bancaire.html" class="cta-btn">Analyser mon relevé maintenant →</a>
+    <h2 id="finalH2">Prêt à faire votre budget ?</h2>
+    <p id="finalText">Gratuit. Sans carte bancaire. Sans connexion à votre banque.</p>
+    <a href="https://bankanalyzer.fr/analyser-releve-bancaire.html" class="cta-btn" id="ctaFinal">Analyser mon relevé maintenant →</a>
   </div>
 </section>
 
 <footer>
   BankAnalyzer — édité par CG Conseils
   <br>
-  <a href="https://bankanalyzer.fr/mentions-legales.html">Mentions légales</a>·
-  <a href="https://bankanalyzer.fr/politique-confidentialite.html">Confidentialité</a>·
-  <a href="https://bankanalyzer.fr/cgv.html">CGV</a>
+  <a href="https://bankanalyzer.fr/mentions-legales.html" id="footerMentions">Mentions légales</a>·
+  <a href="https://bankanalyzer.fr/politique-confidentialite.html" id="footerConfidentialite">Confidentialité</a>·
+  <a href="https://bankanalyzer.fr/cgv.html" id="footerCgv">CGV</a>
 </footer>
+
+<script>
+const TR_PAGE = {
+francais:{subnavAccueil:'Accueil',subnavAnalyser:'Analyser un relevé',subnavConvertir:'Convertir PDF en Excel',subnavEpargne:'Taux d\'épargne',subnavBilan:'Bilan gratuit',ctaSub:'Aucune carte bancaire requise · Aucune connexion à votre banque',trustTitle:'Pourquoi ne pas connecter son compte ?',trustText:'Une appli connectée à votre banque garde un accès permanent à vos données, même quand vous ne l\'utilisez pas. Avec BankAnalyzer, vous décidez quand vous partagez un relevé — et c\'est tout ce que vous partagez.',proofText:'Déjà testé et approuvé par ses <b>premiers utilisateurs</b>.',ctaFinal:'Analyser mon relevé maintenant →',footerMentions:'Mentions légales',footerConfidentialite:'Confidentialité',footerCgv:'CGV',eyebrowGratuit:'✦ Gratuit',eyebrowSecondes:'En quelques secondes',eyebrowSansConnexion:'Sans connexion bancaire',stepsH2:'Comment ça marche',heroH1:'Faire son budget <br>sans connecter son compte bancaire',heroPayoff:'Déposez juste votre relevé, jamais vos identifiants. <b>Votre budget en 1 clic.</b>',ctaHero:'Essayer gratuitement →',compareH2:'Deux façons de faire son budget',bridgeH2:'Votre budget, sans donner vos codes à personne',card1Title:'Score de gestion sur 10',card1Text:'Une note claire de votre santé financière, en un coup d\'œil.',card2Title:'Dépenses par catégorie',card2Text:'Où part vraiment votre argent, mois par mois, sans avoir à trier vous-même.',card3Title:'Charges fixes détectées',card3Text:'Les abonnements et prélèvements récurrents que vous avez fini par oublier.',card4Title:'Conseils personnalisés',card4Text:'3 actions concrètes pour votre budget, pas des généralités.',step1Title:'Téléchargez votre relevé depuis votre banque',step1Text:'PDF, CSV ou Excel — vous le trouvez dans l\'espace client de votre banque, en 30 secondes.',step2Title:'Déposez-le sur BankAnalyzer',step2Text:'Aucune connexion à votre compte, aucun mot de passe demandé.',step3Title:'Récupérez votre budget complet',step3Text:'Score, catégories de dépenses, charges fixes, conseils — prêt en quelques secondes.',finalH2:'Prêt à faire votre budget ?',finalText:'Gratuit. Sans carte bancaire. Sans connexion à votre banque.'},
+english:{subnavAccueil:'Home',subnavAnalyser:'Analyze a statement',subnavConvertir:'Convert PDF to Excel',subnavEpargne:'Savings rate',subnavBilan:'Free report',ctaSub:'No credit card required · No connection to your bank',trustTitle:'Why not connect your account?',trustText:'An app connected to your bank keeps permanent access to your data, even when you\'re not using it. With BankAnalyzer, you decide when you share a statement — and that\'s all you share.',proofText:'Already tested and approved by its <b>first users</b>.',ctaFinal:'Analyze my statement now →',footerMentions:'Legal notice',footerConfidentialite:'Privacy',footerCgv:'Terms',eyebrowGratuit:'✦ Free',eyebrowSecondes:'In seconds',eyebrowSansConnexion:'No bank connection',stepsH2:'How it works',heroH1:'Build your budget <br>without connecting your bank account',heroPayoff:'Just upload your statement, never your credentials. <b>Your budget in 1 click.</b>',ctaHero:'Try for free →',compareH2:'Two ways to build a budget',bridgeH2:'Your budget, without giving your codes to anyone',card1Title:'Financial health score out of 10',card1Text:'A clear score of your financial health, at a glance.',card2Title:'Spending by category',card2Text:'Where your money really goes, month by month, without sorting it yourself.',card3Title:'Fixed charges detected',card3Text:'The subscriptions and recurring payments you\'d stopped noticing.',card4Title:'Personalized advice',card4Text:'3 concrete actions for your budget, not generic tips.',step1Title:'Download your statement from your bank',step1Text:'PDF, CSV or Excel — you\'ll find it in your bank\'s client area, in 30 seconds.',step2Title:'Upload it to BankAnalyzer',step2Text:'No connection to your account, no password requested.',step3Title:'Get your complete budget',step3Text:'Score, spending categories, fixed charges, advice — ready in seconds.',finalH2:'Ready to build your budget?',finalText:'Free. No credit card. No connection to your bank.'},
+espanol:{subnavAccueil:'Inicio',subnavAnalyser:'Analizar un extracto',subnavConvertir:'Convertir PDF a Excel',subnavEpargne:'Tasa de ahorro',subnavBilan:'Balance gratis',ctaSub:'No se requiere tarjeta · Sin conexión a tu banco',trustTitle:'¿Por qué no conectar tu cuenta?',trustText:'Una app conectada a tu banco mantiene un acceso permanente a tus datos, incluso cuando no la usas. Con BankAnalyzer, decides cuándo compartes un extracto — y eso es todo lo que compartes.',proofText:'Ya probado y aprobado por sus <b>primeros usuarios</b>.',ctaFinal:'Analizar mi extracto ahora →',footerMentions:'Aviso legal',footerConfidentialite:'Privacidad',footerCgv:'Términos',eyebrowGratuit:'✦ Gratis',eyebrowSecondes:'En segundos',eyebrowSansConnexion:'Sin conexión bancaria',stepsH2:'Cómo funciona',heroH1:'Hacer tu presupuesto <br>sin conectar tu cuenta bancaria',heroPayoff:'Solo sube tu extracto, nunca tus credenciales. <b>Tu presupuesto en 1 clic.</b>',ctaHero:'Probar gratis →',compareH2:'Dos formas de hacer tu presupuesto',bridgeH2:'Tu presupuesto, sin dar tus códigos a nadie',card1Title:'Puntuación financiera sobre 10',card1Text:'Una nota clara de tu salud financiera, de un vistazo.',card2Title:'Gastos por categoría',card2Text:'A dónde va realmente tu dinero, mes a mes, sin clasificarlo tú mismo.',card3Title:'Gastos fijos detectados',card3Text:'Las suscripciones y cargos recurrentes que habías dejado de notar.',card4Title:'Consejos personalizados',card4Text:'3 acciones concretas para tu presupuesto, no generalidades.',step1Title:'Descarga tu extracto desde tu banco',step1Text:'PDF, CSV o Excel — lo encuentras en el área de cliente de tu banco, en 30 segundos.',step2Title:'Súbelo a BankAnalyzer',step2Text:'Sin conexión a tu cuenta, sin contraseña solicitada.',step3Title:'Obtén tu presupuesto completo',step3Text:'Puntuación, categorías de gastos, gastos fijos, consejos — listo en segundos.',finalH2:'¿Listo para hacer tu presupuesto?',finalText:'Gratis. Sin tarjeta. Sin conexión a tu banco.'},
+deutsch:{subnavAccueil:'Startseite',subnavAnalyser:'Kontoauszug analysieren',subnavConvertir:'PDF in Excel umwandeln',subnavEpargne:'Sparquote',subnavBilan:'Kostenlose Übersicht',ctaSub:'Keine Kreditkarte nötig · Keine Verbindung zu Ihrer Bank',trustTitle:'Warum nicht das Konto verbinden?',trustText:'Eine mit Ihrer Bank verbundene App behält dauerhaften Zugriff auf Ihre Daten, selbst wenn Sie sie nicht nutzen. Mit BankAnalyzer entscheiden Sie, wann Sie einen Kontoauszug teilen — und das ist alles, was Sie teilen.',proofText:'Bereits getestet und bestätigt von den <b>ersten Nutzern</b>.',ctaFinal:'Jetzt meinen Kontoauszug analysieren →',footerMentions:'Impressum',footerConfidentialite:'Datenschutz',footerCgv:'AGB',eyebrowGratuit:'✦ Kostenlos',eyebrowSecondes:'In Sekunden',eyebrowSansConnexion:'Keine Bankverbindung',stepsH2:'So funktioniert\'s',heroH1:'Ihr Budget erstellen <br>ohne Ihr Bankkonto zu verbinden',heroPayoff:'Laden Sie nur Ihren Kontoauszug hoch, nie Ihre Zugangsdaten. <b>Ihr Budget in 1 Klick.</b>',ctaHero:'Kostenlos testen →',compareH2:'Zwei Wege, ein Budget zu erstellen',bridgeH2:'Ihr Budget, ohne Ihre Codes an irgendjemanden weiterzugeben',card1Title:'Finanz-Score von 10',card1Text:'Eine klare Bewertung Ihrer finanziellen Gesundheit, auf einen Blick.',card2Title:'Ausgaben nach Kategorie',card2Text:'Wohin Ihr Geld wirklich fließt, Monat für Monat, ohne selbst zu sortieren.',card3Title:'Erkannte Fixkosten',card3Text:'Die Abonnements und wiederkehrenden Abbuchungen, die Sie längst vergessen hatten.',card4Title:'Persönliche Empfehlungen',card4Text:'3 konkrete Maßnahmen für Ihr Budget, keine Allgemeinplätze.',step1Title:'Laden Sie Ihren Kontoauszug von Ihrer Bank herunter',step1Text:'PDF, CSV oder Excel — Sie finden ihn im Kundenbereich Ihrer Bank, in 30 Sekunden.',step2Title:'Laden Sie ihn bei BankAnalyzer hoch',step2Text:'Keine Verbindung zu Ihrem Konto, kein Passwort erforderlich.',step3Title:'Erhalten Sie Ihr vollständiges Budget',step3Text:'Score, Ausgabenkategorien, Fixkosten, Empfehlungen — in Sekunden fertig.',finalH2:'Bereit, Ihr Budget zu erstellen?',finalText:'Kostenlos. Keine Kreditkarte. Keine Verbindung zu Ihrer Bank.'},
+italiano:{subnavAccueil:'Home',subnavAnalyser:'Analizza un estratto',subnavConvertir:'Converti PDF in Excel',subnavEpargne:'Tasso di risparmio',subnavBilan:'Bilancio gratuito',ctaSub:'Nessuna carta richiesta · Nessuna connessione alla tua banca',trustTitle:'Perché non collegare il proprio conto?',trustText:'Un\'app collegata alla tua banca mantiene un accesso permanente ai tuoi dati, anche quando non la usi. Con BankAnalyzer, decidi tu quando condividere un estratto conto — ed è tutto ciò che condividi.',proofText:'Già testato e approvato dai suoi <b>primi utenti</b>.',ctaFinal:'Analizza il mio estratto ora →',footerMentions:'Note legali',footerConfidentialite:'Privacy',footerCgv:'Termini',eyebrowGratuit:'✦ Gratuito',eyebrowSecondes:'In pochi secondi',eyebrowSansConnexion:'Senza connessione bancaria',stepsH2:'Come funziona',heroH1:'Creare il tuo budget <br>senza collegare il tuo conto bancario',heroPayoff:'Carica solo il tuo estratto, mai le tue credenziali. <b>Il tuo budget in 1 clic.</b>',ctaHero:'Prova gratis →',compareH2:'Due modi per creare un budget',bridgeH2:'Il tuo budget, senza dare i tuoi codici a nessuno',card1Title:'Punteggio finanziario su 10',card1Text:'Un punteggio chiaro della tua salute finanziaria, a colpo d\'occhio.',card2Title:'Spese per categoria',card2Text:'Dove va davvero il tuo denaro, mese per mese, senza doverlo ordinare tu.',card3Title:'Spese fisse rilevate',card3Text:'Gli abbonamenti e gli addebiti ricorrenti che avevi smesso di notare.',card4Title:'Consigli personalizzati',card4Text:'3 azioni concrete per il tuo budget, non generalità.',step1Title:'Scarica il tuo estratto dalla tua banca',step1Text:'PDF, CSV o Excel — lo trovi nell\'area clienti della tua banca, in 30 secondi.',step2Title:'Caricalo su BankAnalyzer',step2Text:'Nessuna connessione al tuo conto, nessuna password richiesta.',step3Title:'Ottieni il tuo budget completo',step3Text:'Punteggio, categorie di spesa, spese fisse, consigli — pronto in pochi secondi.',finalH2:'Pronto a creare il tuo budget?',finalText:'Gratuito. Nessuna carta. Nessuna connessione alla tua banca.'},
+portugues:{subnavAccueil:'Início',subnavAnalyser:'Analisar um extrato',subnavConvertir:'Converter PDF em Excel',subnavEpargne:'Taxa de poupança',subnavBilan:'Balanço grátis',ctaSub:'Nenhum cartão necessário · Sem conexão com seu banco',trustTitle:'Por que não conectar sua conta?',trustText:'Um app conectado ao seu banco mantém acesso permanente aos seus dados, mesmo quando você não o usa. Com o BankAnalyzer, você decide quando compartilha um extrato — e é só isso que você compartilha.',proofText:'Já testado e aprovado por seus <b>primeiros usuários</b>.',ctaFinal:'Analisar meu extrato agora →',footerMentions:'Aviso legal',footerConfidentialite:'Privacidade',footerCgv:'Termos',eyebrowGratuit:'✦ Grátis',eyebrowSecondes:'Em segundos',eyebrowSansConnexion:'Sem conexão bancária',stepsH2:'Como funciona',heroH1:'Fazer seu orçamento <br>sem conectar sua conta bancária',heroPayoff:'Envie apenas seu extrato, nunca suas credenciais. <b>Seu orçamento em 1 clique.</b>',ctaHero:'Experimente grátis →',compareH2:'Duas formas de fazer seu orçamento',bridgeH2:'Seu orçamento, sem dar seus códigos a ninguém',card1Title:'Pontuação financeira de 10',card1Text:'Uma nota clara da sua saúde financeira, em um relance.',card2Title:'Gastos por categoria',card2Text:'Para onde seu dinheiro realmente vai, mês a mês, sem precisar organizar você mesmo.',card3Title:'Despesas fixas detectadas',card3Text:'As assinaturas e débitos recorrentes que você tinha parado de notar.',card4Title:'Conselhos personalizados',card4Text:'3 ações concretas para seu orçamento, não generalidades.',step1Title:'Baixe seu extrato do seu banco',step1Text:'PDF, CSV ou Excel — você o encontra na área do cliente do seu banco, em 30 segundos.',step2Title:'Envie-o para o BankAnalyzer',step2Text:'Sem conexão com sua conta, nenhuma senha solicitada.',step3Title:'Obtenha seu orçamento completo',step3Text:'Pontuação, categorias de gastos, despesas fixas, conselhos — pronto em segundos.',finalH2:'Pronto para fazer seu orçamento?',finalText:'Grátis. Sem cartão. Sem conexão com seu banco.'},
+chinese:{subnavAccueil:'首页',subnavAnalyser:'分析对账单',subnavConvertir:'PDF转Excel',subnavEpargne:'储蓄率',subnavBilan:'免费报告',ctaSub:'无需信用卡 · 无需连接您的银行',trustTitle:'为什么不连接您的账户？',trustText:'与您的银行连接的应用会持续访问您的数据，即使您不使用它时也是如此。使用BankAnalyzer，您可以自行决定何时分享对账单——而这就是您分享的全部内容。',proofText:'已经过<b>首批用户</b>的测试和认可。',ctaFinal:'立即分析我的对账单 →',footerMentions:'法律声明',footerConfidentialite:'隐私政策',footerCgv:'条款',eyebrowGratuit:'✦ 免费',eyebrowSecondes:'几秒钟内完成',eyebrowSansConnexion:'无需连接银行',stepsH2:'使用方法',heroH1:'制定预算<br>无需连接您的银行账户',heroPayoff:'只需上传对账单，绝不透露您的凭证。<b>一键获取您的预算。</b>',ctaHero:'免费试用 →',compareH2:'制定预算的两种方式',bridgeH2:'您的预算，无需向任何人透露您的密码',card1Title:'十分制财务健康评分',card1Text:'一目了然的财务健康评分。',card2Title:'按类别划分的支出',card2Text:'您的钱究竟花在哪里，逐月呈现，无需自己整理。',card3Title:'检测到的固定支出',card3Text:'您已经不再注意的订阅和经常性扣款。',card4Title:'个性化建议',card4Text:'针对您预算的3个具体行动，而非泛泛而谈。',step1Title:'从您的银行下载对账单',step1Text:'PDF、CSV或Excel——您可以在银行的客户专区找到，只需30秒。',step2Title:'上传到BankAnalyzer',step2Text:'无需连接您的账户，不要求任何密码。',step3Title:'获取您的完整预算',step3Text:'评分、支出类别、固定支出、建议——几秒钟内准备就绪。',finalH2:'准备好制定预算了吗？',finalText:'免费。无需信用卡。无需连接您的银行。'},
+arabic:{subnavAccueil:'الرئيسية',subnavAnalyser:'تحليل كشف حساب',subnavConvertir:'تحويل PDF إلى Excel',subnavEpargne:'معدل الادخار',subnavBilan:'تقرير مجاني',ctaSub:'لا حاجة لبطاقة بنكية · بدون ربط ببنكك',trustTitle:'لماذا لا تربط حسابك؟',trustText:'التطبيق المرتبط ببنكك يحتفظ بوصول دائم إلى بياناتك، حتى عندما لا تستخدمه. مع BankAnalyzer، أنت من يقرر متى تشارك كشف حساب — وهذا كل ما تشاركه.',proofText:'تم اختباره واعتماده بالفعل من قبل <b>أوائل المستخدمين</b>.',ctaFinal:'حلّل كشفي الآن →',footerMentions:'الإشعار القانوني',footerConfidentialite:'الخصوصية',footerCgv:'الشروط',eyebrowGratuit:'✦ مجاني',eyebrowSecondes:'خلال ثوانٍ',eyebrowSansConnexion:'بدون ربط بنكي',stepsH2:'كيف يعمل',heroH1:'إعداد ميزانيتك <br>دون ربط حسابك البنكي',heroPayoff:'ارفع كشف حسابك فقط، أبدًا بيانات اعتمادك. <b>ميزانيتك بنقرة واحدة.</b>',ctaHero:'جرّب مجانًا →',compareH2:'طريقتان لإعداد الميزانية',bridgeH2:'ميزانيتك، دون إعطاء رموزك لأي أحد',card1Title:'درجة الصحة المالية من 10',card1Text:'درجة واضحة لصحتك المالية، بنظرة واحدة.',card2Title:'المصروفات حسب الفئة',card2Text:'أين يذهب مالك فعليًا، شهرًا بشهر، دون الحاجة للفرز بنفسك.',card3Title:'الرسوم الثابتة المكتشفة',card3Text:'الاشتراكات والخصومات المتكررة التي توقفت عن ملاحظتها.',card4Title:'نصائح شخصية',card4Text:'3 إجراءات ملموسة لميزانيتك، وليست تعميمات.',step1Title:'حمّل كشف حسابك من بنكك',step1Text:'PDF أو CSV أو Excel — تجده في منطقة العميل الخاصة ببنكك، خلال 30 ثانية.',step2Title:'ارفعه إلى BankAnalyzer',step2Text:'بدون ربط بحسابك، بدون طلب كلمة مرور.',step3Title:'احصل على ميزانيتك الكاملة',step3Text:'درجة، فئات الإنفاق، الرسوم الثابتة، نصائح — جاهزة خلال ثوانٍ.',finalH2:'هل أنت مستعد لإعداد ميزانيتك؟',finalText:'مجاني. بدون بطاقة بنكية. بدون ربط ببنكك.'}
+};
+const COMPARE_HTML = {
+  francais: `<div class="compare-row head"><div></div><div>Appli de connexion bancaire</div><div>BankAnalyzer</div></div><div class="compare-row"><div>Identifiants bancaires demandés</div><div>Oui</div><div>Jamais</div></div><div class="compare-row"><div>Accès en lecture à votre banque</div><div>Permanent</div><div>Aucun</div></div><div class="compare-row"><div>Ce que vous partagez</div><div>Vos codes d'accès</div><div>Un simple fichier</div></div><div class="compare-row"><div>Mise en place</div><div>Autorisation à donner</div><div>1 clic, aucun compte lié</div></div>`,
+  english: `<div class="compare-row head"><div></div><div>Bank-connection app</div><div>BankAnalyzer</div></div><div class="compare-row"><div>Bank credentials required</div><div>Yes</div><div>Never</div></div><div class="compare-row"><div>Read access to your bank</div><div>Permanent</div><div>None</div></div><div class="compare-row"><div>What you share</div><div>Your login codes</div><div>A simple file</div></div><div class="compare-row"><div>Setup</div><div>Authorization required</div><div>1 click, no account linked</div></div>`,
+  espanol: `<div class="compare-row head"><div></div><div>App de conexión bancaria</div><div>BankAnalyzer</div></div><div class="compare-row"><div>Credenciales bancarias solicitadas</div><div>Sí</div><div>Nunca</div></div><div class="compare-row"><div>Acceso de lectura a tu banco</div><div>Permanente</div><div>Ninguno</div></div><div class="compare-row"><div>Lo que compartes</div><div>Tus códigos de acceso</div><div>Un simple archivo</div></div><div class="compare-row"><div>Configuración</div><div>Autorización requerida</div><div>1 clic, sin cuenta vinculada</div></div>`,
+  deutsch: `<div class="compare-row head"><div></div><div>Banking-Connect-App</div><div>BankAnalyzer</div></div><div class="compare-row"><div>Bankdaten erforderlich</div><div>Ja</div><div>Nie</div></div><div class="compare-row"><div>Lesezugriff auf Ihre Bank</div><div>Dauerhaft</div><div>Keiner</div></div><div class="compare-row"><div>Was Sie teilen</div><div>Ihre Zugangscodes</div><div>Eine einfache Datei</div></div><div class="compare-row"><div>Einrichtung</div><div>Genehmigung erforderlich</div><div>1 Klick, kein verknüpftes Konto</div></div>`,
+  italiano: `<div class="compare-row head"><div></div><div>App di connessione bancaria</div><div>BankAnalyzer</div></div><div class="compare-row"><div>Credenziali bancarie richieste</div><div>Sì</div><div>Mai</div></div><div class="compare-row"><div>Accesso in lettura alla tua banca</div><div>Permanente</div><div>Nessuno</div></div><div class="compare-row"><div>Cosa condividi</div><div>I tuoi codici di accesso</div><div>Un semplice file</div></div><div class="compare-row"><div>Configurazione</div><div>Autorizzazione richiesta</div><div>1 clic, nessun conto collegato</div></div>`,
+  portugues: `<div class="compare-row head"><div></div><div>App de conexão bancária</div><div>BankAnalyzer</div></div><div class="compare-row"><div>Credenciais bancárias solicitadas</div><div>Sim</div><div>Nunca</div></div><div class="compare-row"><div>Acesso de leitura ao seu banco</div><div>Permanente</div><div>Nenhum</div></div><div class="compare-row"><div>O que você compartilha</div><div>Seus códigos de acesso</div><div>Um simples arquivo</div></div><div class="compare-row"><div>Configuração</div><div>Autorização necessária</div><div>1 clique, nenhuma conta vinculada</div></div>`,
+  chinese: `<div class="compare-row head"><div></div><div>银行连接类应用</div><div>BankAnalyzer</div></div><div class="compare-row"><div>需要银行凭证</div><div>是</div><div>从不</div></div><div class="compare-row"><div>对您银行的读取权限</div><div>永久</div><div>无</div></div><div class="compare-row"><div>您分享的内容</div><div>您的登录密码</div><div>一个简单的文件</div></div><div class="compare-row"><div>设置</div><div>需要授权</div><div>一键完成，无绑定账户</div></div>`,
+  arabic: `<div class="compare-row head"><div></div><div>تطبيق ربط بنكي</div><div>BankAnalyzer</div></div><div class="compare-row"><div>بيانات اعتماد بنكية مطلوبة</div><div>نعم</div><div>أبدًا</div></div><div class="compare-row"><div>وصول للقراءة إلى بنكك</div><div>دائم</div><div>لا شيء</div></div><div class="compare-row"><div>ما تشاركه</div><div>رموز الدخول الخاصة بك</div><div>ملف بسيط فقط</div></div><div class="compare-row"><div>الإعداد</div><div>إذن مطلوب</div><div>نقرة واحدة، بدون حساب مرتبط</div></div>`,
+};
+
+function getLangueSite(){
+  return localStorage.getItem('bankanalyzer_langue') || 'francais';
+}
+function setLangueSite(val){
+  localStorage.setItem('bankanalyzer_langue', val);
+}
+function appliquerTraductionPage(){
+  const lang = getLangueSite();
+  const T = TR_PAGE[lang] || TR_PAGE.francais;
+  for (const cle in T) {
+    const el = document.getElementById(cle);
+    if (!el) continue;
+    if (T[cle].indexOf('<b>') !== -1 || T[cle].indexOf('<br>') !== -1) {
+      el.innerHTML = T[cle];
+    } else {
+      el.textContent = T[cle];
+    }
+  }
+  const compareEl = document.getElementById('compareTable');
+  if (compareEl) compareEl.innerHTML = COMPARE_HTML[lang] || COMPARE_HTML.francais;
+}
+document.addEventListener('DOMContentLoaded', function(){
+  const select = document.getElementById('siteLangue');
+  select.value = getLangueSite();
+  appliquerTraductionPage();
+  select.addEventListener('change', function(){
+    setLangueSite(select.value);
+    appliquerTraductionPage();
+  });
+});
+</script>
 
 <!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "0eed735705d74d45bf5a71ac0d3a345b"}'></script><!-- End Cloudflare Web Analytics -->
 </body>

@@ -26,7 +26,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;ba
 img,svg{max-width:100%;display:block}
 .wrap{max-width:760px;margin:0 auto;padding:0 1.5rem}
 a{color:inherit}
-header{padding:1.5rem 0}
+header{padding:1.5rem 1.5rem;position:relative;display:flex;align-items:center;justify-content:center}
 .logo{display:flex;align-items:center;gap:10px;justify-content:center}
 .logo-icon{width:30px;height:30px;background:linear-gradient(135deg,var(--blue),var(--blue2));border-radius:9px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:14px}
 .logo span{font-size:17px;font-weight:600;letter-spacing:-.2px}
@@ -34,6 +34,11 @@ header{padding:1.5rem 0}
 .subnav-wrap{display:flex;justify-content:center;flex-wrap:wrap;gap:8px;max-width:760px;margin:0 auto}
 .subnav a{color:var(--text2);text-decoration:none;padding:7px 14px;border-radius:100px;background:#fff;border:1px solid var(--border);font-size:12.5px;font-weight:600}
 .subnav a:hover{color:var(--blue);border-color:var(--blue)}
+.site-lang-select{position:absolute;right:1.5rem;top:50%;transform:translateY(-50%);color:var(--text2);padding:7px 10px;border-radius:100px;background:#fff;border:1px solid var(--border);font-size:12.5px;font-weight:600;font-family:inherit;cursor:pointer}
+@media(max-width:600px){
+  header{flex-direction:column;gap:10px}
+  .site-lang-select{position:static;transform:none}
+}
 .hero{text-align:center;padding:2.5rem 0 3.5rem}
 .eyebrow{display:inline-flex;align-items:center;gap:9px;background:#fff;border:1px solid var(--border);border-radius:100px;padding:8px 18px;font-size:12.5px;font-weight:600;color:var(--text2);box-shadow:var(--sh);margin-bottom:1.75rem}
 .eyebrow .dot{color:var(--green);font-weight:700}
@@ -83,35 +88,45 @@ footer a{text-decoration:underline;margin:0 6px}
     <div class="logo-icon">B</div>
     <span>BankAnalyzer</span>
   </a>
+  <select id="siteLangue" class="site-lang-select">
+    <option value="francais">🇫🇷 FR</option>
+    <option value="english">🇬🇧 EN</option>
+    <option value="espanol">🇪🇸 ES</option>
+    <option value="deutsch">🇩🇪 DE</option>
+    <option value="italiano">🇮🇹 IT</option>
+    <option value="portugues">🇵🇹 PT</option>
+    <option value="chinese">🇨🇳 中文</option>
+    <option value="arabic">🇸🇦 عربي</option>
+  </select>
 </header>
 <nav class="subnav"><div class="subnav-wrap">
-  <a href="https://bankanalyzer.fr/">Accueil</a>
-  <a href="/analyser-releve-bancaire.html">Analyser un relevé</a>
-  <a href="/faire-son-budget-sans-connecter-son-compte.html">Faire son budget</a>
-  <a href="/calculer-taux-epargne.html">Taux d'épargne</a>
-  <a href="/bilan-financier-gratuit-en-ligne.html">Bilan gratuit</a>
+  <a href="https://bankanalyzer.fr/" id="subnavAccueil">Accueil</a>
+  <a href="/analyser-releve-bancaire.html" id="subnavAnalyser">Analyser un relevé</a>
+  <a href="/faire-son-budget-sans-connecter-son-compte.html" id="subnavBudget">Faire son budget</a>
+  <a href="/calculer-taux-epargne.html" id="subnavEpargne">Taux d'épargne</a>
+  <a href="/bilan-financier-gratuit-en-ligne.html" id="subnavBilan">Bilan gratuit</a>
 </div></nav>
 
 <section class="hero">
   <div class="wrap">
-    <div class="eyebrow"><span>✦ Gratuit</span><span class="dot">&bull;</span><span>Export Excel</span><span class="dot">&bull;</span><span>En quelques secondes</span></div>
-    <h1>Convertir un relevé bancaire PDF en Excel</h1>
-    <p class="payoff">Déposez votre PDF, récupérez un <b>tableau Excel exploitable</b> — et bien plus.</p>
-    <a href="https://bankanalyzer.fr/analyser-releve-bancaire.html" class="cta-btn">Convertir mon relevé →</a>
-    <div class="cta-sub">Aucune carte bancaire requise · Aucune connexion à votre banque</div>
+    <div class="eyebrow"><span id="eyebrowGratuit">✦ Gratuit</span><span class="dot">&bull;</span><span id="eyebrowMiddle">Export Excel</span><span class="dot">&bull;</span><span id="eyebrowSecondes">En quelques secondes</span></div>
+    <h1 id="heroH1">Convertir un relevé bancaire PDF en Excel</h1>
+    <p class="payoff" id="heroPayoff">Déposez votre PDF, récupérez un <b>tableau Excel exploitable</b> — et bien plus.</p>
+    <a href="https://bankanalyzer.fr/analyser-releve-bancaire.html" class="cta-btn" id="ctaHero">Convertir mon relevé →</a>
+    <div class="cta-sub" id="ctaSub">Aucune carte bancaire requise · Aucune connexion à votre banque</div>
   </div>
 </section>
 
 <section>
   <div class="wrap">
-    <div class="note">
+    <div class="note" id="noteBox">
       <b>Bon à savoir :</b> BankAnalyzer ne se contente pas de convertir votre PDF en Excel — il analyse aussi vos transactions et génère un bilan financier complet (score, catégories de dépenses, charges fixes). L'export Excel des transactions est une fonctionnalité Pro ; l'analyse de base reste accessible gratuitement.
     </div>
   </div>
 </section>
 
 <section class="bridge">
-  <div class="wrap"><h2>De votre PDF illisible à un tableau clair</h2></div>
+  <div class="wrap"><h2 id="bridgeH2">De votre PDF illisible à un tableau clair</h2></div>
 </section>
 
 <section>
@@ -119,23 +134,23 @@ footer a{text-decoration:underline;margin:0 6px}
     <div class="cards">
       <div class="card">
         <div class="badge b1">📄</div>
-        <h3>PDF, CSV ou Excel en entrée</h3>
-        <p>Peu importe le format que votre banque vous donne, BankAnalyzer le lit directement.</p>
+        <h3 id="card1Title">PDF, CSV ou Excel en entrée</h3>
+        <p id="card1Text">Peu importe le format que votre banque vous donne, BankAnalyzer le lit directement.</p>
       </div>
       <div class="card">
         <div class="badge b4">📊</div>
-        <h3>Export Excel des transactions</h3>
-        <p>Toutes vos opérations, structurées en tableau, prêtes à trier ou retravailler.</p>
+        <h3 id="card2Title">Export Excel des transactions</h3>
+        <p id="card2Text">Toutes vos opérations, structurées en tableau, prêtes à trier ou retravailler.</p>
       </div>
       <div class="card">
         <div class="badge b2">🍕</div>
-        <h3>Catégorisation automatique</h3>
-        <p>Chaque dépense classée par catégorie, sans trier vous-même ligne par ligne.</p>
+        <h3 id="card3Title">Catégorisation automatique</h3>
+        <p id="card3Text">Chaque dépense classée par catégorie, sans trier vous-même ligne par ligne.</p>
       </div>
       <div class="card">
         <div class="badge b3">📥</div>
-        <h3>Export PDF du bilan</h3>
-        <p>Un rapport visuel complet, téléchargeable en plus du tableau Excel.</p>
+        <h3 id="card4Title">Export PDF du bilan</h3>
+        <p id="card4Text">Un rapport visuel complet, téléchargeable en plus du tableau Excel.</p>
       </div>
     </div>
   </div>
@@ -143,18 +158,18 @@ footer a{text-decoration:underline;margin:0 6px}
 
 <section class="steps">
   <div class="wrap">
-    <h2>Comment ça marche</h2>
+    <h2 id="stepsH2">Comment ça marche</h2>
     <div class="step">
       <div class="step-num">1</div>
-      <div><h3>Déposez votre relevé PDF</h3><p>Celui que vous avez déjà téléchargé depuis votre espace bancaire.</p></div>
+      <div><h3 id="step1Title">Déposez votre relevé PDF</h3><p id="step1Text">Celui que vous avez déjà téléchargé depuis votre espace bancaire.</p></div>
     </div>
     <div class="step">
       <div class="step-num">2</div>
-      <div><h3>Lecture automatique des transactions</h3><p>Quelques secondes, aucune saisie manuelle de votre part.</p></div>
+      <div><h3 id="step2Title">Lecture automatique des transactions</h3><p id="step2Text">Quelques secondes, aucune saisie manuelle de votre part.</p></div>
     </div>
     <div class="step">
       <div class="step-num">3</div>
-      <div><h3>Téléchargez votre Excel et votre bilan</h3><p>Un tableau exploitable, plus un rapport complet de votre situation financière.</p></div>
+      <div><h3 id="step3Title">Téléchargez votre Excel et votre bilan</h3><p id="step3Text">Un tableau exploitable, plus un rapport complet de votre situation financière.</p></div>
     </div>
   </div>
 </section>
@@ -164,32 +179,74 @@ footer a{text-decoration:underline;margin:0 6px}
     <div class="trust">
       <div class="icon">🔒</div>
       <div>
-        <h3>Sans connexion bancaire</h3>
-        <p>Vous déposez juste un fichier — jamais vos identifiants bancaires. Vos données restent les vôtres.</p>
+        <h3 id="trustTitle">Sans connexion bancaire</h3>
+        <p id="trustText">Vous déposez juste un fichier — jamais vos identifiants bancaires. Vos données restent les vôtres.</p>
       </div>
     </div>
   </div>
 </section>
 
 <section class="proof">
-  <div class="wrap"><p>Déjà testé et approuvé par ses <b>premiers utilisateurs</b>.</p></div>
+  <div class="wrap"><p id="proofText">Déjà testé et approuvé par ses <b>premiers utilisateurs</b>.</p></div>
 </section>
 
 <section class="final">
   <div class="wrap">
-    <h2>Prêt à convertir votre relevé ?</h2>
-    <p>Gratuit pour l'analyse de base. Sans carte bancaire. Sans connexion à votre banque.</p>
-    <a href="https://bankanalyzer.fr/analyser-releve-bancaire.html" class="cta-btn">Analyser mon relevé maintenant →</a>
+    <h2 id="finalH2">Prêt à convertir votre relevé ?</h2>
+    <p id="finalText">Gratuit pour l'analyse de base. Sans carte bancaire. Sans connexion à votre banque.</p>
+    <a href="https://bankanalyzer.fr/analyser-releve-bancaire.html" class="cta-btn" id="ctaFinal">Analyser mon relevé maintenant →</a>
   </div>
 </section>
 
 <footer>
   BankAnalyzer — édité par CG Conseils
   <br>
-  <a href="https://bankanalyzer.fr/mentions-legales.html">Mentions légales</a>·
-  <a href="https://bankanalyzer.fr/politique-confidentialite.html">Confidentialité</a>·
-  <a href="https://bankanalyzer.fr/cgv.html">CGV</a>
+  <a href="https://bankanalyzer.fr/mentions-legales.html" id="footerMentions">Mentions légales</a>·
+  <a href="https://bankanalyzer.fr/politique-confidentialite.html" id="footerConfidentialite">Confidentialité</a>·
+  <a href="https://bankanalyzer.fr/cgv.html" id="footerCgv">CGV</a>
 </footer>
+
+<script>
+const TR_PAGE = {
+francais:{subnavAccueil:'Accueil',subnavAnalyser:'Analyser un relevé',subnavBudget:'Faire son budget',subnavEpargne:'Taux d\'épargne',subnavBilan:'Bilan gratuit',ctaSub:'Aucune carte bancaire requise · Aucune connexion à votre banque',trustTitle:'Sans connexion bancaire',trustText:'Vous déposez juste un fichier — jamais vos identifiants bancaires. Vos données restent les vôtres.',proofText:'Déjà testé et approuvé par ses <b>premiers utilisateurs</b>.',ctaFinal:'Analyser mon relevé maintenant →',footerMentions:'Mentions légales',footerConfidentialite:'Confidentialité',footerCgv:'CGV',eyebrowGratuit:'✦ Gratuit',eyebrowSecondes:'En quelques secondes',eyebrowSansConnexion:'Sans connexion bancaire',stepsH2:'Comment ça marche',eyebrowMiddle:'Export Excel',heroH1:'Convertir un relevé bancaire PDF en Excel',heroPayoff:'Déposez votre PDF, récupérez un <b>tableau Excel exploitable</b> — et bien plus.',ctaHero:'Convertir mon relevé →',noteBox:'<b>Bon à savoir :</b> BankAnalyzer ne se contente pas de convertir votre PDF en Excel — il analyse aussi vos transactions et génère un bilan financier complet (score, catégories de dépenses, charges fixes). L\'export Excel des transactions est une fonctionnalité Pro ; l\'analyse de base reste accessible gratuitement.',bridgeH2:'De votre PDF illisible à un tableau clair',card1Title:'PDF, CSV ou Excel en entrée',card1Text:'Peu importe le format que votre banque vous donne, BankAnalyzer le lit directement.',card2Title:'Export Excel des transactions',card2Text:'Toutes vos opérations, structurées en tableau, prêtes à trier ou retravailler.',card3Title:'Catégorisation automatique',card3Text:'Chaque dépense classée par catégorie, sans trier vous-même ligne par ligne.',card4Title:'Export PDF du bilan',card4Text:'Un rapport visuel complet, téléchargeable en plus du tableau Excel.',step1Title:'Déposez votre relevé PDF',step1Text:'Celui que vous avez déjà téléchargé depuis votre espace bancaire.',step2Title:'Lecture automatique des transactions',step2Text:'Quelques secondes, aucune saisie manuelle de votre part.',step3Title:'Téléchargez votre Excel et votre bilan',step3Text:'Un tableau exploitable, plus un rapport complet de votre situation financière.',finalH2:'Prêt à convertir votre relevé ?',finalText:'Gratuit pour l\'analyse de base. Sans carte bancaire. Sans connexion à votre banque.'},
+english:{subnavAccueil:'Home',subnavAnalyser:'Analyze a statement',subnavBudget:'Build your budget',subnavEpargne:'Savings rate',subnavBilan:'Free report',ctaSub:'No credit card required · No connection to your bank',trustTitle:'No bank connection',trustText:'You just upload a file — never your bank credentials. Your data stays yours.',proofText:'Already tested and approved by its <b>first users</b>.',ctaFinal:'Analyze my statement now →',footerMentions:'Legal notice',footerConfidentialite:'Privacy',footerCgv:'Terms',eyebrowGratuit:'✦ Free',eyebrowSecondes:'In seconds',eyebrowSansConnexion:'No bank connection',stepsH2:'How it works',eyebrowMiddle:'Excel Export',heroH1:'Convert a bank statement PDF to Excel',heroPayoff:'Upload your PDF, get back a <b>ready-to-use Excel table</b> — and much more.',ctaHero:'Convert my statement →',noteBox:'<b>Good to know:</b> BankAnalyzer doesn\'t just convert your PDF to Excel — it also analyzes your transactions and generates a complete financial report (score, spending categories, fixed charges). Excel export of transactions is a Pro feature; the basic analysis remains free.',bridgeH2:'From your unreadable PDF to a clear table',card1Title:'PDF, CSV or Excel input',card1Text:'Whatever format your bank gives you, BankAnalyzer reads it directly.',card2Title:'Excel export of transactions',card2Text:'All your transactions, structured in a table, ready to sort or rework.',card3Title:'Automatic categorization',card3Text:'Every expense classified by category, without sorting line by line yourself.',card4Title:'PDF export of the report',card4Text:'A complete visual report, downloadable in addition to the Excel table.',step1Title:'Upload your PDF statement',step1Text:'The one you already downloaded from your online banking.',step2Title:'Automatic transaction reading',step2Text:'A few seconds, no manual entry on your part.',step3Title:'Download your Excel file and your report',step3Text:'A ready-to-use table, plus a complete report of your financial situation.',finalH2:'Ready to convert your statement?',finalText:'Free for the basic analysis. No credit card. No connection to your bank.'},
+espanol:{subnavAccueil:'Inicio',subnavAnalyser:'Analizar un extracto',subnavBudget:'Hacer tu presupuesto',subnavEpargne:'Tasa de ahorro',subnavBilan:'Balance gratis',ctaSub:'No se requiere tarjeta · Sin conexión a tu banco',trustTitle:'Sin conexión bancaria',trustText:'Solo subes un archivo — nunca tus credenciales bancarias. Tus datos siguen siendo tuyos.',proofText:'Ya probado y aprobado por sus <b>primeros usuarios</b>.',ctaFinal:'Analizar mi extracto ahora →',footerMentions:'Aviso legal',footerConfidentialite:'Privacidad',footerCgv:'Términos',eyebrowGratuit:'✦ Gratis',eyebrowSecondes:'En segundos',eyebrowSansConnexion:'Sin conexión bancaria',stepsH2:'Cómo funciona',eyebrowMiddle:'Exportación a Excel',heroH1:'Convertir un extracto bancario PDF a Excel',heroPayoff:'Sube tu PDF, recibe una <b>tabla Excel lista para usar</b> — y mucho más.',ctaHero:'Convertir mi extracto →',noteBox:'<b>Un dato útil:</b> BankAnalyzer no solo convierte tu PDF a Excel — también analiza tus transacciones y genera un balance financiero completo (puntuación, categorías de gastos, gastos fijos). La exportación a Excel de las transacciones es una función Pro; el análisis básico sigue siendo gratuito.',bridgeH2:'De tu PDF ilegible a una tabla clara',card1Title:'PDF, CSV o Excel de entrada',card1Text:'Sea cual sea el formato que te dé tu banco, BankAnalyzer lo lee directamente.',card2Title:'Exportación a Excel de las transacciones',card2Text:'Todas tus operaciones, estructuradas en tabla, listas para clasificar o retrabajar.',card3Title:'Categorización automática',card3Text:'Cada gasto clasificado por categoría, sin tener que ordenar línea por línea.',card4Title:'Exportación PDF del balance',card4Text:'Un informe visual completo, descargable además de la tabla Excel.',step1Title:'Sube tu extracto en PDF',step1Text:'El que ya descargaste desde tu área bancaria.',step2Title:'Lectura automática de las transacciones',step2Text:'Unos segundos, sin introducción manual por tu parte.',step3Title:'Descarga tu Excel y tu balance',step3Text:'Una tabla lista para usar, más un informe completo de tu situación financiera.',finalH2:'¿Listo para convertir tu extracto?',finalText:'Gratis para el análisis básico. Sin tarjeta. Sin conexión a tu banco.'},
+deutsch:{subnavAccueil:'Startseite',subnavAnalyser:'Kontoauszug analysieren',subnavBudget:'Budget erstellen',subnavEpargne:'Sparquote',subnavBilan:'Kostenlose Übersicht',ctaSub:'Keine Kreditkarte nötig · Keine Verbindung zu Ihrer Bank',trustTitle:'Keine Bankverbindung',trustText:'Sie laden nur eine Datei hoch — nie Ihre Bankzugangsdaten. Ihre Daten bleiben Ihre eigenen.',proofText:'Bereits getestet und bestätigt von den <b>ersten Nutzern</b>.',ctaFinal:'Jetzt meinen Kontoauszug analysieren →',footerMentions:'Impressum',footerConfidentialite:'Datenschutz',footerCgv:'AGB',eyebrowGratuit:'✦ Kostenlos',eyebrowSecondes:'In Sekunden',eyebrowSansConnexion:'Keine Bankverbindung',stepsH2:'So funktioniert\'s',eyebrowMiddle:'Excel-Export',heroH1:'Einen Kontoauszug PDF in Excel umwandeln',heroPayoff:'Laden Sie Ihre PDF hoch, erhalten Sie eine <b>einsatzbereite Excel-Tabelle</b> — und vieles mehr.',ctaHero:'Meinen Kontoauszug umwandeln →',noteBox:'<b>Gut zu wissen:</b> BankAnalyzer wandelt Ihre PDF nicht nur in Excel um — es analysiert auch Ihre Transaktionen und erstellt eine vollständige Finanzübersicht (Score, Ausgabenkategorien, Fixkosten). Der Excel-Export der Transaktionen ist eine Pro-Funktion; die Basisanalyse bleibt kostenlos.',bridgeH2:'Von Ihrer unlesbaren PDF zu einer klaren Tabelle',card1Title:'PDF, CSV oder Excel als Eingabe',card1Text:'Egal welches Format Ihre Bank Ihnen gibt, BankAnalyzer liest es direkt.',card2Title:'Excel-Export der Transaktionen',card2Text:'Alle Ihre Vorgänge, tabellarisch strukturiert, bereit zum Sortieren oder Bearbeiten.',card3Title:'Automatische Kategorisierung',card3Text:'Jede Ausgabe nach Kategorie sortiert, ohne selbst Zeile für Zeile zu sortieren.',card4Title:'PDF-Export der Übersicht',card4Text:'Ein vollständiger visueller Bericht, zusätzlich zur Excel-Tabelle herunterladbar.',step1Title:'Laden Sie Ihren PDF-Kontoauszug hoch',step1Text:'Den Sie bereits aus Ihrem Online-Banking-Bereich heruntergeladen haben.',step2Title:'Automatisches Auslesen der Transaktionen',step2Text:'Wenige Sekunden, keine manuelle Eingabe Ihrerseits.',step3Title:'Laden Sie Ihre Excel-Datei und Ihre Übersicht herunter',step3Text:'Eine einsatzbereite Tabelle, plus ein vollständiger Bericht Ihrer finanziellen Situation.',finalH2:'Bereit, Ihren Kontoauszug umzuwandeln?',finalText:'Kostenlos für die Basisanalyse. Keine Kreditkarte. Keine Verbindung zu Ihrer Bank.'},
+italiano:{subnavAccueil:'Home',subnavAnalyser:'Analizza un estratto',subnavBudget:'Crea il tuo budget',subnavEpargne:'Tasso di risparmio',subnavBilan:'Bilancio gratuito',ctaSub:'Nessuna carta richiesta · Nessuna connessione alla tua banca',trustTitle:'Senza connessione bancaria',trustText:'Carichi solo un file — mai le tue credenziali bancarie. I tuoi dati restano tuoi.',proofText:'Già testato e approvato dai suoi <b>primi utenti</b>.',ctaFinal:'Analizza il mio estratto ora →',footerMentions:'Note legali',footerConfidentialite:'Privacy',footerCgv:'Termini',eyebrowGratuit:'✦ Gratuito',eyebrowSecondes:'In pochi secondi',eyebrowSansConnexion:'Senza connessione bancaria',stepsH2:'Come funziona',eyebrowMiddle:'Esportazione Excel',heroH1:'Convertire un estratto conto PDF in Excel',heroPayoff:'Carica il tuo PDF, ricevi una <b>tabella Excel pronta all\'uso</b> — e molto altro.',ctaHero:'Converti il mio estratto →',noteBox:'<b>Da sapere:</b> BankAnalyzer non si limita a convertire il tuo PDF in Excel — analizza anche le tue transazioni e genera un bilancio finanziario completo (punteggio, categorie di spesa, spese fisse). L\'esportazione Excel delle transazioni è una funzione Pro; l\'analisi di base resta gratuita.',bridgeH2:'Dal tuo PDF illeggibile a una tabella chiara',card1Title:'PDF, CSV o Excel in ingresso',card1Text:'Qualunque sia il formato fornito dalla tua banca, BankAnalyzer lo legge direttamente.',card2Title:'Esportazione Excel delle transazioni',card2Text:'Tutte le tue operazioni, strutturate in tabella, pronte da ordinare o rielaborare.',card3Title:'Categorizzazione automatica',card3Text:'Ogni spesa classificata per categoria, senza doverla ordinare riga per riga.',card4Title:'Esportazione PDF del bilancio',card4Text:'Un report visivo completo, scaricabile oltre alla tabella Excel.',step1Title:'Carica il tuo estratto in PDF',step1Text:'Quello che hai già scaricato dalla tua area bancaria.',step2Title:'Lettura automatica delle transazioni',step2Text:'Pochi secondi, nessuna immissione manuale da parte tua.',step3Title:'Scarica il tuo Excel e il tuo bilancio',step3Text:'Una tabella pronta all\'uso, più un report completo della tua situazione finanziaria.',finalH2:'Pronto a convertire il tuo estratto?',finalText:'Gratuito per l\'analisi di base. Nessuna carta. Nessuna connessione alla tua banca.'},
+portugues:{subnavAccueil:'Início',subnavAnalyser:'Analisar um extrato',subnavBudget:'Fazer seu orçamento',subnavEpargne:'Taxa de poupança',subnavBilan:'Balanço grátis',ctaSub:'Nenhum cartão necessário · Sem conexão com seu banco',trustTitle:'Sem conexão bancária',trustText:'Você só envia um arquivo — nunca suas credenciais bancárias. Seus dados continuam seus.',proofText:'Já testado e aprovado por seus <b>primeiros usuários</b>.',ctaFinal:'Analisar meu extrato agora →',footerMentions:'Aviso legal',footerConfidentialite:'Privacidade',footerCgv:'Termos',eyebrowGratuit:'✦ Grátis',eyebrowSecondes:'Em segundos',eyebrowSansConnexion:'Sem conexão bancária',stepsH2:'Como funciona',eyebrowMiddle:'Exportação para Excel',heroH1:'Converter um extrato bancário PDF em Excel',heroPayoff:'Envie seu PDF, receba uma <b>tabela Excel pronta para usar</b> — e muito mais.',ctaHero:'Converter meu extrato →',noteBox:'<b>Bom saber:</b> O BankAnalyzer não se limita a converter seu PDF em Excel — também analisa suas transações e gera um balanço financeiro completo (pontuação, categorias de gastos, despesas fixas). A exportação Excel das transações é um recurso Pro; a análise básica continua gratuita.',bridgeH2:'Do seu PDF ilegível para uma tabela clara',card1Title:'PDF, CSV ou Excel de entrada',card1Text:'Seja qual for o formato que seu banco fornece, o BankAnalyzer o lê diretamente.',card2Title:'Exportação Excel das transações',card2Text:'Todas as suas operações, estruturadas em tabela, prontas para ordenar ou retrabalhar.',card3Title:'Categorização automática',card3Text:'Cada despesa classificada por categoria, sem precisar ordenar linha por linha.',card4Title:'Exportação PDF do balanço',card4Text:'Um relatório visual completo, disponível para download além da tabela Excel.',step1Title:'Envie seu extrato em PDF',step1Text:'Aquele que você já baixou da sua área bancária.',step2Title:'Leitura automática das transações',step2Text:'Poucos segundos, sem digitação manual da sua parte.',step3Title:'Baixe seu Excel e seu balanço',step3Text:'Uma tabela pronta para usar, além de um relatório completo da sua situação financeira.',finalH2:'Pronto para converter seu extrato?',finalText:'Grátis para a análise básica. Sem cartão. Sem conexão com seu banco.'},
+chinese:{subnavAccueil:'首页',subnavAnalyser:'分析对账单',subnavBudget:'制定预算',subnavEpargne:'储蓄率',subnavBilan:'免费报告',ctaSub:'无需信用卡 · 无需连接您的银行',trustTitle:'无需连接银行',trustText:'您只需上传一个文件——绝不需要您的银行凭证。您的数据始终属于您。',proofText:'已经过<b>首批用户</b>的测试和认可。',ctaFinal:'立即分析我的对账单 →',footerMentions:'法律声明',footerConfidentialite:'隐私政策',footerCgv:'条款',eyebrowGratuit:'✦ 免费',eyebrowSecondes:'几秒钟内完成',eyebrowSansConnexion:'无需连接银行',stepsH2:'使用方法',eyebrowMiddle:'导出Excel',heroH1:'将银行对账单PDF转换为Excel',heroPayoff:'上传您的PDF，获得<b>可直接使用的Excel表格</b>——以及更多功能。',ctaHero:'转换我的对账单 →',noteBox:'<b>小提示：</b>BankAnalyzer不仅将您的PDF转换为Excel——还会分析您的交易并生成完整的财务报告（评分、支出类别、固定支出）。交易的Excel导出是Pro功能；基础分析始终免费。',bridgeH2:'从难以阅读的PDF到清晰的表格',card1Title:'支持PDF、CSV或Excel输入',card1Text:'无论您的银行提供什么格式，BankAnalyzer都能直接读取。',card2Title:'交易的Excel导出',card2Text:'所有交易均以表格形式呈现，随时可排序或再处理。',card3Title:'自动分类',card3Text:'每笔支出按类别分类，无需您逐行整理。',card4Title:'导出PDF报告',card4Text:'除Excel表格外，还可下载完整的可视化报告。',step1Title:'上传您的PDF对账单',step1Text:'您已经从网上银行下载的那份。',step2Title:'自动读取交易记录',step2Text:'几秒钟内完成，无需您手动输入。',step3Title:'下载您的Excel和报告',step3Text:'一张可直接使用的表格，外加一份完整的财务状况报告。',finalH2:'准备好转换您的对账单了吗？',finalText:'基础分析免费。无需信用卡。无需连接您的银行。'},
+arabic:{subnavAccueil:'الرئيسية',subnavAnalyser:'تحليل كشف حساب',subnavBudget:'إعداد ميزانيتك',subnavEpargne:'معدل الادخار',subnavBilan:'تقرير مجاني',ctaSub:'لا حاجة لبطاقة بنكية · بدون ربط ببنكك',trustTitle:'بدون ربط بنكي',trustText:'أنت فقط ترفع ملفًا — أبدًا بيانات اعتماد بنكك. بياناتك تبقى ملكك.',proofText:'تم اختباره واعتماده بالفعل من قبل <b>أوائل المستخدمين</b>.',ctaFinal:'حلّل كشفي الآن →',footerMentions:'الإشعار القانوني',footerConfidentialite:'الخصوصية',footerCgv:'الشروط',eyebrowGratuit:'✦ مجاني',eyebrowSecondes:'خلال ثوانٍ',eyebrowSansConnexion:'بدون ربط بنكي',stepsH2:'كيف يعمل',eyebrowMiddle:'تصدير Excel',heroH1:'تحويل كشف حساب بنكي PDF إلى Excel',heroPayoff:'ارفع ملف PDF الخاص بك، واحصل على <b>جدول Excel جاهز للاستخدام</b> — وأكثر من ذلك بكثير.',ctaHero:'تحويل كشفي →',noteBox:'<b>معلومة مفيدة:</b> لا يقتصر BankAnalyzer على تحويل ملف PDF الخاص بك إلى Excel — بل يحلل أيضًا معاملاتك وينشئ تقريرًا ماليًا كاملاً (درجة، فئات الإنفاق، الرسوم الثابتة). تصدير Excel للمعاملات هو ميزة Pro؛ يبقى التحليل الأساسي مجانيًا.',bridgeH2:'من ملف PDF غير المقروء إلى جدول واضح',card1Title:'إدخال PDF أو CSV أو Excel',card1Text:'أيًا كان التنسيق الذي يمنحه بنكك، يقرأه BankAnalyzer مباشرة.',card2Title:'تصدير Excel للمعاملات',card2Text:'جميع عملياتك، منظمة في جدول، جاهزة للفرز أو إعادة العمل.',card3Title:'تصنيف تلقائي',card3Text:'كل نفقة مصنفة حسب الفئة، دون الحاجة للفرز سطرًا بسطر بنفسك.',card4Title:'تصدير PDF للتقرير',card4Text:'تقرير مرئي كامل، قابل للتنزيل بالإضافة إلى جدول Excel.',step1Title:'ارفع كشف حسابك بصيغة PDF',step1Text:'الذي حمّلته بالفعل من منطقتك البنكية.',step2Title:'قراءة تلقائية للمعاملات',step2Text:'ثوانٍ قليلة، بدون إدخال يدوي من جانبك.',step3Title:'حمّل ملف Excel وتقريرك',step3Text:'جدول جاهز للاستخدام، بالإضافة إلى تقرير كامل عن وضعك المالي.',finalH2:'هل أنت مستعد لتحويل كشف حسابك؟',finalText:'مجاني للتحليل الأساسي. بدون بطاقة بنكية. بدون ربط ببنكك.'}
+};
+
+function getLangueSite(){
+  return localStorage.getItem('bankanalyzer_langue') || 'francais';
+}
+function setLangueSite(val){
+  localStorage.setItem('bankanalyzer_langue', val);
+}
+function appliquerTraductionPage(){
+  const lang = getLangueSite();
+  const T = TR_PAGE[lang] || TR_PAGE.francais;
+  for (const cle in T) {
+    const el = document.getElementById(cle);
+    if (!el) continue;
+    if (T[cle].indexOf('<b>') !== -1 || T[cle].indexOf('<br>') !== -1) {
+      el.innerHTML = T[cle];
+    } else {
+      el.textContent = T[cle];
+    }
+  }
+}
+document.addEventListener('DOMContentLoaded', function(){
+  const select = document.getElementById('siteLangue');
+  select.value = getLangueSite();
+  appliquerTraductionPage();
+  select.addEventListener('change', function(){
+    setLangueSite(select.value);
+    appliquerTraductionPage();
+  });
+});
+</script>
 
 <!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "0eed735705d74d45bf5a71ac0d3a345b"}'></script><!-- End Cloudflare Web Analytics -->
 </body>

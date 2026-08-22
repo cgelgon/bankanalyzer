@@ -26,7 +26,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;ba
 img,svg{max-width:100%;display:block}
 .wrap{max-width:760px;margin:0 auto;padding:0 1.5rem}
 a{color:inherit}
-header{padding:1.5rem 0}
+header{padding:1.5rem 1.5rem;position:relative;display:flex;align-items:center;justify-content:center}
 .logo{display:flex;align-items:center;gap:10px;justify-content:center}
 .logo-icon{width:30px;height:30px;background:linear-gradient(135deg,var(--blue),var(--blue2));border-radius:9px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:14px}
 .logo span{font-size:17px;font-weight:600;letter-spacing:-.2px}
@@ -34,6 +34,11 @@ header{padding:1.5rem 0}
 .subnav-wrap{display:flex;justify-content:center;flex-wrap:wrap;gap:8px;max-width:760px;margin:0 auto}
 .subnav a{color:var(--text2);text-decoration:none;padding:7px 14px;border-radius:100px;background:#fff;border:1px solid var(--border);font-size:12.5px;font-weight:600}
 .subnav a:hover{color:var(--blue);border-color:var(--blue)}
+.site-lang-select{position:absolute;right:1.5rem;top:50%;transform:translateY(-50%);color:var(--text2);padding:7px 10px;border-radius:100px;background:#fff;border:1px solid var(--border);font-size:12.5px;font-weight:600;font-family:inherit;cursor:pointer}
+@media(max-width:600px){
+  header{flex-direction:column;gap:10px}
+  .site-lang-select{position:static;transform:none}
+}
 .hero{text-align:center;padding:2.5rem 0 3rem}
 .eyebrow{display:inline-flex;align-items:center;gap:9px;background:#fff;border:1px solid var(--border);border-radius:100px;padding:8px 18px;font-size:12.5px;font-weight:600;color:var(--text2);box-shadow:var(--sh);margin-bottom:1.75rem}
 .eyebrow .dot{color:var(--green);font-weight:700}
@@ -86,37 +91,47 @@ footer a{text-decoration:underline;margin:0 6px}
     <div class="logo-icon">B</div>
     <span>BankAnalyzer</span>
   </a>
+  <select id="siteLangue" class="site-lang-select">
+    <option value="francais">🇫🇷 FR</option>
+    <option value="english">🇬🇧 EN</option>
+    <option value="espanol">🇪🇸 ES</option>
+    <option value="deutsch">🇩🇪 DE</option>
+    <option value="italiano">🇮🇹 IT</option>
+    <option value="portugues">🇵🇹 PT</option>
+    <option value="chinese">🇨🇳 中文</option>
+    <option value="arabic">🇸🇦 عربي</option>
+  </select>
 </header>
 <nav class="subnav"><div class="subnav-wrap">
-  <a href="https://bankanalyzer.fr/">Accueil</a>
-  <a href="/analyser-releve-bancaire.html">Analyser un relevé</a>
-  <a href="/faire-son-budget-sans-connecter-son-compte.html">Faire son budget</a>
-  <a href="/convertir-releve-bancaire-pdf-excel.html">Convertir PDF en Excel</a>
-  <a href="/bilan-financier-gratuit-en-ligne.html">Bilan gratuit</a>
+  <a href="https://bankanalyzer.fr/" id="subnavAccueil">Accueil</a>
+  <a href="/analyser-releve-bancaire.html" id="subnavAnalyser">Analyser un relevé</a>
+  <a href="/faire-son-budget-sans-connecter-son-compte.html" id="subnavBudget">Faire son budget</a>
+  <a href="/convertir-releve-bancaire-pdf-excel.html" id="subnavConvertir">Convertir PDF en Excel</a>
+  <a href="/bilan-financier-gratuit-en-ligne.html" id="subnavBilan">Bilan gratuit</a>
 </div></nav>
 
 <section class="hero">
   <div class="wrap">
-    <div class="eyebrow"><span>✦ Gratuit</span><span class="dot">&bull;</span><span>Calcul automatique</span><span class="dot">&bull;</span><span>En quelques secondes</span></div>
-    <h1>Calculer son taux d'épargne</h1>
-    <p class="payoff">La part de vos revenus mise de côté chaque mois. <b>Calculée pour vous, automatiquement.</b></p>
-    <a href="https://bankanalyzer.fr/analyser-releve-bancaire.html" class="cta-btn">Calculer mon taux d'épargne →</a>
-    <div class="cta-sub">Aucune carte bancaire requise · Aucune connexion à votre banque</div>
+    <div class="eyebrow"><span id="eyebrowGratuit">✦ Gratuit</span><span class="dot">&bull;</span><span id="eyebrowMiddle">Calcul automatique</span><span class="dot">&bull;</span><span id="eyebrowSecondes">En quelques secondes</span></div>
+    <h1 id="heroH1">Calculer son taux d'épargne</h1>
+    <p class="payoff" id="heroPayoff">La part de vos revenus mise de côté chaque mois. <b>Calculée pour vous, automatiquement.</b></p>
+    <a href="https://bankanalyzer.fr/analyser-releve-bancaire.html" class="cta-btn" id="ctaHero">Calculer mon taux d'épargne →</a>
+    <div class="cta-sub" id="ctaSub">Aucune carte bancaire requise · Aucune connexion à votre banque</div>
   </div>
 </section>
 
 <section>
   <div class="wrap">
     <div class="formula">
-      <div class="label">La formule</div>
-      <div class="eq">Taux d'épargne = <span>(Revenus − Dépenses)</span> ÷ Revenus × 100</div>
-      <p>Un taux de 10 à 20 % est souvent considéré comme un bon repère, mais tout dépend de votre situation.</p>
+      <div class="label" id="formulaLabel">La formule</div>
+      <div class="eq" id="formulaEq">Taux d'épargne = <span>(Revenus − Dépenses)</span> ÷ Revenus × 100</div>
+      <p id="formulaP">Un taux de 10 à 20 % est souvent considéré comme un bon repère, mais tout dépend de votre situation.</p>
     </div>
   </div>
 </section>
 
 <section class="bridge">
-  <div class="wrap"><h2>Pourquoi c'est plus compliqué à calculer soi-même qu'il n'y paraît</h2></div>
+  <div class="wrap"><h2 id="bridgeH2">Pourquoi c'est plus compliqué à calculer soi-même qu'il n'y paraît</h2></div>
 </section>
 
 <section>
@@ -124,23 +139,23 @@ footer a{text-decoration:underline;margin:0 6px}
     <div class="cards">
       <div class="card">
         <div class="badge b1">📊</div>
-        <h3>Le vrai chiffre, pas une estimation</h3>
-        <p>Calculé directement sur vos transactions réelles, pas sur une moyenne approximative.</p>
+        <h3 id="card1Title">Le vrai chiffre, pas une estimation</h3>
+        <p id="card1Text">Calculé directement sur vos transactions réelles, pas sur une moyenne approximative.</p>
       </div>
       <div class="card">
         <div class="badge b2">🍕</div>
-        <h3>Dépenses détaillées par catégorie</h3>
-        <p>Comprendre ce qui pèse sur votre taux d'épargne, pas juste le chiffre final.</p>
+        <h3 id="card2Title">Dépenses détaillées par catégorie</h3>
+        <p id="card2Text">Comprendre ce qui pèse sur votre taux d'épargne, pas juste le chiffre final.</p>
       </div>
       <div class="card">
         <div class="badge b3">🔁</div>
-        <h3>Charges fixes identifiées</h3>
-        <p>Ce qui revient chaque mois, souvent la première chose à optimiser.</p>
+        <h3 id="card3Title">Charges fixes identifiées</h3>
+        <p id="card3Text">Ce qui revient chaque mois, souvent la première chose à optimiser.</p>
       </div>
       <div class="card">
         <div class="badge b4">💡</div>
-        <h3>Conseils pour l'améliorer</h3>
-        <p>3 actions concrètes adaptées à votre situation, pas des généralités.</p>
+        <h3 id="card4Title">Conseils pour l'améliorer</h3>
+        <p id="card4Text">3 actions concrètes adaptées à votre situation, pas des généralités.</p>
       </div>
     </div>
   </div>
@@ -148,18 +163,18 @@ footer a{text-decoration:underline;margin:0 6px}
 
 <section class="steps">
   <div class="wrap">
-    <h2>Comment ça marche</h2>
+    <h2 id="stepsH2">Comment ça marche</h2>
     <div class="step">
       <div class="step-num">1</div>
-      <div><h3>Déposez votre relevé</h3><p>PDF, CSV ou Excel — celui que vous avez déjà sur votre ordinateur.</p></div>
+      <div><h3 id="step1Title">Déposez votre relevé</h3><p id="step1Text">PDF, CSV ou Excel — celui que vous avez déjà sur votre ordinateur.</p></div>
     </div>
     <div class="step">
       <div class="step-num">2</div>
-      <div><h3>Calcul automatique</h3><p>Revenus et dépenses identifiés, taux d'épargne calculé en quelques secondes.</p></div>
+      <div><h3 id="step2Title">Calcul automatique</h3><p id="step2Text">Revenus et dépenses identifiés, taux d'épargne calculé en quelques secondes.</p></div>
     </div>
     <div class="step">
       <div class="step-num">3</div>
-      <div><h3>Votre bilan complet</h3><p>Taux d'épargne, score de gestion, et pistes concrètes pour l'améliorer.</p></div>
+      <div><h3 id="step3Title">Votre bilan complet</h3><p id="step3Text">Taux d'épargne, score de gestion, et pistes concrètes pour l'améliorer.</p></div>
     </div>
   </div>
 </section>
@@ -169,32 +184,74 @@ footer a{text-decoration:underline;margin:0 6px}
     <div class="trust">
       <div class="icon">🔒</div>
       <div>
-        <h3>Sans connexion bancaire</h3>
-        <p>Vous déposez juste un fichier — jamais vos identifiants bancaires. Vos données restent les vôtres.</p>
+        <h3 id="trustTitle">Sans connexion bancaire</h3>
+        <p id="trustText">Vous déposez juste un fichier — jamais vos identifiants bancaires. Vos données restent les vôtres.</p>
       </div>
     </div>
   </div>
 </section>
 
 <section class="proof">
-  <div class="wrap"><p>Déjà testé et approuvé par ses <b>premiers utilisateurs</b>.</p></div>
+  <div class="wrap"><p id="proofText">Déjà testé et approuvé par ses <b>premiers utilisateurs</b>.</p></div>
 </section>
 
 <section class="final">
   <div class="wrap">
-    <h2>Prêt à connaître votre taux d'épargne ?</h2>
-    <p>Gratuit. Sans carte bancaire. Sans connexion à votre banque.</p>
-    <a href="https://bankanalyzer.fr/analyser-releve-bancaire.html" class="cta-btn">Analyser mon relevé maintenant →</a>
+    <h2 id="finalH2">Prêt à connaître votre taux d'épargne ?</h2>
+    <p id="finalText">Gratuit. Sans carte bancaire. Sans connexion à votre banque.</p>
+    <a href="https://bankanalyzer.fr/analyser-releve-bancaire.html" class="cta-btn" id="ctaFinal">Analyser mon relevé maintenant →</a>
   </div>
 </section>
 
 <footer>
   BankAnalyzer — édité par CG Conseils
   <br>
-  <a href="https://bankanalyzer.fr/mentions-legales.html">Mentions légales</a>·
-  <a href="https://bankanalyzer.fr/politique-confidentialite.html">Confidentialité</a>·
-  <a href="https://bankanalyzer.fr/cgv.html">CGV</a>
+  <a href="https://bankanalyzer.fr/mentions-legales.html" id="footerMentions">Mentions légales</a>·
+  <a href="https://bankanalyzer.fr/politique-confidentialite.html" id="footerConfidentialite">Confidentialité</a>·
+  <a href="https://bankanalyzer.fr/cgv.html" id="footerCgv">CGV</a>
 </footer>
+
+<script>
+const TR_PAGE = {
+francais:{subnavAccueil:'Accueil',subnavAnalyser:'Analyser un relevé',subnavBudget:'Faire son budget',subnavConvertir:'Convertir PDF en Excel',subnavBilan:'Bilan gratuit',ctaSub:'Aucune carte bancaire requise · Aucune connexion à votre banque',trustTitle:'Sans connexion bancaire',trustText:'Vous déposez juste un fichier — jamais vos identifiants bancaires. Vos données restent les vôtres.',proofText:'Déjà testé et approuvé par ses <b>premiers utilisateurs</b>.',ctaFinal:'Analyser mon relevé maintenant →',footerMentions:'Mentions légales',footerConfidentialite:'Confidentialité',footerCgv:'CGV',eyebrowGratuit:'✦ Gratuit',eyebrowSecondes:'En quelques secondes',eyebrowSansConnexion:'Sans connexion bancaire',stepsH2:'Comment ça marche',eyebrowMiddle:'Calcul automatique',heroH1:'Calculer son taux d\'épargne',heroPayoff:'La part de vos revenus mise de côté chaque mois. <b>Calculée pour vous, automatiquement.</b>',ctaHero:'Calculer mon taux d\'épargne →',formulaLabel:'La formule',formulaEq:'Taux d\'épargne = <span>(Revenus − Dépenses)</span> ÷ Revenus × 100',formulaP:'Un taux de 10 à 20 % est souvent considéré comme un bon repère, mais tout dépend de votre situation.',bridgeH2:'Pourquoi c\'est plus compliqué à calculer soi-même qu\'il n\'y paraît',card1Title:'Le vrai chiffre, pas une estimation',card1Text:'Calculé directement sur vos transactions réelles, pas sur une moyenne approximative.',card2Title:'Dépenses détaillées par catégorie',card2Text:'Comprendre ce qui pèse sur votre taux d\'épargne, pas juste le chiffre final.',card3Title:'Charges fixes identifiées',card3Text:'Ce qui revient chaque mois, souvent la première chose à optimiser.',card4Title:'Conseils pour l\'améliorer',card4Text:'3 actions concrètes adaptées à votre situation, pas des généralités.',step1Title:'Déposez votre relevé',step1Text:'PDF, CSV ou Excel — celui que vous avez déjà sur votre ordinateur.',step2Title:'Calcul automatique',step2Text:'Revenus et dépenses identifiés, taux d\'épargne calculé en quelques secondes.',step3Title:'Votre bilan complet',step3Text:'Taux d\'épargne, score de gestion, et pistes concrètes pour l\'améliorer.',finalH2:'Prêt à connaître votre taux d\'épargne ?',finalText:'Gratuit. Sans carte bancaire. Sans connexion à votre banque.'},
+english:{subnavAccueil:'Home',subnavAnalyser:'Analyze a statement',subnavBudget:'Build your budget',subnavConvertir:'Convert PDF to Excel',subnavBilan:'Free report',ctaSub:'No credit card required · No connection to your bank',trustTitle:'No bank connection',trustText:'You just upload a file — never your bank credentials. Your data stays yours.',proofText:'Already tested and approved by its <b>first users</b>.',ctaFinal:'Analyze my statement now →',footerMentions:'Legal notice',footerConfidentialite:'Privacy',footerCgv:'Terms',eyebrowGratuit:'✦ Free',eyebrowSecondes:'In seconds',eyebrowSansConnexion:'No bank connection',stepsH2:'How it works',eyebrowMiddle:'Automatic calculation',heroH1:'Calculate your savings rate',heroPayoff:'The share of your income set aside each month. <b>Calculated for you, automatically.</b>',ctaHero:'Calculate my savings rate →',formulaLabel:'The formula',formulaEq:'Savings rate = <span>(Income − Expenses)</span> ÷ Income × 100',formulaP:'A rate of 10 to 20% is often considered a good benchmark, but it all depends on your situation.',bridgeH2:'Why it\'s more complicated to calculate yourself than it seems',card1Title:'The real number, not an estimate',card1Text:'Calculated directly from your actual transactions, not a rough average.',card2Title:'Detailed spending by category',card2Text:'Understand what\'s weighing on your savings rate, not just the final number.',card3Title:'Fixed charges identified',card3Text:'What comes back every month, often the first thing to optimize.',card4Title:'Tips to improve it',card4Text:'3 concrete actions tailored to your situation, not generic tips.',step1Title:'Upload your statement',step1Text:'PDF, CSV or Excel — the one you already have on your computer.',step2Title:'Automatic calculation',step2Text:'Income and expenses identified, savings rate calculated in seconds.',step3Title:'Your complete report',step3Text:'Savings rate, financial health score, and concrete ways to improve it.',finalH2:'Ready to know your savings rate?',finalText:'Free. No credit card. No connection to your bank.'},
+espanol:{subnavAccueil:'Inicio',subnavAnalyser:'Analizar un extracto',subnavBudget:'Hacer tu presupuesto',subnavConvertir:'Convertir PDF a Excel',subnavBilan:'Balance gratis',ctaSub:'No se requiere tarjeta · Sin conexión a tu banco',trustTitle:'Sin conexión bancaria',trustText:'Solo subes un archivo — nunca tus credenciales bancarias. Tus datos siguen siendo tuyos.',proofText:'Ya probado y aprobado por sus <b>primeros usuarios</b>.',ctaFinal:'Analizar mi extracto ahora →',footerMentions:'Aviso legal',footerConfidentialite:'Privacidad',footerCgv:'Términos',eyebrowGratuit:'✦ Gratis',eyebrowSecondes:'En segundos',eyebrowSansConnexion:'Sin conexión bancaria',stepsH2:'Cómo funciona',eyebrowMiddle:'Cálculo automático',heroH1:'Calcular tu tasa de ahorro',heroPayoff:'La parte de tus ingresos que ahorras cada mes. <b>Calculada para ti, automáticamente.</b>',ctaHero:'Calcular mi tasa de ahorro →',formulaLabel:'La fórmula',formulaEq:'Tasa de ahorro = <span>(Ingresos − Gastos)</span> ÷ Ingresos × 100',formulaP:'Una tasa del 10 al 20 % suele considerarse un buen referente, pero todo depende de tu situación.',bridgeH2:'Por qué es más complicado calcularlo tú mismo de lo que parece',card1Title:'La cifra real, no una estimación',card1Text:'Calculada directamente sobre tus transacciones reales, no sobre una media aproximada.',card2Title:'Gastos detallados por categoría',card2Text:'Entender qué pesa sobre tu tasa de ahorro, no solo la cifra final.',card3Title:'Gastos fijos identificados',card3Text:'Lo que vuelve cada mes, a menudo lo primero a optimizar.',card4Title:'Consejos para mejorarla',card4Text:'3 acciones concretas adaptadas a tu situación, no generalidades.',step1Title:'Sube tu extracto',step1Text:'PDF, CSV o Excel — el que ya tienes en tu ordenador.',step2Title:'Cálculo automático',step2Text:'Ingresos y gastos identificados, tasa de ahorro calculada en segundos.',step3Title:'Tu balance completo',step3Text:'Tasa de ahorro, puntuación financiera, y pistas concretas para mejorarla.',finalH2:'¿Listo para conocer tu tasa de ahorro?',finalText:'Gratis. Sin tarjeta. Sin conexión a tu banco.'},
+deutsch:{subnavAccueil:'Startseite',subnavAnalyser:'Kontoauszug analysieren',subnavBudget:'Budget erstellen',subnavConvertir:'PDF in Excel umwandeln',subnavBilan:'Kostenlose Übersicht',ctaSub:'Keine Kreditkarte nötig · Keine Verbindung zu Ihrer Bank',trustTitle:'Keine Bankverbindung',trustText:'Sie laden nur eine Datei hoch — nie Ihre Bankzugangsdaten. Ihre Daten bleiben Ihre eigenen.',proofText:'Bereits getestet und bestätigt von den <b>ersten Nutzern</b>.',ctaFinal:'Jetzt meinen Kontoauszug analysieren →',footerMentions:'Impressum',footerConfidentialite:'Datenschutz',footerCgv:'AGB',eyebrowGratuit:'✦ Kostenlos',eyebrowSecondes:'In Sekunden',eyebrowSansConnexion:'Keine Bankverbindung',stepsH2:'So funktioniert\'s',eyebrowMiddle:'Automatische Berechnung',heroH1:'Ihre Sparquote berechnen',heroPayoff:'Der Anteil Ihres Einkommens, den Sie jeden Monat zurücklegen. <b>Automatisch für Sie berechnet.</b>',ctaHero:'Meine Sparquote berechnen →',formulaLabel:'Die Formel',formulaEq:'Sparquote = <span>(Einkommen − Ausgaben)</span> ÷ Einkommen × 100',formulaP:'Eine Quote von 10 bis 20 % gilt oft als guter Richtwert, aber es hängt ganz von Ihrer Situation ab.',bridgeH2:'Warum es komplizierter ist, es selbst zu berechnen, als es scheint',card1Title:'Die echte Zahl, keine Schätzung',card1Text:'Direkt aus Ihren tatsächlichen Transaktionen berechnet, nicht aus einem groben Durchschnitt.',card2Title:'Detaillierte Ausgaben nach Kategorie',card2Text:'Verstehen, was auf Ihrer Sparquote lastet, nicht nur die Endzahl.',card3Title:'Identifizierte Fixkosten',card3Text:'Was jeden Monat wiederkehrt, oft das Erste, was zu optimieren ist.',card4Title:'Tipps zur Verbesserung',card4Text:'3 konkrete, auf Ihre Situation zugeschnittene Maßnahmen, keine Allgemeinplätze.',step1Title:'Laden Sie Ihren Kontoauszug hoch',step1Text:'PDF, CSV oder Excel — den Sie bereits auf Ihrem Computer haben.',step2Title:'Automatische Berechnung',step2Text:'Einkommen und Ausgaben identifiziert, Sparquote in Sekunden berechnet.',step3Title:'Ihre vollständige Übersicht',step3Text:'Sparquote, Finanz-Score und konkrete Wege zur Verbesserung.',finalH2:'Bereit, Ihre Sparquote zu erfahren?',finalText:'Kostenlos. Keine Kreditkarte. Keine Verbindung zu Ihrer Bank.'},
+italiano:{subnavAccueil:'Home',subnavAnalyser:'Analizza un estratto',subnavBudget:'Crea il tuo budget',subnavConvertir:'Converti PDF in Excel',subnavBilan:'Bilancio gratuito',ctaSub:'Nessuna carta richiesta · Nessuna connessione alla tua banca',trustTitle:'Senza connessione bancaria',trustText:'Carichi solo un file — mai le tue credenziali bancarie. I tuoi dati restano tuoi.',proofText:'Già testato e approvato dai suoi <b>primi utenti</b>.',ctaFinal:'Analizza il mio estratto ora →',footerMentions:'Note legali',footerConfidentialite:'Privacy',footerCgv:'Termini',eyebrowGratuit:'✦ Gratuito',eyebrowSecondes:'In pochi secondi',eyebrowSansConnexion:'Senza connessione bancaria',stepsH2:'Come funziona',eyebrowMiddle:'Calcolo automatico',heroH1:'Calcolare il tuo tasso di risparmio',heroPayoff:'La parte dei tuoi redditi messa da parte ogni mese. <b>Calcolata per te, automaticamente.</b>',ctaHero:'Calcola il mio tasso di risparmio →',formulaLabel:'La formula',formulaEq:'Tasso di risparmio = <span>(Redditi − Spese)</span> ÷ Redditi × 100',formulaP:'Un tasso dal 10 al 20% è spesso considerato un buon riferimento, ma tutto dipende dalla tua situazione.',bridgeH2:'Perché calcolarlo da soli è più complicato di quanto sembri',card1Title:'Il numero reale, non una stima',card1Text:'Calcolato direttamente sulle tue transazioni reali, non su una media approssimativa.',card2Title:'Spese dettagliate per categoria',card2Text:'Capire cosa pesa sul tuo tasso di risparmio, non solo il numero finale.',card3Title:'Spese fisse identificate',card3Text:'Ciò che ricorre ogni mese, spesso la prima cosa da ottimizzare.',card4Title:'Consigli per migliorarlo',card4Text:'3 azioni concrete adattate alla tua situazione, non generalità.',step1Title:'Carica il tuo estratto',step1Text:'PDF, CSV o Excel — quello che hai già sul tuo computer.',step2Title:'Calcolo automatico',step2Text:'Redditi e spese identificati, tasso di risparmio calcolato in pochi secondi.',step3Title:'Il tuo bilancio completo',step3Text:'Tasso di risparmio, punteggio finanziario, e piste concrete per migliorarlo.',finalH2:'Pronto a conoscere il tuo tasso di risparmio?',finalText:'Gratuito. Nessuna carta. Nessuna connessione alla tua banca.'},
+portugues:{subnavAccueil:'Início',subnavAnalyser:'Analisar um extrato',subnavBudget:'Fazer seu orçamento',subnavConvertir:'Converter PDF em Excel',subnavBilan:'Balanço grátis',ctaSub:'Nenhum cartão necessário · Sem conexão com seu banco',trustTitle:'Sem conexão bancária',trustText:'Você só envia um arquivo — nunca suas credenciais bancárias. Seus dados continuam seus.',proofText:'Já testado e aprovado por seus <b>primeiros usuários</b>.',ctaFinal:'Analisar meu extrato agora →',footerMentions:'Aviso legal',footerConfidentialite:'Privacidade',footerCgv:'Termos',eyebrowGratuit:'✦ Grátis',eyebrowSecondes:'Em segundos',eyebrowSansConnexion:'Sem conexão bancária',stepsH2:'Como funciona',eyebrowMiddle:'Cálculo automático',heroH1:'Calcular sua taxa de poupança',heroPayoff:'A parte da sua renda guardada a cada mês. <b>Calculada para você, automaticamente.</b>',ctaHero:'Calcular minha taxa de poupança →',formulaLabel:'A fórmula',formulaEq:'Taxa de poupança = <span>(Renda − Despesas)</span> ÷ Renda × 100',formulaP:'Uma taxa de 10 a 20% é frequentemente considerada um bom parâmetro, mas tudo depende da sua situação.',bridgeH2:'Por que é mais complicado calcular sozinho do que parece',card1Title:'O número real, não uma estimativa',card1Text:'Calculado diretamente com base nas suas transações reais, não em uma média aproximada.',card2Title:'Gastos detalhados por categoria',card2Text:'Entender o que pesa na sua taxa de poupança, não apenas o número final.',card3Title:'Despesas fixas identificadas',card3Text:'O que se repete todo mês, geralmente a primeira coisa a otimizar.',card4Title:'Dicas para melhorá-la',card4Text:'3 ações concretas adaptadas à sua situação, não generalidades.',step1Title:'Envie seu extrato',step1Text:'PDF, CSV ou Excel — o que você já tem no seu computador.',step2Title:'Cálculo automático',step2Text:'Renda e despesas identificadas, taxa de poupança calculada em segundos.',step3Title:'Seu balanço completo',step3Text:'Taxa de poupança, pontuação financeira, e caminhos concretos para melhorá-la.',finalH2:'Pronto para conhecer sua taxa de poupança?',finalText:'Grátis. Sem cartão. Sem conexão com seu banco.'},
+chinese:{subnavAccueil:'首页',subnavAnalyser:'分析对账单',subnavBudget:'制定预算',subnavConvertir:'PDF转Excel',subnavBilan:'免费报告',ctaSub:'无需信用卡 · 无需连接您的银行',trustTitle:'无需连接银行',trustText:'您只需上传一个文件——绝不需要您的银行凭证。您的数据始终属于您。',proofText:'已经过<b>首批用户</b>的测试和认可。',ctaFinal:'立即分析我的对账单 →',footerMentions:'法律声明',footerConfidentialite:'隐私政策',footerCgv:'条款',eyebrowGratuit:'✦ 免费',eyebrowSecondes:'几秒钟内完成',eyebrowSansConnexion:'无需连接银行',stepsH2:'使用方法',eyebrowMiddle:'自动计算',heroH1:'计算您的储蓄率',heroPayoff:'每月存下的收入比例。<b>为您自动计算。</b>',ctaHero:'计算我的储蓄率 →',formulaLabel:'计算公式',formulaEq:'储蓄率 = <span>（收入 − 支出）</span> ÷ 收入 × 100',formulaP:'10%至20%的比例通常被视为不错的参考标准，但一切取决于您的具体情况。',bridgeH2:'为什么自己计算比看起来更复杂',card1Title:'真实数字，而非估算',card1Text:'直接根据您的真实交易计算，而非粗略平均值。',card2Title:'按类别细分的详细支出',card2Text:'了解影响储蓄率的因素，而不仅仅是最终数字。',card3Title:'识别出的固定支出',card3Text:'每月重复出现的支出，通常是首先需要优化的部分。',card4Title:'改善建议',card4Text:'针对您情况量身定制的3个具体行动，而非泛泛而谈。',step1Title:'上传您的对账单',step1Text:'PDF、CSV或Excel——您电脑上已有的文件。',step2Title:'自动计算',step2Text:'识别收入和支出，几秒钟内计算出储蓄率。',step3Title:'您的完整报告',step3Text:'储蓄率、财务健康评分，以及切实可行的改善建议。',finalH2:'准备好了解您的储蓄率了吗？',finalText:'免费。无需信用卡。无需连接您的银行。'},
+arabic:{subnavAccueil:'الرئيسية',subnavAnalyser:'تحليل كشف حساب',subnavBudget:'إعداد ميزانيتك',subnavConvertir:'تحويل PDF إلى Excel',subnavBilan:'تقرير مجاني',ctaSub:'لا حاجة لبطاقة بنكية · بدون ربط ببنكك',trustTitle:'بدون ربط بنكي',trustText:'أنت فقط ترفع ملفًا — أبدًا بيانات اعتماد بنكك. بياناتك تبقى ملكك.',proofText:'تم اختباره واعتماده بالفعل من قبل <b>أوائل المستخدمين</b>.',ctaFinal:'حلّل كشفي الآن →',footerMentions:'الإشعار القانوني',footerConfidentialite:'الخصوصية',footerCgv:'الشروط',eyebrowGratuit:'✦ مجاني',eyebrowSecondes:'خلال ثوانٍ',eyebrowSansConnexion:'بدون ربط بنكي',stepsH2:'كيف يعمل',eyebrowMiddle:'حساب تلقائي',heroH1:'حساب معدل ادخارك',heroPayoff:'الجزء من دخلك الذي تضعه جانبًا كل شهر. <b>يُحسب لك تلقائيًا.</b>',ctaHero:'احسب معدل ادخاري →',formulaLabel:'المعادلة',formulaEq:'معدل الادخار = <span>(الدخل − المصروفات)</span> ÷ الدخل × 100',formulaP:'يُعتبر معدل من 10 إلى 20٪ غالبًا مرجعًا جيدًا، لكن كل شيء يعتمد على وضعك.',bridgeH2:'لماذا يعد حسابه بنفسك أكثر تعقيدًا مما يبدو',card1Title:'الرقم الحقيقي، وليس تقديرًا',card1Text:'محسوب مباشرة من معاملاتك الفعلية، وليس من متوسط تقريبي.',card2Title:'مصروفات مفصلة حسب الفئة',card2Text:'فهم ما يؤثر على معدل ادخارك، وليس فقط الرقم النهائي.',card3Title:'الرسوم الثابتة المحددة',card3Text:'ما يتكرر كل شهر، وغالبًا ما يكون أول شيء يجب تحسينه.',card4Title:'نصائح لتحسينه',card4Text:'3 إجراءات ملموسة مصممة لوضعك، وليست تعميمات.',step1Title:'ارفع كشف حسابك',step1Text:'PDF أو CSV أو Excel — الذي لديك بالفعل على حاسوبك.',step2Title:'حساب تلقائي',step2Text:'يتم تحديد الدخل والمصروفات، ويُحسب معدل الادخار خلال ثوانٍ.',step3Title:'تقريرك الكامل',step3Text:'معدل الادخار، درجة الصحة المالية، وطرق ملموسة لتحسينه.',finalH2:'هل أنت مستعد لمعرفة معدل ادخارك؟',finalText:'مجاني. بدون بطاقة بنكية. بدون ربط ببنكك.'}
+};
+
+function getLangueSite(){
+  return localStorage.getItem('bankanalyzer_langue') || 'francais';
+}
+function setLangueSite(val){
+  localStorage.setItem('bankanalyzer_langue', val);
+}
+function appliquerTraductionPage(){
+  const lang = getLangueSite();
+  const T = TR_PAGE[lang] || TR_PAGE.francais;
+  for (const cle in T) {
+    const el = document.getElementById(cle);
+    if (!el) continue;
+    if (T[cle].indexOf('<b>') !== -1 || T[cle].indexOf('<br>') !== -1 || T[cle].indexOf('<span>') !== -1) {
+      el.innerHTML = T[cle];
+    } else {
+      el.textContent = T[cle];
+    }
+  }
+}
+document.addEventListener('DOMContentLoaded', function(){
+  const select = document.getElementById('siteLangue');
+  select.value = getLangueSite();
+  appliquerTraductionPage();
+  select.addEventListener('change', function(){
+    setLangueSite(select.value);
+    appliquerTraductionPage();
+  });
+});
+</script>
 
 <!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "0eed735705d74d45bf5a71ac0d3a345b"}'></script><!-- End Cloudflare Web Analytics -->
 </body>
