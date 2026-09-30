@@ -251,12 +251,18 @@ def _extraire_soldes_ouverture_cloture_texte(text):
     return None, None
 
 
-def calculer_totaux_verifies_pdf(text):
+def calculer_totaux_verifies_pdf(text, texte_complet=None):
     """Essaie de calculer des totaux exacts pour certains formats de PDF
     reconnus (actuellement : Revolut 'Releve personnalise'), plutot que
     de laisser l'IA les estimer. Retourne None si le format n'est pas
-    reconnu (comportement inchange, aucune regression)."""
-    if 'Revolut' in text and ('Relevé des transactions' in text or ('Argent' in text and 'entrant' in text)):
+    reconnu (comportement inchange, aucune regression).
+
+    texte_complet (optionnel) : texte du document ENTIER, utilise
+    uniquement pour reconnaitre le format quand `text` est un extrait
+    partiel (bloc d'un seul mois issu du decoupage multi-mois) qui n'a
+    plus forcement les lignes d'en-tete identifiant la banque."""
+    texte_pour_detection = texte_complet if texte_complet is not None else text
+    if 'Revolut' in texte_pour_detection and ('Relevé des transactions' in texte_pour_detection or ('Argent' in texte_pour_detection and 'entrant' in texte_pour_detection)):
         matches = _REGEX_5_MONTANTS_EUR.findall(text)
         if matches:
             recettes = 0.0
@@ -400,6 +406,91 @@ def _totaux_ligne(ligne, idx_debit, idx_credit, idx_montant):
         else:
             depense = abs(m)
     return recette, depense
+
+
+MOIS_ABBR_FR = {
+    'janv': 1, 'jan': 1, 'fevr': 2, 'fev': 2, 'mars': 3, 'avr': 4, 'mai': 5, 'juin': 6,
+    'juil': 7, 'aout': 8, 'aou': 8, 'sept': 9, 'sep': 9, 'oct': 10, 'nov': 11, 'dec': 12,
+}
+
+_REGEX_DATE_LIGNE_TEXTE = re.compile(
+    r'\b(\d{1,2})\s+([a-zA-ZÀ-ÿ]{3,10})\.?\s+(\d{4})\b'
+)
+_REGEX_DATE_NUMERIQUE_LIGNE = re.compile(
+    r'\b(\d{1,2})[/.-](\d{1,2})[/.-](\d{2,4})\b'
+)
+
+
+def _detecter_mois_ligne(ligne):
+    """Essaie de detecter une date dans une ligne de texte PDF brut
+    (ex: '26 sept. 2026 ClickRent 1000,00' ou '13/07/2026 ...').
+    Retourne (annee, mois) ou None si aucune date fiable n'est trouvee."""
+    m = _REGEX_DATE_LIGNE_TEXTE.search(ligne)
+    if m:
+        jour, nom_mois, annee = m.groups()
+        nom_mois_norm = sans_accents(nom_mois.lower())
+        for prefixe, num in sorted(MOIS_ABBR_FR.items(), key=lambda x: -len(x[0])):
+            if nom_mois_norm.startswith(prefixe):
+                return (int(annee), num)
+        for nom, num in MOIS_MAP.items():
+            if nom_mois_norm.startswith(sans_accents(nom)[:4]):
+                return (int(annee), num)
+    m2 = _REGEX_DATE_NUMERIQUE_LIGNE.search(ligne)
+    if m2:
+        jour, mois, annee = m2.groups()
+        annee_i = int(annee)
+        if annee_i < 100:
+            annee_i += 2000
+        try:
+            mois_i = int(mois)
+            jour_i = int(jour)
+            if 1 <= mois_i <= 12 and 1 <= jour_i <= 31:
+                return (annee_i, mois_i)
+        except ValueError:
+            pass
+    return None
+
+
+def decouper_texte_pdf_par_mois(texte):
+    """Decoupe le texte brut extrait d'un PDF en blocs mensuels, en
+    detectant les dates presentes ligne par ligne (bug 'relevé PDF
+    multi-mois affiche comme un seul mois'). Si une seule periode (ou
+    aucune date fiable) est detectee, retourne un seul bloc -- comportement
+    inchange pour les PDF mono-mois. Les lignes d'en-tete avant la
+    premiere date detectee sont rattachees au premier bloc trouve, pour ne
+    pas les perdre (numero de compte, titulaire, etc.)."""
+    lignes = texte.split(chr(10))
+    preambule = []
+    cle_courante = None
+    groupes = {}
+    ordre = []
+    for ligne in lignes:
+        cle_detectee = _detecter_mois_ligne(ligne)
+        if cle_detectee:
+            cle_courante = cle_detectee
+        if cle_courante is None:
+            preambule.append(ligne)
+            continue
+        if cle_courante not in groupes:
+            groupes[cle_courante] = list(preambule) if not ordre else []
+            ordre.append(cle_courante)
+            preambule = []
+        groupes[cle_courante].append(ligne)
+
+    if len(set(ordre)) <= 1:
+        return [{'periode': None, 'text': texte, 'totauxVerifies': None}]
+
+    blocs = []
+    for cle in sorted(set(ordre), key=lambda c: (c[0], c[1])):
+        annee, mois = cle
+        periode = '%02d/%s' % (mois, annee)
+        texte_bloc = chr(10).join(groupes[cle])
+        blocs.append({
+            'periode': periode,
+            'text': texte_bloc,
+            'totauxVerifies': calculer_totaux_verifies_pdf(texte_bloc, texte_complet=texte),
+        })
+    return blocs
 
 
 def _decouper_lignes_par_mois(entetes, lignes_donnees):
@@ -1380,7 +1471,9 @@ def _analyze_impl():
         try:
             if filename.endswith('.pdf'):
                 texte_pdf_extrait = extract_text_from_pdf(file_bytes)
-                blocs = [{'periode': None, 'text': texte_pdf_extrait, 'totauxVerifies': calculer_totaux_verifies_pdf(texte_pdf_extrait)}]
+                blocs = decouper_texte_pdf_par_mois(texte_pdf_extrait)
+                if len(blocs) == 1 and blocs[0]['totauxVerifies'] is None:
+                    blocs[0]['totauxVerifies'] = calculer_totaux_verifies_pdf(texte_pdf_extrait)
             elif filename.endswith('.csv'):
                 blocs = decouper_par_mois_csv(file_bytes)
             elif filename.endswith(('.xlsx', '.xls')):
