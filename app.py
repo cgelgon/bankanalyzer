@@ -422,10 +422,19 @@ _REGEX_DATE_NUMERIQUE_LIGNE = re.compile(
 
 
 def _detecter_mois_ligne(ligne):
-    """Essaie de detecter une date dans une ligne de texte PDF brut
-    (ex: '26 sept. 2026 ClickRent 1000,00' ou '13/07/2026 ...').
+    """Essaie de detecter une date EN DEBUT de ligne de texte PDF brut
+    (ex: '26 sept. 2026 ClickRent 1000,00' ou '13/07/2026 ...'), comme le
+    sont les vraies lignes de transaction. On ancre volontairement en
+    debut de ligne (pas de recherche n'importe ou dans le texte) pour
+    ignorer les dates incidentes qui ne sont pas des transactions : date
+    de generation du document ('Genere le 30 sept. 2026'), en-tetes de
+    section ('En attente de 1 juillet 2026 a 30 septembre 2026'), etc.
+    Sans cet ancrage, ces dates parasites declenchent un changement de
+    mois premature et font atterrir le tableau-resume du releve dans le
+    mauvais bloc mensuel (bug constate en prod sur un releve Revolut).
     Retourne (annee, mois) ou None si aucune date fiable n'est trouvee."""
-    m = _REGEX_DATE_LIGNE_TEXTE.search(ligne)
+    ligne_debut = ligne.lstrip()
+    m = _REGEX_DATE_LIGNE_TEXTE.match(ligne_debut)
     if m:
         jour, nom_mois, annee = m.groups()
         nom_mois_norm = sans_accents(nom_mois.lower())
@@ -435,7 +444,7 @@ def _detecter_mois_ligne(ligne):
         for nom, num in MOIS_MAP.items():
             if nom_mois_norm.startswith(sans_accents(nom)[:4]):
                 return (int(annee), num)
-    m2 = _REGEX_DATE_NUMERIQUE_LIGNE.search(ligne)
+    m2 = _REGEX_DATE_NUMERIQUE_LIGNE.match(ligne_debut)
     if m2:
         jour, mois, annee = m2.groups()
         annee_i = int(annee)
@@ -453,14 +462,23 @@ def _detecter_mois_ligne(ligne):
 
 def decouper_texte_pdf_par_mois(texte):
     """Decoupe le texte brut extrait d'un PDF en blocs mensuels, en
-    detectant les dates presentes ligne par ligne (bug 'relevé PDF
+    detectant les dates presentes en debut de ligne (bug 'relevé PDF
     multi-mois affiche comme un seul mois'). Si une seule periode (ou
     aucune date fiable) est detectee, retourne un seul bloc -- comportement
-    inchange pour les PDF mono-mois. Les lignes d'en-tete avant la
-    premiere date detectee sont rattachees au premier bloc trouve, pour ne
-    pas les perdre (numero de compte, titulaire, etc.)."""
+    inchange pour les PDF mono-mois.
+
+    Les lignes avant la premiere date detectee (en-tete : titulaire,
+    IBAN, tableau-resume des totaux du releve entier, etc.) sont
+    DELIBEREMENT exclues de tous les blocs mensuels, plutot que
+    rattachees au premier -- un tableau-resume qui affiche deja les
+    totaux AGREGES de toute la periode, une fois mele au texte d'un
+    seul mois, peut faire croire a l'IA que ces totaux globaux sont
+    ceux de ce mois-la (bug constate en prod : certains releves, comme
+    Revolut, listent d'abord une section 'transactions en attente' datee
+    du mois le plus RECENT avant la liste chronologique qui commence au
+    mois le plus ancien -- le mois 'rencontre en premier' dans le texte
+    n'est donc pas forcement le premier mois chronologique)."""
     lignes = texte.split(chr(10))
-    preambule = []
     cle_courante = None
     groupes = {}
     ordre = []
@@ -469,12 +487,10 @@ def decouper_texte_pdf_par_mois(texte):
         if cle_detectee:
             cle_courante = cle_detectee
         if cle_courante is None:
-            preambule.append(ligne)
             continue
         if cle_courante not in groupes:
-            groupes[cle_courante] = list(preambule) if not ordre else []
+            groupes[cle_courante] = []
             ordre.append(cle_courante)
-            preambule = []
         groupes[cle_courante].append(ligne)
 
     if len(set(ordre)) <= 1:
