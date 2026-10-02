@@ -1009,6 +1009,33 @@ def _completer_avec_categorie_autres(data):
         data[cle_categories] = categories
     return data
 
+# Outil impose a l'IA pour l'analyse d'un releve : l'oblige a renvoyer directement
+# des donnees structurees, sans texte de raisonnement avant (qui consommait toute
+# la place sur les gros mois et faisait echouer l'analyse : stop_reason max_tokens).
+OUTIL_ANALYSE_RELEVE = {
+    'name': 'enregistrer_analyse_releve',
+    'description': "Enregistre l'analyse complete du releve bancaire, avec exactement les champs et le format demandes dans la consigne.",
+    'input_schema': {
+        'type': 'object',
+        'properties': {
+            'compte': {'type': 'string'},
+            'devise': {'type': 'string'},
+            'totalRecettes': {'type': 'number'},
+            'totalDepenses': {'type': 'number'},
+            'soldeDepart': {'type': 'number'},
+            'soldeArrivee': {'type': 'number'},
+            'totalRecettesOfficiel': {'type': 'number'},
+            'totalDepensesOfficiel': {'type': 'number'},
+            'recettes': {'type': 'array', 'items': {'type': 'object'}},
+            'depenses': {'type': 'array', 'items': {'type': 'object'}},
+            'top5depenses': {'type': 'array', 'items': {'type': 'object'}},
+            'prelevementsRecurrents': {'type': 'array', 'items': {'type': 'object'}},
+        },
+        'required': ['totalRecettes', 'totalDepenses', 'recettes', 'depenses'],
+    },
+}
+
+
 def analyse_releve(client, text, nom_banque, langue='français', totaux_verifies=None):
     prefixe_totaux_verifies = ''
     if totaux_verifies:
@@ -1048,12 +1075,23 @@ def analyse_releve(client, text, nom_banque, langue='français', totaux_verifies
     )
     msg = client.messages.create(
         model='claude-sonnet-4-6',
-        max_tokens=4000,
+        max_tokens=8000,
+        tools=[OUTIL_ANALYSE_RELEVE],
+        tool_choice={'type': 'tool', 'name': 'enregistrer_analyse_releve'},
         system='Tu es un expert-comptable. Tu reponds UNIQUEMENT avec du JSON valide, sans aucun texte avant ou apres, sans markdown, sans phrase d\'introduction ni de raisonnement visible (meme sur des releves complexes ou volumineux, va directement au JSON final). IMPORTANT: toutes les valeurs textuelles du JSON (labels de categories, commentaire, score_detail, titres et details des actions) doivent etre redigees dans la langue specifiee dans le prompt utilisateur.',
         messages=[{'role': 'user', 'content': prompt}]
     )
-    raw = msg.content[0].text.replace('```json', '').replace('```', '').strip() if msg.content else ''
     stop_reason = getattr(msg, 'stop_reason', None)
+    for bloc in (msg.content or []):
+        donnees = getattr(bloc, 'input', None)
+        if getattr(bloc, 'type', None) == 'tool_use' and isinstance(donnees, dict) and donnees:
+            print('CLAUDE RESPONSE (outil):', json.dumps(donnees, ensure_ascii=False)[:200], '| stop_reason:', stop_reason, '| longueur_texte_source:', len(text))
+            if stop_reason == 'max_tokens':
+                raise ValueError('Reponse tronquee (max_tokens), longueur texte source=' + str(len(text)) + ' caracteres')
+            return donnees
+    # Secours : lecture texte (ancien fonctionnement)
+    raw = ''.join(getattr(b, 'text', '') or '' for b in (msg.content or []) if getattr(b, 'type', None) == 'text')
+    raw = raw.replace('```json', '').replace('```', '').strip()
     print('CLAUDE RESPONSE:', raw[:200], '| stop_reason:', stop_reason, '| nb_blocks:', len(msg.content), '| longueur_texte_source:', len(text))
     if not raw:
         raise ValueError('Reponse vide de Claude (stop_reason=' + str(stop_reason) + ', longueur texte source=' + str(len(text)) + ' caracteres)')
@@ -1641,7 +1679,8 @@ def _analyze_impl():
                 except Exception as e:
                     print('ERREUR releve', f['nom'], str(e))
                     err_msg = str(e)[:150]
-                    fichiers_ignores.append({'nom': f['nomFichier'], 'raison': "Echec de l'analyse IA : " + err_msg})
+                    periode_ko = f.get('periode')
+                    fichiers_ignores.append({'nom': f['nomFichier'], 'raison': "Banky n'a pas pu lire " + (("le mois " + str(periode_ko)) if periode_ko else "ce relevé") + " : ces chiffres manquent dans ton bilan. Relance l'analyse pour les récupérer."})
                     continue
 
     if not comptes:
