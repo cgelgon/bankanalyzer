@@ -1072,7 +1072,44 @@ def analyse_releve(client, text, nom_banque, langue='français', totaux_verifies
         raise
 
 
-def get_conseil_global(client, comptes, total_r, total_d, periode, langue='francais', patrimoine=None, devise='EUR'):
+PROMPT_CONSEIL_TON = '''You are Banky, a smart and friendly money coach: the opposite of the boring bank advisor who only tries to sell insurance. Write ALL text EXCLUSIVELY in {LANGUE}.
+CURRENCY: all amounts are in {DEVISE}. Write amounts with this currency (the symbol € is fine for EUR). NEVER use another currency.
+
+TONE (very important):
+- Talk to the user informally, in the second person singular (French: "tu", never "vous"; Spanish: "tú"; German: "du"; Italian: "tu"; Portuguese: informal "você"; the informal equivalent in any other language).
+- Cool, clear, a bit witty, but always smart and credible. Simple everyday words, zero jargon: someone who is bad with numbers must understand everything on first reading.
+- Be frank about problems, but never moralize, shame or mock. Always show the way out right after.
+- Never mention AI, models or algorithms.
+
+FACTS (non-negotiable):
+- Only use figures that appear in the data below. Never invent a merchant, a habit or an amount.
+- A merchant name may only be used if it appears in the examples. The examples are only a sample: never compute a merchant total from them; use category totals for amounts.
+- Round amounts. When several months are covered, monthly averages are often more telling (divide by the number of months) and say so explicitly (e.g. "par mois").
+'''
+
+PROMPT_CONSEIL_SORTIE = '''
+PHRASE_CHOC - the highlight of the report, shown in big letters. ONE sentence (max 25 words) that makes the user smile AND think. Build it on a real figure from the data, ideally converted into something concrete and desirable (a trip, a concert, a phone, months of rent, a weekend away...). It must feel written for THIS person, never generic.
+Tone examples (French, for the spirit only - never reuse their numbers or merchants):
+- "Tes 180 € de fast-food du mois, c'est déjà la moitié d'un billet pour les Maldives."
+- "64 € d'abonnements par mois, soit 768 € par an : un week-end à Rome parti en prélèvements."
+- "Tu mets 420 € de côté chaque mois : à ce rythme, l'été prochain c'est Bali."
+
+ACTIONS - exactly 3, ordered by impact. Each must be really concrete and doable by anyone:
+- "titre": short imperative, 3 to 8 words, plain language (e.g. "Coupe les abonnements que tu n'utilises plus")
+- "detail": 1 or 2 sentences saying exactly what to do and why, with the real figures
+- "gain": estimated monthly gain or impact, very short, with the currency (e.g. "+45 €/mois"); "" if it cannot be quantified honestly
+- "quand": when to do it, 2 to 4 words (e.g. "Cette semaine", "Dès ta prochaine paie")
+If net is negative: action 1 says frankly how much is lost per month and which 1 or 2 expense categories to cut first to stop it.
+If the situation is healthy: help the money work (safety cushion, automatically putting the monthly surplus aside, etc.).
+
+score_detail: one short, friendly sentence explaining the score.
+commentaire: 2 short sentences, honest and encouraging.
+
+Return ONLY valid JSON, no text before or after, ALL text in {LANGUE}:
+{"score":0,"score_detail":"...","phrase_choc":"...","actions":[{"priorite":1,"titre":"...","detail":"...","gain":"...","quand":"..."},{"priorite":2,"titre":"...","detail":"...","gain":"...","quand":"..."},{"priorite":3,"titre":"...","detail":"...","gain":"...","quand":"..."}],"commentaire":"..."}'''
+
+
+def get_conseil_global(client, comptes, total_r, total_d, periode, langue='francais', patrimoine=None, devise='EUR', details=''):
     comptes_str = chr(10).join(['- ' + c['nom'] + ' (' + c.get('periode', '') + '): recettes ' + str(c['totalRecettes']) + devise + ', depenses ' + str(c['totalDepenses']) + devise for c in comptes])
     net = total_r - total_d
     taux = round(net / total_r * 100) if total_r else 0
@@ -1091,10 +1128,11 @@ def get_conseil_global(client, comptes, total_r, total_d, periode, langue='franc
         )
 
     prompt = (
-        'You are a senior financial expert. Write ALL text EXCLUSIVELY in ' + langue_name + '. The currency of ALL amounts is ' + devise + ' - use this currency code (' + devise + ') everywhere you mention a monetary amount, NEVER write EUR or any other currency code.' + chr(10) +
+        PROMPT_CONSEIL_TON.replace('{LANGUE}', langue_name).replace('{DEVISE}', devise) + chr(10) +
         'Financial data for ' + periode + ':' + chr(10) +
         comptes_str + chr(10) +
-        'TOTAL: income=' + str(total_r) + devise + ' expenses=' + str(total_d) + devise + ' net=' + str(net) + devise + ' savings_rate=' + str(taux) + '%' + chr(10) +
+        'TOTAL: income=' + str(round(total_r)) + devise + ' expenses=' + str(round(total_d)) + devise + ' net=' + str(round(net)) + devise + ' savings_rate=' + str(taux) + '%' + chr(10) +
+        ((details + chr(10)) if details else '') +
         patrimoine_str +
         'SCORING (be strict):' + chr(10) +
         '- 9-10: savings>30% AND positive net AND diversified income' + chr(10) +
@@ -1103,25 +1141,18 @@ def get_conseil_global(client, comptes, total_r, total_d, periode, langue='franc
         '- 3-4: savings -30% to 0%' + chr(10) +
         '- 1-2: savings < -30% OR deficit > 20% of income' + chr(10) +
         'Current savings rate=' + str(taux) + '% -> apply strictly.' + chr(10) +
-        'PHRASE_CHOC: One single punchy sentence (max 15 words) that hits hard, using the ' + devise + ' currency code. Examples:' + chr(10) +
-        '- "At this rate, your savings will be gone in 3 months."' + chr(10) +
-        '- "You save the equivalent of a new iPhone every month."' + chr(10) +
-        '- "Your biggest hidden expense: 4 forgotten subscriptions."' + chr(10) +
-        '- "Warning: 2 of your 3 accounts are in the red."' + chr(10) +
-        'Make it personal, specific with real numbers from the data, and impactful.' + chr(10) + chr(10) +
-        'Return ONLY valid JSON, ALL text in ' + langue_name + ':' + chr(10) +
-        '{"score":0,"score_detail":"sentence","phrase_choc":"impactful sentence with real numbers",' +
-        '"actions":[{"priorite":1,"titre":"title","detail":"detail with numbers"},' +
-        '{"priorite":2,"titre":"title","detail":"detail with numbers"},' +
-        '{"priorite":3,"titre":"title","detail":"detail with numbers"}],' +
-        '"commentaire":"2 sentences"}'
+        PROMPT_CONSEIL_SORTIE.replace('{LANGUE}', langue_name)
     )
     msg = client.messages.create(
         model='claude-sonnet-4-6',
-        max_tokens=1000,
+        max_tokens=1500,
         messages=[{'role': 'user', 'content': prompt}]
     )
     raw = msg.content[0].text.replace('```json', '').replace('```', '').strip()
+    debut_json = raw.find('{')
+    fin_json = raw.rfind('}')
+    if debut_json != -1 and fin_json > debut_json:
+        raw = raw[debut_json:fin_json + 1]
     return json.loads(raw)
 
 
@@ -1820,8 +1851,40 @@ def _analyze_impl():
     rec_global = _finaliser_categories_fusionnees(all_rec, all_rec_tx, total_r, 5)
     dep_global = _finaliser_categories_fusionnees(all_dep, all_dep_tx, total_d, 7)
 
+    def _details_pour_conseil():
+        # Detail transmis a l'IA pour une phrase choc et des actions concretes
+        # (sans ce detail, elle ne voyait que les totaux et restait generique).
+        d = devise_principale
+        lignes = ['Number of months covered: ' + str(max(1, len(periodes_uniques)))]
+        lignes.append('EXPENSES BY CATEGORY (exact totals for the whole period; the examples are only a SAMPLE of individual transactions):')
+        for cat in dep_global:
+            exemples = sorted(cat.get('transactions') or [], key=lambda t: -to_num(t.get('montant', 0)))[:4]
+            ex_str = '; '.join(str(t.get('libelle', '')).strip()[:45] + ' ' + str(round(to_num(t.get('montant', 0)))) + d for t in exemples if t.get('libelle'))
+            lignes.append('- ' + str(cat.get('label')) + ': ' + str(round(to_num(cat.get('montant', 0)))) + d + ((' | examples: ' + ex_str) if ex_str else ''))
+        lignes.append('INCOME BY CATEGORY (exact totals):')
+        for cat in rec_global:
+            lignes.append('- ' + str(cat.get('label')) + ': ' + str(round(to_num(cat.get('montant', 0)))) + d)
+        recurrents = {}
+        for c in comptes:
+            for p in (c.get('prelevementsRecurrents') or []):
+                lib = (p.get('libelle') or '').strip()
+                m = to_num(p.get('montant', 0))
+                if lib and m > 0:
+                    recurrents[lib] = recurrents.get(lib, 0) + m
+        if recurrents:
+            lignes.append('RECURRING DIRECT DEBITS / SUBSCRIPTIONS (total for the period):')
+            for lib, m in sorted(recurrents.items(), key=lambda kv: -kv[1])[:12]:
+                lignes.append('- ' + lib[:45] + ': ' + str(round(m)) + d)
+        return chr(10).join(lignes)
+
     try:
-        conseil = get_conseil_global(client, comptes, total_r, total_d, periode_label, langue, patrimoine_resume, devise_principale)
+        details_conseil = _details_pour_conseil()
+    except Exception as e:
+        print('AVERTISSEMENT details conseil:', repr(e))
+        details_conseil = ''
+
+    try:
+        conseil = get_conseil_global(client, comptes, total_r, total_d, periode_label, langue, patrimoine_resume, devise_principale, details_conseil)
     except Exception as e:
         print('AVERTISSEMENT get_conseil_global a echoue:', repr(e))
         conseil = {'score': 5, 'score_detail': 'Analyse partielle', 'actions': [], 'commentaire': 'Analyse disponible.'}
