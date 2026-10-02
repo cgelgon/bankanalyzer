@@ -1935,10 +1935,37 @@ def _analyze_impl():
         print('AVERTISSEMENT get_conseil_global a echoue:', repr(e))
         conseil = {'score': 5, 'score_detail': 'Analyse partielle', 'actions': [], 'commentaire': 'Analyse disponible.'}
 
-    all_top5 = []
+    # Top 5 construit a partir des CATEGORIES DE DEPENSES (coherentes avec les
+    # totaux) et non plus de la liste 'top5depenses' fournie a part par l'IA, qui
+    # a deja range par erreur des rentrees d'argent parmi les depenses.
+    def _cle_operation_top5(t):
+        return (round(abs(to_num(t.get('montant', 0)))), str(t.get('date') or '').strip())
+
+    cles_recettes = set()
     for c in comptes:
-        all_top5.extend(c.get('top5depenses', []))
-    all_top5 = sorted(all_top5, key=lambda x: -to_num(x.get('montant', 0)))[:5]
+        for r in c.get('recettes', []):
+            for t in (r.get('transactions') or []):
+                cles_recettes.add(_cle_operation_top5(t))
+
+    candidats_top5 = []
+    for cat in dep_global:
+        candidats_top5.extend(cat.get('transactions') or [])
+    if not candidats_top5:
+        for c in comptes:
+            candidats_top5.extend(c.get('top5depenses', []))
+
+    all_top5 = []
+    deja_vus_top5 = set()
+    for t in sorted(candidats_top5, key=lambda x: -abs(to_num(x.get('montant', 0)))):
+        montant_t = abs(to_num(t.get('montant', 0)))
+        cle = _cle_operation_top5(t)
+        cle_complete = (str(t.get('libelle') or '').strip().lower(),) + cle
+        if montant_t <= 0 or cle in cles_recettes or cle_complete in deja_vus_top5:
+            continue
+        deja_vus_top5.add(cle_complete)
+        all_top5.append(dict(t, montant=montant_t))
+        if len(all_top5) == 5:
+            break
     all_top5 = normaliser_montants(all_top5)
 
     charges_dict = {}
