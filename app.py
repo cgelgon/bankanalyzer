@@ -1387,6 +1387,54 @@ def _cle_admin_valide():
     return bool(cle_attendue) and hmac.compare_digest(cle_fournie.encode(), cle_attendue.encode())
 
 
+_BANQUES_CONNUES = [
+    ('memo bank', 'Memo Bank'), ('revolut', 'Revolut'), ('hello bank', 'Hello bank!'),
+    ('bnp', 'BNP Paribas'), ('boursorama', 'BoursoBank'), ('boursobank', 'BoursoBank'),
+    ('fortuneo', 'Fortuneo'), ('societe generale', 'Société Générale'),
+    ('credit agricole', 'Crédit Agricole'), ('credit mutuel', 'Crédit Mutuel'),
+    ('credit du nord', 'Crédit du Nord'), ('credit lyonnais', 'LCL'),
+    ('caisse d epargne', "Caisse d'Épargne"), ('caisse depargne', "Caisse d'Épargne"),
+    ('banque populaire', 'Banque Populaire'), ('banque postale', 'La Banque Postale'),
+    ('monabanq', 'Monabanq'), ('qonto', 'Qonto'), ('transferwise', 'Wise'),
+    ('lydia', 'Sumeria (Lydia)'), ('sumeria', 'Sumeria (Lydia)'), ('nickel', 'Nickel'),
+    ('orange bank', 'Orange Bank'), ('hsbc', 'HSBC'), ('bforbank', 'BforBank'),
+    ('trade republic', 'Trade Republic'), ('ma french bank', 'Ma French Bank'),
+    ('paypal', 'PayPal'), ('american express', 'American Express'), ('banque palatine', 'Banque Palatine'),
+    ('milleis', 'Milleis'), ('credit cooperatif', 'Crédit Coopératif'), ('banque kolb', 'Banque Kolb'),
+    ('societe marseillaise', 'Société Marseillaise de Crédit'),
+]
+_BANQUES_SIGLES = [('lcl', 'LCL'), ('cic', 'CIC'), ('ing', 'ING'), ('n26', 'N26'), ('wise', 'Wise'),
+                   ('shine', 'Shine'), ('bunq', 'Bunq'), ('axa', 'AXA Banque'), ('amex', 'American Express')]
+
+
+def _banque_normalisee(nom):
+    # Ramene les variantes ecrites par l'IA ("FORTUNEO - COMPTE COURANT",
+    # "Trusk France - Compte principal (Memo Bank)") au seul nom de la banque.
+    brut = str(nom or '').strip()
+    if not brut:
+        return ''
+    s = unicodedata.normalize('NFKD', brut).encode('ascii', 'ignore').decode().lower()
+    s = re.sub(r"[’'`]", ' ', s)
+    s = re.sub(r'\s+', ' ', s)
+    for cle, libelle in _BANQUES_CONNUES:
+        if cle in s:
+            return libelle
+    for cle, libelle in _BANQUES_SIGLES:
+        if re.search(r'\b' + cle + r'\b', s):
+            return libelle
+    debut = re.split(r'\s+[-–—]\s+|\(', brut)[0].strip() or brut
+    return debut.title() if debut.isupper() else debut
+
+
+def _banques_normalisees(texte):
+    vus = []
+    for b in str(texte or '').split(', '):
+        n = _banque_normalisee(b)
+        if n and n not in vus:
+            vus.append(n)
+    return ', '.join(vus)
+
+
 def _type_abonnement(u):
     if u.get('subscription_status') != 'active':
         return 'FREE'
@@ -1422,6 +1470,7 @@ def _donnees_admin(filtre=None):
         banques, formats = [], []
         for a in liste:
             for b in (a.get('banques') or '').split(', '):
+                b = _banque_normalisee(b)
                 if b and b not in banques:
                     banques.append(b)
             for fo in (a.get('formats') or '').split(', '):
@@ -1567,7 +1616,7 @@ def tableau_de_bord():
         cpt_banques, cpt_formats = Counter(), Counter()
         for b in banques_hist:
             if b['nom_banque']:
-                cpt_banques[b['nom_banque'].strip()] += 1
+                cpt_banques[_banque_normalisee(b['nom_banque'])] += 1
             if b['format']:
                 cpt_formats[b['format'].strip().lower()] += 1
 
@@ -1584,7 +1633,7 @@ def tableau_de_bord():
             for l in lignes)
         lignes_analyses = ''.join(
             '<tr><td>' + _fmt_date(a['created_at']) + '</td><td>' + e(a['email'] or '') + '</td><td>' + e(a['statut'] or '') + '</td>'
-            '<td class="n">' + str(a['nb_fichiers'] or 0) + '</td><td>' + e(a['formats'] or '') + '</td><td>' + e(a['banques'] or '') + '</td>'
+            '<td class="n">' + str(a['nb_fichiers'] or 0) + '</td><td>' + e(a['formats'] or '') + '</td><td>' + e(_banques_normalisees(a['banques'])) + '</td>'
             '<td>' + e(a['periode'] or '') + '</td><td>' + e(a['langue'] or '') + '</td>'
             '<td class="n">' + (str(a['score']) if a['score'] is not None else '') + '</td><td class="err">' + e(a['erreur'] or '') + '</td></tr>'
             for a in analyses[:50])
