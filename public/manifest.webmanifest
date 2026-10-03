@@ -1,0 +1,18 @@
+{
+  "id": "/",
+  "name": "BankAnalyzer — Banky",
+  "short_name": "BankAnalyzer",
+  "description": "Ton bilan financier en 1 clic avec Banky.",
+  "start_url": "/analyser-releve-bancaire.html?source=appli",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f5f5f7",
+  "theme_color": "#0071e3",
+  "lang": "fr",
+  "icons": [
+    {"src": "/app/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any"},
+    {"src": "/app/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any"},
+    {"src": "/app/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"}
+  ]
+}

@@ -15,7 +15,7 @@
 <meta name="twitter:description" content="Analysez votre relevé bancaire sans jamais connecter votre compte. Gratuit, en quelques secondes.">
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
 <link rel="icon" type="image/x-icon" href="/favicon.ico">
-<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="apple-touch-icon" href="/app/apple-touch-icon.png">
 <meta name="theme-color" content="#0071e3">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -247,6 +247,11 @@ select.devise-input-solo{max-width:280px}
 .anim{animation:fadeUp .5s ease forwards}
 @media(max-width:640px){.hero h2{font-size:28px}.charts-grid,.tables-grid{grid-template-columns:1fr}.metrics-grid{grid-template-columns:1fr 1fr}}
 </style>
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="BankAnalyzer">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 </head>
 <body>
 <header>
@@ -1324,5 +1329,6 @@ dz.addEventListener('drop',e=>{e.preventDefault();dz.classList.remove('drag-over
   <a href="/cgv.html" style="color:#86868b;text-decoration:none;margin:0 8px;">CGV</a>
 </footer>
 <!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "0eed735705d74d45bf5a71ac0d3a345b"}'></script><!-- End Cloudflare Web Analytics -->
+<script src="/pwa.js" defer></script>
 </body>
 </html>

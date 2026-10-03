@@ -75,6 +75,7 @@ def init_db():
         ''')
         cur.execute('CREATE INDEX IF NOT EXISTS idx_analyses_log_email ON analyses_log (email)')
         cur.execute('CREATE TABLE IF NOT EXISTS emails_illimites (email TEXT PRIMARY KEY, note TEXT, ajoute_le TIMESTAMP DEFAULT NOW())')
+        cur.execute('CREATE TABLE IF NOT EXISTS pwa_events (id SERIAL PRIMARY KEY, type TEXT, plateforme TEXT, created_at TIMESTAMP DEFAULT NOW())')
         conn.commit()
         cur.close()
         conn.close()
@@ -1383,6 +1384,28 @@ def stripe_webhook():
     return jsonify({'received': True})
 
 
+@app.route('/pwa-evenement', methods=['POST'])
+def pwa_evenement():
+    # Mesure anonyme de l'appli installable (aucun email, aucune donnee personnelle)
+    try:
+        data = json.loads(request.get_data(as_text=True) or '{}')
+    except Exception:
+        data = {}
+    type_evt = str(data.get('type') or '')
+    plateforme = str(data.get('plateforme') or '')
+    if type_evt in ('banniere_vue', 'acceptee', 'refusee', 'installee', 'ouverture_appli') and plateforme in ('ios', 'android', 'ordinateur') and DATABASE_URL:
+        try:
+            conn = get_db()
+            cur = conn.cursor()
+            cur.execute('INSERT INTO pwa_events (type, plateforme) VALUES (%s, %s)', (type_evt, plateforme))
+            conn.commit()
+            cur.close()
+            conn.close()
+        except Exception as e:
+            print('ERREUR pwa_evenement:', str(e))
+    return ('', 204)
+
+
 @app.route('/config', methods=['GET'])
 def config_publique():
     return jsonify({'gratuitAnalysesMois': GRATUIT_ANALYSES_MOIS, 'gratuitRelevesMax': GRATUIT_RELEVES_MAX,
@@ -1699,6 +1722,12 @@ def tableau_de_bord():
         cur_b = conn_b.cursor()
         cur_b.execute('SELECT email, note, ajoute_le FROM emails_illimites ORDER BY ajoute_le DESC')
         betas = cur_b.fetchall()
+        cur_b.execute('SELECT type, plateforme, created_at FROM pwa_events')
+        evts_pwa = [x for x in cur_b.fetchall() if p == 'tout' or dans_periode(x['created_at'])]
+        nb_pwa_vues = sum(1 for x in evts_pwa if x['type'] == 'banniere_vue')
+        nb_pwa_installs = sum(1 for x in evts_pwa if x['type'] == 'installee')
+        nb_pwa_ouvertures = sum(1 for x in evts_pwa if x['type'] == 'ouverture_appli')
+        nb_pwa_ouv_ios = sum(1 for x in evts_pwa if x['type'] == 'ouverture_appli' and x['plateforme'] == 'ios')
         cur_b.close()
         conn_b.close()
         cle_brute = e(request.args.get('key', ''))
@@ -1796,6 +1825,9 @@ td.n{text-align:right;white-space:nowrap}td.err{color:#b42318;max-width:260px}
 <div class="kpi"><div>Ont réussi une analyse</div><b>""" + str(nb_actifs) + """</b></div>
 <div class="kpi"><div>Analyses lancées</div><b>""" + str(nb_analyses) + """</b></div>
 <div class="kpi"><div>Relevés analysés</div><b>""" + str(nb_releves) + """</b></div>
+<div class="kpi"><div>📲 Bannières appli vues</div><b>""" + str(nb_pwa_vues) + """</b></div>
+<div class="kpi"><div>📲 Installations (Android/ordi)</div><b>""" + str(nb_pwa_installs) + """</b></div>
+<div class="kpi"><div>📲 Ouvertures en mode appli</div><b>""" + str(nb_pwa_ouvertures) + """</b><div>dont iPhone : """ + str(nb_pwa_ouv_ios) + """</div></div>
 <div class="kpi"><div>Acceptent les emails</div><b>""" + str(nb_consentements) + """</b></div>
 <div class="kpi"><div>Pro + essai (aujourd'hui)</div><b>""" + str(nb_payants) + """</b></div>
 </div>

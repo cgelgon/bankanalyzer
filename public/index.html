@@ -15,7 +15,7 @@
 <meta name="twitter:description" content="Banky lit ton relevé bancaire à ta place. Sans connecter ton compte. Gratuit, en quelques secondes.">
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
 <link rel="icon" type="image/x-icon" href="/favicon.ico">
-<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="apple-touch-icon" href="/app/apple-touch-icon.png">
 <meta name="theme-color" content="#0071e3">
 <style>
 :root{
@@ -127,6 +127,11 @@ footer .cross-links a{color:var(--text3);text-decoration:none}
 }
 @media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="BankAnalyzer">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 </head>
 <body>
 
@@ -402,5 +407,6 @@ document.addEventListener('DOMContentLoaded', function(){
 </script>
 
 <!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "0eed735705d74d45bf5a71ac0d3a345b"}'></script><!-- End Cloudflare Web Analytics -->
+<script src="/pwa.js" defer></script>
 </body>
 </html>
