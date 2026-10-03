@@ -55,6 +55,23 @@ def init_db():
                 created_at TIMESTAMP DEFAULT NOW()
             )
         ''')
+        cur.execute('''
+            CREATE TABLE IF NOT EXISTS analyses_log (
+                id SERIAL PRIMARY KEY,
+                email TEXT,
+                created_at TIMESTAMP DEFAULT NOW(),
+                statut TEXT,
+                nb_fichiers INTEGER,
+                formats TEXT,
+                banques TEXT,
+                periode TEXT,
+                nb_ignores INTEGER,
+                langue TEXT,
+                score INTEGER,
+                erreur TEXT
+            )
+        ''')
+        cur.execute('CREATE INDEX IF NOT EXISTS idx_analyses_log_email ON analyses_log (email)')
         conn.commit()
         cur.close()
         conn.close()
@@ -1363,55 +1380,208 @@ def create_portal_session():
         return jsonify({'error': str(e)}), 500
 
 
-@app.route('/admin/export-users', methods=['GET'])
-def export_users():
+def _cle_admin_valide():
+    import hmac
     cle_fournie = request.args.get('key', '')
     cle_attendue = os.environ.get('ADMIN_SECRET', '')
-    if not cle_attendue or cle_fournie != cle_attendue:
+    return bool(cle_attendue) and hmac.compare_digest(cle_fournie.encode(), cle_attendue.encode())
+
+
+def _type_abonnement(u):
+    if u.get('subscription_status') != 'active':
+        return 'FREE'
+    if u.get('trial_end') and u['trial_end'] > datetime.utcnow():
+        return 'TRIAL'
+    return 'PRO'
+
+
+def _donnees_admin():
+    # Utilisateurs + resume de leurs analyses, et liste brute des analyses
+    conn = get_db()
+    cur = conn.cursor()
+    cur.execute('SELECT email, subscription_status, nb_analyses_mois_courant, created_at, updated_at, trial_end '
+                'FROM users ORDER BY created_at DESC')
+    users = cur.fetchall()
+    cur.execute('SELECT * FROM analyses_log ORDER BY created_at DESC')
+    analyses = cur.fetchall()
+    cur.execute('SELECT nom_banque, format FROM banques_detectees')
+    banques_hist = cur.fetchall()
+    cur.close()
+    conn.close()
+    par_email = {}
+    for a in analyses:
+        par_email.setdefault(a['email'], []).append(a)
+    lignes = []
+    for u in users:
+        liste = par_email.get(u['email'], [])
+        banques, formats = [], []
+        for a in liste:
+            for b in (a.get('banques') or '').split(', '):
+                if b and b not in banques:
+                    banques.append(b)
+            for fo in (a.get('formats') or '').split(', '):
+                if fo and fo not in formats:
+                    formats.append(fo)
+        lignes.append({
+            'email': u['email'],
+            'type': _type_abonnement(u),
+            'statut': u['subscription_status'],
+            'analyses_ce_mois': u['nb_analyses_mois_courant'],
+            'cree_le': u['created_at'],
+            'maj_le': u['updated_at'],
+            'nb_analyses': len(liste),
+            'nb_reussies': sum(1 for a in liste if a['statut'] in ('ok', 'partielle')),
+            'nb_releves': sum((a['nb_fichiers'] or 0) for a in liste if a['statut'] in ('ok', 'partielle')),
+            'derniere_analyse': liste[0]['created_at'] if liste else None,
+            'dernier_resultat': liste[0]['statut'] if liste else '',
+            'banques': ', '.join(banques),
+            'formats': ', '.join(formats),
+        })
+    return lignes, analyses, banques_hist
+
+
+def _fmt_date(d):
+    return d.strftime('%d/%m/%Y %H:%M') if d else ''
+
+
+def _cellule(v):
+    # Empeche qu'un texte saisi par un visiteur (ex: email commencant par '=')
+    # soit interprete comme une formule dans Excel ou Google Sheets
+    if isinstance(v, str) and v[:1] in ('=', '+', '-', '@'):
+        return "'" + v
+    return '' if v is None else v
+
+
+@app.route('/admin/export-users', methods=['GET'])
+def export_users():
+    if not _cle_admin_valide():
         return jsonify({'error': 'Non autorise'}), 403
     if not DATABASE_URL:
         return jsonify({'error': 'Base de donnees non configuree'}), 500
     try:
         import csv as _csv
-        conn = get_db()
-        cur = conn.cursor()
-        cur.execute('''
-            SELECT email, subscription_status, nb_analyses_mois_courant,
-                   created_at, updated_at, trial_end
-            FROM users
-            ORDER BY created_at DESC
-        ''')
-        lignes = cur.fetchall()
-        cur.close()
-        conn.close()
-
+        lignes, _, _ = _donnees_admin()
         tampon = io.StringIO()
         ecrivain = _csv.writer(tampon)
-        ecrivain.writerow(['email', 'type_abonnement', 'statut_abonnement', 'analyses_ce_mois', 'cree_le', 'maj_le'])
-        for ligne in lignes:
-            if ligne['subscription_status'] != 'active':
-                type_abonnement = 'FREE'
-            elif ligne['trial_end'] and ligne['trial_end'] > datetime.utcnow():
-                type_abonnement = 'TRIAL'
-            else:
-                type_abonnement = 'PRO'
-            ecrivain.writerow([
-                ligne['email'],
-                type_abonnement,
-                ligne['subscription_status'],
-                ligne['nb_analyses_mois_courant'],
-                ligne['created_at'],
-                ligne['updated_at'],
-            ])
-
-        return Response(
-            tampon.getvalue(),
-            mimetype='text/csv',
-            headers={'Content-Disposition': 'attachment; filename=bankanalyzer-utilisateurs.csv'}
-        )
+        ecrivain.writerow(['email', 'type_abonnement', 'statut_abonnement', 'analyses_ce_mois', 'cree_le', 'maj_le',
+                           'nb_analyses_total', 'nb_analyses_reussies', 'nb_releves_analyses', 'derniere_analyse',
+                           'dernier_resultat', 'banques', 'formats'])
+        for l in lignes:
+            ecrivain.writerow([_cellule(x) for x in [l['email'], l['type'], l['statut'], l['analyses_ce_mois'], _fmt_date(l['cree_le']), _fmt_date(l['maj_le']),
+                               l['nb_analyses'], l['nb_reussies'], l['nb_releves'], _fmt_date(l['derniere_analyse']),
+                               l['dernier_resultat'], l['banques'], l['formats']]])
+        return Response(tampon.getvalue(), mimetype='text/csv',
+                        headers={'Content-Disposition': 'attachment; filename=bankanalyzer-utilisateurs.csv'})
     except Exception as e:
         print('ERREUR export_users:', str(e))
         return jsonify({'error': str(e)}), 500
+
+
+@app.route('/admin/export-analyses', methods=['GET'])
+def export_analyses():
+    if not _cle_admin_valide():
+        return jsonify({'error': 'Non autorise'}), 403
+    if not DATABASE_URL:
+        return jsonify({'error': 'Base de donnees non configuree'}), 500
+    try:
+        import csv as _csv
+        _, analyses, _ = _donnees_admin()
+        tampon = io.StringIO()
+        ecrivain = _csv.writer(tampon)
+        ecrivain.writerow(['date', 'email', 'resultat', 'nb_releves', 'formats', 'banques', 'periode', 'mois_manquants', 'langue', 'note_banky', 'erreur'])
+        for a in analyses:
+            ecrivain.writerow([_cellule(x) for x in [_fmt_date(a['created_at']), a['email'], a['statut'], a['nb_fichiers'], a['formats'], a['banques'],
+                               a['periode'], a['nb_ignores'], a['langue'], a['score'] if a['score'] is not None else '', a['erreur']]])
+        return Response(tampon.getvalue(), mimetype='text/csv',
+                        headers={'Content-Disposition': 'attachment; filename=bankanalyzer-analyses.csv'})
+    except Exception as e:
+        print('ERREUR export_analyses:', str(e))
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/admin/tableau-de-bord', methods=['GET'])
+def tableau_de_bord():
+    if not _cle_admin_valide():
+        return jsonify({'error': 'Non autorise'}), 403
+    if not DATABASE_URL:
+        return jsonify({'error': 'Base de donnees non configuree'}), 500
+    try:
+        from html import escape as e
+        from urllib.parse import quote
+        lignes, analyses, banques_hist = _donnees_admin()
+        cle = quote(request.args.get('key', ''))
+        maintenant = datetime.utcnow()
+        nb_inscrits = len(lignes)
+        nb_actifs = sum(1 for l in lignes if l['nb_reussies'] > 0)
+        nb_payants = sum(1 for l in lignes if l['type'] in ('PRO', 'TRIAL'))
+        nb_7j = sum(1 for a in analyses if a['created_at'] and (maintenant - a['created_at']).days < 7)
+        nb_inscrits_7j = sum(1 for l in lignes if l['cree_le'] and (maintenant - l['cree_le']).days < 7)
+        cpt_banques, cpt_formats = Counter(), Counter()
+        for b in banques_hist:
+            if b['nom_banque']:
+                cpt_banques[b['nom_banque'].strip()] += 1
+            if b['format']:
+                cpt_formats[b['format'].strip().lower()] += 1
+
+        def cartes(c):
+            return ''.join('<span class="chip">' + e(k) + ' <b>' + str(v) + '</b></span>' for k, v in c.most_common(12)) or '<span class="vide">Rien pour l\'instant</span>'
+
+        lignes_users = ''.join(
+            '<tr><td>' + e(l['email']) + '</td><td><span class="t t-' + l['type'].lower() + '">' + l['type'] + '</span></td>'
+            '<td>' + _fmt_date(l['cree_le']) + '</td>'
+            '<td class="n">' + str(l['nb_reussies']) + ' / ' + str(l['nb_analyses']) + '</td>'
+            '<td class="n">' + str(l['nb_releves']) + '</td>'
+            '<td>' + e(l['banques']) + '</td><td>' + e(l['formats']) + '</td>'
+            '<td>' + _fmt_date(l['derniere_analyse']) + '</td><td>' + e(l['dernier_resultat']) + '</td></tr>'
+            for l in lignes)
+        lignes_analyses = ''.join(
+            '<tr><td>' + _fmt_date(a['created_at']) + '</td><td>' + e(a['email'] or '') + '</td><td>' + e(a['statut'] or '') + '</td>'
+            '<td class="n">' + str(a['nb_fichiers'] or 0) + '</td><td>' + e(a['formats'] or '') + '</td><td>' + e(a['banques'] or '') + '</td>'
+            '<td>' + e(a['periode'] or '') + '</td><td>' + e(a['langue'] or '') + '</td>'
+            '<td class="n">' + (str(a['score']) if a['score'] is not None else '') + '</td><td class="err">' + e(a['erreur'] or '') + '</td></tr>'
+            for a in analyses[:50])
+
+        page = """<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex, nofollow">
+<title>BankAnalyzer — Tableau de bord</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f5f5f7;color:#1d1d1f;margin:0;padding:1.5rem}
+h1{font-size:22px;margin:0 0 .25rem}h2{font-size:16px;margin:2rem 0 .75rem}
+.sous{color:#6e6e73;font-size:13px;margin-bottom:1.25rem}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.kpi{background:#fff;border-radius:14px;padding:1rem;box-shadow:0 1px 8px rgba(0,0,0,.05)}
+.kpi div{font-size:12px;color:#6e6e73}.kpi b{font-size:26px}
+.chip{display:inline-block;background:#fff;border:1px solid #e5e5ea;border-radius:8px;padding:5px 10px;margin:0 6px 6px 0;font-size:13px}
+.vide{color:#9a9a9f;font-size:13px}
+.boite{background:#fff;border-radius:14px;box-shadow:0 1px 8px rgba(0,0,0,.05);overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th{text-align:left;font-weight:600;color:#6e6e73;padding:10px;border-bottom:1px solid #e5e5ea;white-space:nowrap}
+td{padding:9px 10px;border-bottom:1px solid #f0f0f2;vertical-align:top}
+td.n{text-align:right;white-space:nowrap}td.err{color:#b42318;max-width:260px}
+.t{font-size:11px;font-weight:700;padding:2px 7px;border-radius:6px}.t-free{background:#f0f0f2}.t-trial{background:#fff4d6}.t-pro{background:#e3f6ec;color:#0f7a52}
+.liens a{display:inline-block;margin:0 10px 8px 0;color:#0071e3;font-size:13px}
+</style></head><body>
+<h1>📊 BankAnalyzer — Tableau de bord</h1>
+<div class="sous">Mis à jour à chaque ouverture de la page · heures en UTC · le suivi détaillé des analyses commence à l'installation de ce tableau de bord</div>
+<div class="kpis">
+<div class="kpi"><div>Emails inscrits</div><b>""" + str(nb_inscrits) + """</b></div>
+<div class="kpi"><div>Nouveaux (7 jours)</div><b>""" + str(nb_inscrits_7j) + """</b></div>
+<div class="kpi"><div>Ont réussi une analyse</div><b>""" + str(nb_actifs) + """</b></div>
+<div class="kpi"><div>Analyses (7 jours)</div><b>""" + str(nb_7j) + """</b></div>
+<div class="kpi"><div>Pro + essai</div><b>""" + str(nb_payants) + """</b></div>
+</div>
+<h2>🏦 Banques détectées (depuis le début)</h2><div>""" + cartes(cpt_banques) + """</div>
+<h2>📄 Formats déposés (depuis le début)</h2><div>""" + cartes(cpt_formats) + """</div>
+<h2>👥 Utilisateurs</h2>
+<div class="liens"><a href="/admin/export-users?key=""" + cle + """">⬇️ Export CSV utilisateurs</a><a href="/admin/export-analyses?key=""" + cle + """">⬇️ Export CSV analyses</a></div>
+<div class="boite"><table><tr><th>Email</th><th>Offre</th><th>Inscrit le</th><th>Analyses réussies / total</th><th>Relevés</th><th>Banques</th><th>Formats</th><th>Dernière analyse</th><th>Dernier résultat</th></tr>""" + lignes_users + """</table></div>
+<h2>🕒 50 dernières analyses</h2>
+<div class="boite"><table><tr><th>Date</th><th>Email</th><th>Résultat</th><th>Relevés</th><th>Formats</th><th>Banques</th><th>Période</th><th>Langue</th><th>Note</th><th>Erreur</th></tr>""" + (lignes_analyses or '<tr><td colspan="10" class="vide">Aucune analyse enregistrée pour l\'instant.</td></tr>') + """</table></div>
+</body></html>"""
+        return Response(page, mimetype='text/html', headers={'Cache-Control': 'no-store'})
+    except Exception as ex:
+        print('ERREUR tableau_de_bord:', str(ex))
+        return jsonify({'error': str(ex)}), 500
 
 
 @app.route('/admin/clean-stale-customers', methods=['GET'])
@@ -1467,15 +1637,73 @@ def clean_stale_customers():
         return jsonify({'error': str(e)}), 500
 
 
+def _journaliser_analyse(reponse=None, erreur_fatale=None):
+    # Note qui a analyse quoi (email, formats, banques, resultat) pour le tableau
+    # de bord admin. Ne stocke JAMAIS le contenu des releves. Ne bloque jamais l'analyse.
+    if not DATABASE_URL:
+        return
+    try:
+        email = (request.form.get('email') or '').strip().lower()
+        if not email or '@' not in email:
+            return
+        noms = [(f.filename or '') for f in request.files.getlist('files')]
+        formats = sorted({n.lower().rsplit('.', 1)[-1] for n in noms if '.' in n})
+        code, data = 200, {}
+        if reponse is not None:
+            objet = reponse[0] if isinstance(reponse, tuple) else reponse
+            code = reponse[1] if isinstance(reponse, tuple) and len(reponse) > 1 else getattr(objet, 'status_code', 200)
+            try:
+                data = objet.get_json(silent=True) or {}
+            except Exception:
+                data = {}
+        banques = sorted({str(c.get('nom') or '').strip() for c in (data.get('comptes') or []) if str(c.get('nom') or '').strip()})
+        ignores = data.get('fichiersIgnores') or []
+        if erreur_fatale:
+            statut = 'erreur'
+        elif code == 200:
+            statut = 'partielle' if ignores else 'ok'
+        elif data.get('requiresPro'):
+            statut = 'bloquee (Pro requis)'
+        elif data.get('quotaDepasse'):
+            statut = 'bloquee (quota)'
+        elif code == 400:
+            statut = 'refusee'
+        else:
+            statut = 'erreur'
+        erreur = erreur_fatale or ('' if code == 200 else str(data.get('error') or ''))
+        score = data.get('score') if code == 200 else None
+        try:
+            score = int(score) if score is not None else None
+        except Exception:
+            score = None
+        conn = get_db()
+        cur = conn.cursor()
+        cur.execute(
+            'INSERT INTO analyses_log (email, statut, nb_fichiers, formats, banques, periode, nb_ignores, langue, score, erreur) '
+            'VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)',
+            (email[:200], statut, len(noms), ', '.join(formats)[:200], ', '.join(banques)[:500],
+             str(data.get('periode') or '')[:100], len(ignores), str(request.form.get('langue') or '')[:30],
+             score, erreur[:300])
+        )
+        conn.commit()
+        cur.close()
+        conn.close()
+    except Exception as e:
+        print('ERREUR journalisation analyse:', str(e))
+
+
 @app.route('/analyze', methods=['POST'])
 def analyze():
     try:
-        return _analyze_impl()
+        reponse = _analyze_impl()
     except Exception as e:
         import traceback
         print('ERREUR FATALE /analyze:', str(e))
         print(traceback.format_exc())
+        _journaliser_analyse(None, str(e)[:300])
         return jsonify({'error': "Erreur serveur : " + str(e)[:300]}), 500
+    _journaliser_analyse(reponse)
+    return reponse
 
 
 def _analyze_impl():
