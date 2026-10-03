@@ -1395,7 +1395,7 @@ def _type_abonnement(u):
     return 'PRO'
 
 
-def _donnees_admin():
+def _donnees_admin(filtre=None):
     # Utilisateurs + resume de leurs analyses, et liste brute des analyses
     conn = get_db()
     cur = conn.cursor()
@@ -1404,10 +1404,15 @@ def _donnees_admin():
     users = cur.fetchall()
     cur.execute('SELECT * FROM analyses_log ORDER BY created_at DESC')
     analyses = cur.fetchall()
-    cur.execute('SELECT nom_banque, format FROM banques_detectees')
+    cur.execute('SELECT nom_banque, format, created_at FROM banques_detectees')
     banques_hist = cur.fetchall()
     cur.close()
     conn.close()
+    if filtre is not None:
+        analyses = [a for a in analyses if filtre(a['created_at'])]
+        banques_hist = [b for b in banques_hist if filtre(b['created_at'])]
+        emails_actifs = {a['email'] for a in analyses}
+        users = [u for u in users if filtre(u['created_at']) or u['email'] in emails_actifs]
     par_email = {}
     for a in analyses:
         par_email.setdefault(a['email'], []).append(a)
@@ -1508,14 +1513,57 @@ def tableau_de_bord():
     try:
         from html import escape as e
         from urllib.parse import quote
-        lignes, analyses, banques_hist = _donnees_admin()
+        from datetime import timedelta
         cle = quote(request.args.get('key', ''))
         maintenant = datetime.utcnow()
-        nb_inscrits = len(lignes)
+        p = request.args.get('p', 'tout')
+        du_txt = (request.args.get('du') or '').strip()
+        au_txt = (request.args.get('au') or '').strip()
+        debut = fin = None
+        try:
+            if du_txt:
+                debut = datetime.strptime(du_txt, '%Y-%m-%d')
+            if au_txt:
+                fin = datetime.strptime(au_txt, '%Y-%m-%d') + timedelta(days=1)
+        except ValueError:
+            debut = fin = None
+            du_txt = au_txt = ''
+        if debut or fin:
+            p = 'perso'
+            if debut and fin:
+                libelle_periode = 'Du ' + debut.strftime('%d/%m/%Y') + ' au ' + (fin - timedelta(days=1)).strftime('%d/%m/%Y')
+            elif debut:
+                libelle_periode = 'Depuis le ' + debut.strftime('%d/%m/%Y')
+            else:
+                libelle_periode = "Jusqu'au " + (fin - timedelta(days=1)).strftime('%d/%m/%Y')
+        elif p in ('7', '30', '90'):
+            debut = maintenant - timedelta(days=int(p))
+            libelle_periode = {'7': '7 derniers jours', '30': '30 derniers jours', '90': '3 derniers mois'}[p]
+        else:
+            p = 'tout'
+            libelle_periode = 'Depuis le début'
+
+        def dans_periode(d):
+            return d is not None and (debut is None or d >= debut) and (fin is None or d < fin)
+
+        lignes, analyses, banques_hist = _donnees_admin(None if p == 'tout' else dans_periode)
+        tous, _, _ = _donnees_admin() if p != 'tout' else (lignes, None, None)
+        nb_payants = sum(1 for l in tous if l['type'] in ('PRO', 'TRIAL'))
+        nb_inscrits = sum(1 for l in lignes if p == 'tout' or dans_periode(l['cree_le']))
         nb_actifs = sum(1 for l in lignes if l['nb_reussies'] > 0)
-        nb_payants = sum(1 for l in lignes if l['type'] in ('PRO', 'TRIAL'))
-        nb_7j = sum(1 for a in analyses if a['created_at'] and (maintenant - a['created_at']).days < 7)
-        nb_inscrits_7j = sum(1 for l in lignes if l['cree_le'] and (maintenant - l['cree_le']).days < 7)
+        nb_analyses = len(analyses)
+        nb_releves = sum((a['nb_fichiers'] or 0) for a in analyses if a['statut'] in ('ok', 'partielle'))
+
+        def lien_p(code, texte):
+            return '<a href="?key=' + cle + '&p=' + code + '"' + (' class="actif"' if p == code else '') + '>' + texte + '</a>'
+
+        filtre_html = (
+            '<form class="filtre" method="get"><input type="hidden" name="key" value="' + e(request.args.get('key', '')) + '">'
+            '<div class="raccourcis">' + lien_p('7', '7 jours') + lien_p('30', '30 jours') + lien_p('90', '3 mois') + lien_p('tout', 'Tout') + '</div>'
+            '<div class="dates"><label>Du <input type="date" name="du" value="' + e(du_txt) + '"></label>'
+            '<label>Au <input type="date" name="au" value="' + e(au_txt) + '"></label>'
+            '<button type="submit"' + (' class="actif"' if p == 'perso' else '') + '>Filtrer</button></div></form>'
+        )
         cpt_banques, cpt_formats = Counter(), Counter()
         for b in banques_hist:
             if b['nom_banque']:
@@ -1560,22 +1608,33 @@ td{padding:9px 10px;border-bottom:1px solid #f0f0f2;vertical-align:top}
 td.n{text-align:right;white-space:nowrap}td.err{color:#b42318;max-width:260px}
 .t{font-size:11px;font-weight:700;padding:2px 7px;border-radius:6px}.t-free{background:#f0f0f2}.t-trial{background:#fff4d6}.t-pro{background:#e3f6ec;color:#0f7a52}
 .liens a{display:inline-block;margin:0 10px 8px 0;color:#0071e3;font-size:13px}
+.entete{display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;flex-wrap:wrap;margin-bottom:1.25rem}
+.entete .sous{margin-bottom:0}
+.filtre{display:flex;flex-direction:column;gap:8px;align-items:flex-end}
+.raccourcis{display:flex;gap:6px;flex-wrap:wrap}
+.raccourcis a{background:#fff;border:1px solid #e5e5ea;border-radius:100px;padding:6px 14px;font-size:13px;color:#1d1d1f;text-decoration:none;font-weight:600}
+.raccourcis a.actif,.dates button.actif{background:#0071e3;border-color:#0071e3;color:#fff}
+.dates{display:flex;gap:8px;align-items:center;font-size:13px;color:#6e6e73;flex-wrap:wrap}
+.dates input{font:inherit;padding:5px 8px;border:1px solid #e5e5ea;border-radius:8px;background:#fff;color:#1d1d1f}
+.dates button{font:inherit;font-weight:600;padding:6px 14px;border:1px solid #e5e5ea;border-radius:100px;background:#fff;cursor:pointer}
+@media(max-width:700px){.filtre{align-items:flex-start}}
 </style></head><body>
-<h1>📊 BankAnalyzer — Tableau de bord</h1>
-<div class="sous">Mis à jour à chaque ouverture de la page · heures en UTC · le suivi détaillé des analyses commence à l'installation de ce tableau de bord</div>
+<div class="entete"><div><h1>📊 BankAnalyzer — Tableau de bord</h1>
+<div class="sous">Période : <b>""" + e(libelle_periode) + """</b> · heures en UTC · suivi détaillé des analyses depuis l'installation du tableau de bord</div></div>
+""" + filtre_html + """</div>
 <div class="kpis">
-<div class="kpi"><div>Emails inscrits</div><b>""" + str(nb_inscrits) + """</b></div>
-<div class="kpi"><div>Nouveaux (7 jours)</div><b>""" + str(nb_inscrits_7j) + """</b></div>
+<div class="kpi"><div>""" + ('Emails inscrits' if p == 'tout' else 'Inscrits sur la période') + """</div><b>""" + str(nb_inscrits) + """</b></div>
 <div class="kpi"><div>Ont réussi une analyse</div><b>""" + str(nb_actifs) + """</b></div>
-<div class="kpi"><div>Analyses (7 jours)</div><b>""" + str(nb_7j) + """</b></div>
-<div class="kpi"><div>Pro + essai</div><b>""" + str(nb_payants) + """</b></div>
+<div class="kpi"><div>Analyses lancées</div><b>""" + str(nb_analyses) + """</b></div>
+<div class="kpi"><div>Relevés analysés</div><b>""" + str(nb_releves) + """</b></div>
+<div class="kpi"><div>Pro + essai (aujourd'hui)</div><b>""" + str(nb_payants) + """</b></div>
 </div>
-<h2>🏦 Banques détectées (depuis le début)</h2><div>""" + cartes(cpt_banques) + """</div>
-<h2>📄 Formats déposés (depuis le début)</h2><div>""" + cartes(cpt_formats) + """</div>
+<h2>🏦 Banques détectées</h2><div>""" + cartes(cpt_banques) + """</div>
+<h2>📄 Formats déposés</h2><div>""" + cartes(cpt_formats) + """</div>
 <h2>👥 Utilisateurs</h2>
 <div class="liens"><a href="/admin/export-users?key=""" + cle + """">⬇️ Export CSV utilisateurs</a><a href="/admin/export-analyses?key=""" + cle + """">⬇️ Export CSV analyses</a></div>
 <div class="boite"><table><tr><th>Email</th><th>Offre</th><th>Inscrit le</th><th>Analyses réussies / total</th><th>Relevés</th><th>Banques</th><th>Formats</th><th>Dernière analyse</th><th>Dernier résultat</th></tr>""" + lignes_users + """</table></div>
-<h2>🕒 50 dernières analyses</h2>
+<h2>🕒 Analyses de la période (50 dernières)</h2>
 <div class="boite"><table><tr><th>Date</th><th>Email</th><th>Résultat</th><th>Relevés</th><th>Formats</th><th>Banques</th><th>Période</th><th>Langue</th><th>Note</th><th>Erreur</th></tr>""" + (lignes_analyses or '<tr><td colspan="10" class="vide">Aucune analyse enregistrée pour l\'instant.</td></tr>') + """</table></div>
 </body></html>"""
         return Response(page, mimetype='text/html', headers={'Cache-Control': 'no-store'})
