@@ -46,6 +46,8 @@ def init_db():
         cur.execute('ALTER TABLE users ADD COLUMN IF NOT EXISTS nb_analyses_mois_courant INTEGER DEFAULT 0')
         cur.execute('ALTER TABLE users ADD COLUMN IF NOT EXISTS mois_reference_quota TEXT')
         cur.execute('ALTER TABLE users ADD COLUMN IF NOT EXISTS trial_end TIMESTAMP')
+        cur.execute('ALTER TABLE users ADD COLUMN IF NOT EXISTS consentement_emails BOOLEAN DEFAULT FALSE')
+        cur.execute('ALTER TABLE users ADD COLUMN IF NOT EXISTS consentement_date TIMESTAMP')
         cur.execute('''
             CREATE TABLE IF NOT EXISTS banques_detectees (
                 id SERIAL PRIMARY KEY,
@@ -72,6 +74,7 @@ def init_db():
             )
         ''')
         cur.execute('CREATE INDEX IF NOT EXISTS idx_analyses_log_email ON analyses_log (email)')
+        cur.execute('CREATE TABLE IF NOT EXISTS emails_illimites (email TEXT PRIMARY KEY, note TEXT, ajoute_le TIMESTAMP DEFAULT NOW())')
         conn.commit()
         cur.close()
         conn.close()
@@ -99,7 +102,56 @@ def est_pro(email):
 QUOTA_ANALYSES_PRO_PAR_MOIS = 5
 
 
-def verifier_et_incrementer_quota_pro(email):
+def _reglage_entier(nom, defaut):
+    try:
+        return max(0, int(os.environ.get(nom, str(defaut)).strip()))
+    except ValueError:
+        return defaut
+
+
+# Freemium : toutes les fonctions ouvertes a tous, seules ces limites changent
+# (reglables dans Railway > Variables ; 0 = illimite)
+GRATUIT_ANALYSES_MOIS = _reglage_entier('GRATUIT_ANALYSES_MOIS', 3)
+GRATUIT_RELEVES_MAX = _reglage_entier('GRATUIT_RELEVES_MAX', 12)
+PRO_ANALYSES_MOIS = _reglage_entier('PRO_ANALYSES_MOIS', 10)
+PRO_RELEVES_MAX = _reglage_entier('PRO_RELEVES_MAX', 24)
+EMAILS_ILLIMITES = {e.strip().lower() for e in os.environ.get('EMAILS_ILLIMITES', 'cgelgon@gmail.com').split(',') if e.strip()}
+
+
+def _est_illimite(email):
+    # Ton email (variable Railway) + les beta-testeurs ajoutes depuis le tableau de bord
+    if email in EMAILS_ILLIMITES:
+        return True
+    if not DATABASE_URL:
+        return False
+    try:
+        conn = get_db()
+        cur = conn.cursor()
+        cur.execute('SELECT 1 FROM emails_illimites WHERE email = %s', (email,))
+        trouve = cur.fetchone() is not None
+        cur.close()
+        conn.close()
+        return trouve
+    except Exception as e:
+        print('ERREUR _est_illimite:', str(e))
+        return False
+
+
+def _enregistrer_consentement(email):
+    if not DATABASE_URL:
+        return
+    try:
+        conn = get_db()
+        cur = conn.cursor()
+        cur.execute('UPDATE users SET consentement_emails = TRUE, consentement_date = COALESCE(consentement_date, NOW()) WHERE email = %s', (email,))
+        conn.commit()
+        cur.close()
+        conn.close()
+    except Exception as e:
+        print('ERREUR consentement:', str(e))
+
+
+def verifier_et_incrementer_quota_pro(email, limite=None):
     """Verifie que le compte Pro n'a pas depasse son quota d'analyses
     pour le mois en cours, et incremente son compteur si l'analyse est
     autorisee. Le quota se reinitialise automatiquement a chaque nouveau
@@ -131,7 +183,7 @@ def verifier_et_incrementer_quota_pro(email):
             # nouveau mois calendaire : on reinitialise le compteur
             nb_actuel = 0
 
-        if nb_actuel >= QUOTA_ANALYSES_PRO_PAR_MOIS:
+        if nb_actuel >= (QUOTA_ANALYSES_PRO_PAR_MOIS if limite is None else limite):
             cur.close()
             conn.close()
             return False, nb_actuel
@@ -1331,6 +1383,12 @@ def stripe_webhook():
     return jsonify({'received': True})
 
 
+@app.route('/config', methods=['GET'])
+def config_publique():
+    return jsonify({'gratuitAnalysesMois': GRATUIT_ANALYSES_MOIS, 'gratuitRelevesMax': GRATUIT_RELEVES_MAX,
+                    'proAnalysesMois': PRO_ANALYSES_MOIS, 'proRelevesMax': PRO_RELEVES_MAX})
+
+
 @app.route('/check-pro-status', methods=['POST'])
 def check_pro_status():
     data = request.get_json(force=True)
@@ -1447,13 +1505,15 @@ def _donnees_admin(filtre=None):
     # Utilisateurs + resume de leurs analyses, et liste brute des analyses
     conn = get_db()
     cur = conn.cursor()
-    cur.execute('SELECT email, subscription_status, nb_analyses_mois_courant, created_at, updated_at, trial_end '
+    cur.execute('SELECT email, subscription_status, nb_analyses_mois_courant, created_at, updated_at, trial_end, consentement_emails '
                 'FROM users ORDER BY created_at DESC')
     users = cur.fetchall()
     cur.execute('SELECT * FROM analyses_log ORDER BY created_at DESC')
     analyses = cur.fetchall()
     cur.execute('SELECT nom_banque, format, created_at FROM banques_detectees')
     banques_hist = cur.fetchall()
+    cur.execute('SELECT email FROM emails_illimites')
+    illimites = {r['email'] for r in cur.fetchall()} | set(EMAILS_ILLIMITES)
     cur.close()
     conn.close()
     if filtre is not None:
@@ -1478,7 +1538,7 @@ def _donnees_admin(filtre=None):
                     formats.append(fo)
         lignes.append({
             'email': u['email'],
-            'type': _type_abonnement(u),
+            'type': 'BETA' if u['email'] in illimites else _type_abonnement(u),
             'statut': u['subscription_status'],
             'analyses_ce_mois': u['nb_analyses_mois_courant'],
             'cree_le': u['created_at'],
@@ -1490,6 +1550,7 @@ def _donnees_admin(filtre=None):
             'dernier_resultat': liste[0]['statut'] if liste else '',
             'banques': ', '.join(banques),
             'formats': ', '.join(formats),
+            'emails_ok': 'oui' if u.get('consentement_emails') else 'non',
         })
     return lignes, analyses, banques_hist
 
@@ -1519,11 +1580,11 @@ def export_users():
         ecrivain = _csv.writer(tampon)
         ecrivain.writerow(['email', 'type_abonnement', 'statut_abonnement', 'analyses_ce_mois', 'cree_le', 'maj_le',
                            'nb_analyses_total', 'nb_analyses_reussies', 'nb_releves_analyses', 'derniere_analyse',
-                           'dernier_resultat', 'banques', 'formats'])
+                           'dernier_resultat', 'banques', 'formats', 'accepte_emails'])
         for l in lignes:
             ecrivain.writerow([_cellule(x) for x in [l['email'], l['type'], l['statut'], l['analyses_ce_mois'], _fmt_date(l['cree_le']), _fmt_date(l['maj_le']),
                                l['nb_analyses'], l['nb_reussies'], l['nb_releves'], _fmt_date(l['derniere_analyse']),
-                               l['dernier_resultat'], l['banques'], l['formats']]])
+                               l['dernier_resultat'], l['banques'], l['formats'], l['emails_ok']]])
         return Response(tampon.getvalue(), mimetype='text/csv',
                         headers={'Content-Disposition': 'attachment; filename=bankanalyzer-utilisateurs.csv'})
     except Exception as e:
@@ -1551,6 +1612,33 @@ def export_analyses():
     except Exception as e:
         print('ERREUR export_analyses:', str(e))
         return jsonify({'error': str(e)}), 500
+
+
+@app.route('/admin/beta', methods=['POST'])
+def admin_beta():
+    from urllib.parse import quote
+    cle = request.form.get('key', '')
+    import hmac
+    cle_attendue = os.environ.get('ADMIN_SECRET', '')
+    if not cle_attendue or not hmac.compare_digest(cle.encode(), cle_attendue.encode()):
+        return jsonify({'error': 'Non autorise'}), 403
+    email = (request.form.get('email') or '').strip().lower()[:200]
+    note = (request.form.get('note') or '').strip()[:200]
+    action = request.form.get('action', '')
+    if DATABASE_URL and email and '@' in email:
+        try:
+            conn = get_db()
+            cur = conn.cursor()
+            if action == 'ajouter':
+                cur.execute('INSERT INTO emails_illimites (email, note) VALUES (%s, %s) ON CONFLICT (email) DO UPDATE SET note = EXCLUDED.note', (email, note))
+            elif action == 'retirer':
+                cur.execute('DELETE FROM emails_illimites WHERE email = %s', (email,))
+            conn.commit()
+            cur.close()
+            conn.close()
+        except Exception as e:
+            print('ERREUR admin_beta:', str(e))
+    return redirect('/admin/tableau-de-bord?key=' + quote(cle) + '#beta')
 
 
 @app.route('/admin/tableau-de-bord', methods=['GET'])
@@ -1602,9 +1690,35 @@ def tableau_de_bord():
         nb_actifs = sum(1 for l in lignes if l['nb_reussies'] > 0)
         nb_analyses = len(analyses)
         nb_releves = sum((a['nb_fichiers'] or 0) for a in analyses if a['statut'] in ('ok', 'partielle'))
+        nb_consentements = sum(1 for l in lignes if l['emails_ok'] == 'oui')
 
         def lien_p(code, texte):
             return '<a href="?key=' + cle + '&p=' + code + '"' + (' class="actif"' if p == code else '') + '>' + texte + '</a>'
+
+        conn_b = get_db()
+        cur_b = conn_b.cursor()
+        cur_b.execute('SELECT email, note, ajoute_le FROM emails_illimites ORDER BY ajoute_le DESC')
+        betas = cur_b.fetchall()
+        cur_b.close()
+        conn_b.close()
+        cle_brute = e(request.args.get('key', ''))
+        lignes_beta = ''.join(
+            '<div class="beta-ligne"><span><b>' + e(x) + '</b> <span class="vide">· réglage Railway, permanent</span></span></div>'
+            for x in sorted(EMAILS_ILLIMITES)) + ''.join(
+            '<form class="beta-ligne" method="post" action="/admin/beta"><input type="hidden" name="key" value="' + cle_brute + '">'
+            '<input type="hidden" name="email" value="' + e(b['email']) + '"><input type="hidden" name="action" value="retirer">'
+            '<span><b>' + e(b['email']) + '</b>' + (' · ' + e(b['note']) if b['note'] else '') + ' <span class="vide">· ajouté le ' + _fmt_date(b['ajoute_le']) + '</span></span>'
+            '<button type="submit" onclick="return confirm(\'Retirer l\\\'accès illimité ?\')">Retirer</button></form>'
+            for b in betas)
+        beta_html = (
+            '<h2 id="beta">🧪 Accès illimité (bêta-testeurs) · ' + str(len(betas) + len(EMAILS_ILLIMITES)) + '</h2>'
+            '<form class="beta-ajout" method="post" action="/admin/beta"><input type="hidden" name="key" value="' + cle_brute + '">'
+            '<input type="hidden" name="action" value="ajouter">'
+            '<input type="email" name="email" placeholder="email du bêta-testeur" required>'
+            '<input type="text" name="note" placeholder="note (facultatif, ex. pote de Marc)">'
+            '<button type="submit">Ajouter</button></form>'
+            '<div class="boite beta-liste">' + lignes_beta + '</div>'
+        )
 
         filtre_html = (
             '<form class="filtre" method="get"><input type="hidden" name="key" value="' + e(request.args.get('key', '')) + '">'
@@ -1629,7 +1743,7 @@ def tableau_de_bord():
             '<td class="n">' + str(l['nb_reussies']) + ' / ' + str(l['nb_analyses']) + '</td>'
             '<td class="n">' + str(l['nb_releves']) + '</td>'
             '<td>' + e(l['banques']) + '</td><td>' + e(l['formats']) + '</td>'
-            '<td>' + _fmt_date(l['derniere_analyse']) + '</td><td>' + e(l['dernier_resultat']) + '</td></tr>'
+            '<td>' + _fmt_date(l['derniere_analyse']) + '</td><td>' + e(l['dernier_resultat']) + '</td><td>' + ('✅' if l['emails_ok'] == 'oui' else '') + '</td></tr>'
             for l in lignes)
         lignes_analyses = ''.join(
             '<tr><td>' + _fmt_date(a['created_at']) + '</td><td>' + e(a['email'] or '') + '</td><td>' + e(a['statut'] or '') + '</td>'
@@ -1655,7 +1769,13 @@ table{border-collapse:collapse;width:100%;font-size:13px}
 th{text-align:left;font-weight:600;color:#6e6e73;padding:10px;border-bottom:1px solid #e5e5ea;white-space:nowrap}
 td{padding:9px 10px;border-bottom:1px solid #f0f0f2;vertical-align:top}
 td.n{text-align:right;white-space:nowrap}td.err{color:#b42318;max-width:260px}
-.t{font-size:11px;font-weight:700;padding:2px 7px;border-radius:6px}.t-free{background:#f0f0f2}.t-trial{background:#fff4d6}.t-pro{background:#e3f6ec;color:#0f7a52}
+.t{font-size:11px;font-weight:700;padding:2px 7px;border-radius:6px}.t-free{background:#f0f0f2}.t-beta{background:#efe7ff;color:#5b21b6}
+.beta-ajout{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+.beta-ajout input{font:inherit;font-size:13px;padding:7px 10px;border:1px solid #e5e5ea;border-radius:8px;min-width:220px}
+.beta-ajout button,.beta-ligne button{font:inherit;font-size:13px;font-weight:600;padding:7px 14px;border-radius:100px;border:1px solid #e5e5ea;background:#fff;cursor:pointer}
+.beta-ajout button{background:#0071e3;border-color:#0071e3;color:#fff}
+.beta-ligne{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:9px 12px;border-bottom:1px solid #f0f0f2;font-size:13px;margin:0}
+.beta-ligne:last-child{border-bottom:none}.t-trial{background:#fff4d6}.t-pro{background:#e3f6ec;color:#0f7a52}
 .liens a{display:inline-block;margin:0 10px 8px 0;color:#0071e3;font-size:13px}
 .entete{display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;flex-wrap:wrap;margin-bottom:1.25rem}
 .entete .sous{margin-bottom:0}
@@ -1676,13 +1796,15 @@ td.n{text-align:right;white-space:nowrap}td.err{color:#b42318;max-width:260px}
 <div class="kpi"><div>Ont réussi une analyse</div><b>""" + str(nb_actifs) + """</b></div>
 <div class="kpi"><div>Analyses lancées</div><b>""" + str(nb_analyses) + """</b></div>
 <div class="kpi"><div>Relevés analysés</div><b>""" + str(nb_releves) + """</b></div>
+<div class="kpi"><div>Acceptent les emails</div><b>""" + str(nb_consentements) + """</b></div>
 <div class="kpi"><div>Pro + essai (aujourd'hui)</div><b>""" + str(nb_payants) + """</b></div>
 </div>
 <h2>🏦 Banques détectées</h2><div>""" + cartes(cpt_banques) + """</div>
 <h2>📄 Formats déposés</h2><div>""" + cartes(cpt_formats) + """</div>
+""" + beta_html + """
 <h2>👥 Utilisateurs</h2>
 <div class="liens"><a href="/admin/export-users?key=""" + cle + """">⬇️ Export CSV utilisateurs</a><a href="/admin/export-analyses?key=""" + cle + """">⬇️ Export CSV analyses</a></div>
-<div class="boite"><table><tr><th>Email</th><th>Offre</th><th>Inscrit le</th><th>Analyses réussies / total</th><th>Relevés</th><th>Banques</th><th>Formats</th><th>Dernière analyse</th><th>Dernier résultat</th></tr>""" + lignes_users + """</table></div>
+<div class="boite"><table><tr><th>Email</th><th>Offre</th><th>Inscrit le</th><th>Analyses réussies / total</th><th>Relevés</th><th>Banques</th><th>Formats</th><th>Dernière analyse</th><th>Dernier résultat</th><th>Emails OK</th></tr>""" + lignes_users + """</table></div>
 <h2>🕒 Analyses de la période (50 dernières)</h2>
 <div class="boite"><table><tr><th>Date</th><th>Email</th><th>Résultat</th><th>Relevés</th><th>Formats</th><th>Banques</th><th>Période</th><th>Langue</th><th>Note</th><th>Erreur</th></tr>""" + (lignes_analyses or '<tr><td colspan="10" class="vide">Aucune analyse enregistrée pour l\'instant.</td></tr>') + """</table></div>
 </body></html>"""
@@ -1770,6 +1892,10 @@ def _journaliser_analyse(reponse=None, erreur_fatale=None):
             statut = 'erreur'
         elif code == 200:
             statut = 'partielle' if ignores else 'ok'
+        elif data.get('limiteMois'):
+            statut = 'bloquee (limite du mois)'
+        elif data.get('tropDeReleves'):
+            statut = 'bloquee (trop de releves)'
         elif data.get('requiresPro'):
             statut = 'bloquee (Pro requis)'
         elif data.get('quotaDepasse'):
@@ -1822,6 +1948,8 @@ def _analyze_impl():
     if not email or '@' not in email:
         return jsonify({'error': 'Adresse email requise pour lancer une analyse.'}), 400
     upsert_user(email)
+    if (request.form.get('consentement') or '') == '1':
+        _enregistrer_consentement(email)
 
     mode_devise = request.form.get('modeDevise', 'unique')
     devise_unique = (request.form.get('deviseUnique') or 'EUR').upper().strip()
@@ -1885,7 +2013,8 @@ def _analyze_impl():
             return jsonify({'error': 'Aucun fichier recu'}), 400
     files = files[:60]
 
-    utilisateur_pro = est_pro(email)
+    abonne_pro = est_pro(email)
+    utilisateur_pro = True  # freemium : toutes les fonctions sont ouvertes a tous
 
     client = anthropic.Anthropic()
 
@@ -1927,20 +2056,22 @@ def _analyze_impl():
     if not fichiers_prepares:
         return jsonify({'error': 'Aucun releve analyse'}), 500
 
-    demande_features_pro = len(fichiers_prepares) > 1 or bool(patrimoine_resume) or mode_devise == 'multiple'
-    if demande_features_pro and not utilisateur_pro:
-        return jsonify({
-            'error': "Cette analyse utilise une fonctionnalite BankAnalyzer Pro (plusieurs fichiers, plusieurs mois detectes dans un meme fichier, patrimoine ou plusieurs devises). Passez a l'offre Pro pour y acceder.",
-            'requiresPro': True
-        }), 402
-
-    if utilisateur_pro:
-        quota_ok, nb_utilisees = verifier_et_incrementer_quota_pro(email)
-        if not quota_ok:
+    # Freemium : seules les limites (nombre de releves, analyses du mois) different
+    if not _est_illimite(email):
+        max_releves = PRO_RELEVES_MAX if abonne_pro else GRATUIT_RELEVES_MAX
+        if max_releves > 0 and len(fichiers_prepares) > max_releves:
             return jsonify({
-                'error': "Vous avez atteint votre quota de %d analyses Pro pour ce mois-ci. Il sera reinitialise le mois prochain." % QUOTA_ANALYSES_PRO_PAR_MOIS,
-                'quotaDepasse': True
+                'error': "Tu as depose %d releves (ou mois de releves) : ta formule en analyse jusqu'a %d a la fois." % (len(fichiers_prepares), max_releves),
+                'requiresPro': not abonne_pro, 'tropDeReleves': True, 'max': max_releves, 'nb': len(fichiers_prepares)
             }), 402
+        limite_mois = PRO_ANALYSES_MOIS if abonne_pro else GRATUIT_ANALYSES_MOIS
+        if limite_mois > 0:
+            quota_ok, nb_utilisees = verifier_et_incrementer_quota_pro(email, limite_mois)
+            if not quota_ok:
+                return jsonify({
+                    'error': "Tu as utilise tes %d analyses du mois. Le compteur repart a zero le 1er du mois prochain." % limite_mois,
+                    'requiresPro': not abonne_pro, 'limiteMois': True, 'quotaDepasse': abonne_pro, 'max': limite_mois
+                }), 402
 
     # Etape 2 : appels IA en parallele (par lots pour respecter les limites de debit de l'API)
     comptes = []
