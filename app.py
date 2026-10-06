@@ -112,10 +112,12 @@ def _reglage_entier(nom, defaut):
 
 # Freemium : toutes les fonctions ouvertes a tous, seules ces limites changent
 # (reglables dans Railway > Variables ; 0 = illimite)
-GRATUIT_ANALYSES_MOIS = _reglage_entier('GRATUIT_ANALYSES_MOIS', 3)
-GRATUIT_RELEVES_MAX = _reglage_entier('GRATUIT_RELEVES_MAX', 12)
+GRATUIT_ANALYSES_MOIS = _reglage_entier('GRATUIT_ANALYSES_MOIS', 1)
+GRATUIT_RELEVES_MAX = _reglage_entier('GRATUIT_RELEVES_MAX', 3)
 PRO_ANALYSES_MOIS = _reglage_entier('PRO_ANALYSES_MOIS', 10)
 PRO_RELEVES_MAX = _reglage_entier('PRO_RELEVES_MAX', 24)
+# Patch 13 : essai gratuit reglable (0 = pas d'essai, paiement des l'inscription)
+ESSAI_JOURS = _reglage_entier('ESSAI_JOURS', 0)
 EMAILS_ILLIMITES = {e.strip().lower() for e in os.environ.get('EMAILS_ILLIMITES', 'cgelgon@gmail.com').split(',') if e.strip()}
 
 
@@ -1302,16 +1304,15 @@ def create_checkout_session():
         else:
             # Deja un abonnement actif a ce prix ? On evite d'en creer un deuxieme (double facturation)
             abonnements_existants = stripe.Subscription.list(customer=customer_id, status='active', limit=10)
-            for abo in abonnements_existants.data:
-                for item in abo['items']['data']:
-                    if item['price']['id'] == STRIPE_PRICE_ID:
-                        return jsonify({'error': 'Vous etes deja abonne a BankAnalyzer Pro.', 'alreadySubscribed': True}), 409
+            # (quel que soit le prix : un ancien abonne a 9 EUR compte aussi)
+            if abonnements_existants.data:
+                return jsonify({'error': 'Vous etes deja abonne a BankAnalyzer Pro.', 'alreadySubscribed': True}), 409
 
         session = stripe.checkout.Session.create(
             customer=customer_id,
             mode='subscription',
             line_items=[{'price': STRIPE_PRICE_ID, 'quantity': 1}],
-            subscription_data={'trial_period_days': 30},
+            **({'subscription_data': {'trial_period_days': ESSAI_JOURS}} if ESSAI_JOURS > 0 else {}),
             success_url=FRONTEND_URL + '?checkout=success',
             cancel_url=FRONTEND_URL + '?checkout=cancel',
         )

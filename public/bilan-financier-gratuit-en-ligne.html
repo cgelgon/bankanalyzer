@@ -178,7 +178,7 @@ footer a{text-decoration:underline;margin:0 6px}
     <div class="pricing">
       <h3 id="pricingTitle">Ce qui est gratuit</h3>
       <ul id="pricingList">
-        <li><span>✓</span>1 analyse simple par mois (1 fichier)</li>
+        <li><span>✓</span>1 analyse offerte chaque mois (jusqu'à 3 relevés)</li>
         <li><span>✓</span>Score de gestion, catégories, charges fixes</li>
         <li><span>✓</span>Conseils personnalisés</li>
         <li><span>✓</span>Export PDF de votre bilan</li>
@@ -231,14 +231,14 @@ chinese:{subnavAccueil:'首页',subnavAnalyser:'分析对账单',subnavBudget:'�
 arabic:{subnavAccueil:'الرئيسية',subnavAnalyser:'تحليل كشف حساب',subnavBudget:'إعداد ميزانيتك',subnavConvertir:'تحويل PDF إلى Excel',subnavEpargne:'معدل الادخار',ctaSub:'لا حاجة لبطاقة بنكية · بدون ربط ببنكك',trustTitle:'بدون ربط بنكي',trustText:'أنت فقط ترفع ملفًا — أبدًا بيانات اعتماد بنكك. بياناتك تبقى ملكك.',proofText:'تم اختباره واعتماده بالفعل من قبل <b>أوائل المستخدمين</b>.',ctaFinal:'حلّل كشفي الآن →',footerMentions:'الإشعار القانوني',footerConfidentialite:'الخصوصية',footerCgv:'الشروط',eyebrowGratuit:'✦ مجاني',eyebrowSecondes:'خلال ثوانٍ',eyebrowSansConnexion:'بدون ربط بنكي',stepsH2:'كيف يعمل',heroH1:'تقريرك المالي<br>مجانًا، عبر الإنترنت',heroPayoff:'ارفع كشف حسابك البنكي، <b>واحصل على تقريرك الكامل بنقرة واحدة.</b>',ctaHero:'احصل على تقريري المجاني →',bridgeH2:'ما الذي يحتويه تقريرك',card1Title:'درجة الصحة المالية من 10',card1Text:'درجة واضحة لصحتك المالية، وليس مجرد رصيد على الشاشة.',card2Title:'المصروفات حسب الفئة',card2Text:'أين يذهب مالك فعليًا، شهرًا بشهر، دون الحاجة للفرز بنفسك.',card3Title:'الرسوم الثابتة المكتشفة',card3Text:'الخصومات المتكررة التي توقفت عن ملاحظتها.',card4Title:'نصائح شخصية',card4Text:'3 إجراءات ملموسة لوضعك، وليست تعميمات.',step1Title:'ارفع كشف حسابك',step1Text:'PDF أو CSV أو Excel — الذي لديك بالفعل على حاسوبك.',step2Title:'تحليل فوري',step2Text:'ثوانٍ قليلة، بدون ربط بحسابك البنكي.',step3Title:'تقريرك الكامل',step3Text:'جاهز للعرض عبر الإنترنت أو التنزيل بصيغة PDF.',pricingTitle:'ما هو مجاني',finalH2:'هل أنت مستعد لرؤية تقريرك؟',finalText:'مجاني. بدون بطاقة بنكية. بدون ربط ببنكك.'}
 };
 const PRICING_HTML = {
-  francais: `<li><span>✓</span>1 analyse simple par mois (1 fichier)</li><li><span>✓</span>Score de gestion, catégories, charges fixes</li><li><span>✓</span>Conseils personnalisés</li><li><span>✓</span>Export PDF de votre bilan</li>`,
-  english: `<li><span>✓</span>1 simple analysis per month (1 file)</li><li><span>✓</span>Financial health score, categories, fixed charges</li><li><span>✓</span>Personalized advice</li><li><span>✓</span>PDF export of your report</li>`,
-  espanol: `<li><span>✓</span>1 análisis simple al mes (1 archivo)</li><li><span>✓</span>Puntuación financiera, categorías, gastos fijos</li><li><span>✓</span>Consejos personalizados</li><li><span>✓</span>Exportación PDF de tu balance</li>`,
-  deutsch: `<li><span>✓</span>1 einfache Analyse pro Monat (1 Datei)</li><li><span>✓</span>Finanz-Score, Kategorien, Fixkosten</li><li><span>✓</span>Persönliche Empfehlungen</li><li><span>✓</span>PDF-Export Ihrer Übersicht</li>`,
-  italiano: `<li><span>✓</span>1 analisi semplice al mese (1 file)</li><li><span>✓</span>Punteggio finanziario, categorie, spese fisse</li><li><span>✓</span>Consigli personalizzati</li><li><span>✓</span>Esportazione PDF del tuo bilancio</li>`,
-  portugues: `<li><span>✓</span>1 análise simples por mês (1 arquivo)</li><li><span>✓</span>Pontuação financeira, categorias, despesas fixas</li><li><span>✓</span>Conselhos personalizados</li><li><span>✓</span>Exportação PDF do seu balanço</li>`,
-  chinese: `<li><span>✓</span>每月1次简单分析（1个文件）</li><li><span>✓</span>财务健康评分、类别、固定支出</li><li><span>✓</span>个性化建议</li><li><span>✓</span>导出PDF报告</li>`,
-  arabic: `<li><span>✓</span>تحليل بسيط واحد شهريًا (ملف واحد)</li><li><span>✓</span>درجة الصحة المالية، الفئات، الرسوم الثابتة</li><li><span>✓</span>نصائح شخصية</li><li><span>✓</span>تصدير PDF لتقريرك</li>`,
+  francais: `<li><span>✓</span>1 analyse offerte chaque mois (jusqu'à 3 relevés)</li><li><span>✓</span>Score de gestion, catégories, charges fixes</li><li><span>✓</span>Conseils personnalisés</li><li><span>✓</span>Export PDF de votre bilan</li>`,
+  english: `<li><span>✓</span>1 free analysis every month (up to 3 statements)</li><li><span>✓</span>Financial health score, categories, fixed charges</li><li><span>✓</span>Personalized advice</li><li><span>✓</span>PDF export of your report</li>`,
+  espanol: `<li><span>✓</span>1 análisis gratis cada mes (hasta 3 extractos)</li><li><span>✓</span>Puntuación financiera, categorías, gastos fijos</li><li><span>✓</span>Consejos personalizados</li><li><span>✓</span>Exportación PDF de tu balance</li>`,
+  deutsch: `<li><span>✓</span>1 kostenlose Analyse pro Monat (bis zu 3 Kontoauszüge)</li><li><span>✓</span>Finanz-Score, Kategorien, Fixkosten</li><li><span>✓</span>Persönliche Empfehlungen</li><li><span>✓</span>PDF-Export Ihrer Übersicht</li>`,
+  italiano: `<li><span>✓</span>1 analisi gratuita ogni mese (fino a 3 estratti conto)</li><li><span>✓</span>Punteggio finanziario, categorie, spese fisse</li><li><span>✓</span>Consigli personalizzati</li><li><span>✓</span>Esportazione PDF del tuo bilancio</li>`,
+  portugues: `<li><span>✓</span>1 análise grátis por mês (até 3 extratos)</li><li><span>✓</span>Pontuação financeira, categorias, despesas fixas</li><li><span>✓</span>Conselhos personalizados</li><li><span>✓</span>Exportação PDF do seu balanço</li>`,
+  chinese: `<li><span>✓</span>每月1次免费分析（最多3份对账单）</li><li><span>✓</span>财务健康评分、类别、固定支出</li><li><span>✓</span>个性化建议</li><li><span>✓</span>导出PDF报告</li>`,
+  arabic: `<li><span>✓</span>تحليل مجاني واحد كل شهر (حتى 3 كشوف)</li><li><span>✓</span>درجة الصحة المالية، الفئات، الرسوم الثابتة</li><li><span>✓</span>نصائح شخصية</li><li><span>✓</span>تصدير PDF لتقريرك</li>`,
 };
 
 function getLangueSite(){
