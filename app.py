@@ -76,6 +76,7 @@ def init_db():
         cur.execute('CREATE INDEX IF NOT EXISTS idx_analyses_log_email ON analyses_log (email)')
         cur.execute('CREATE TABLE IF NOT EXISTS emails_illimites (email TEXT PRIMARY KEY, note TEXT, ajoute_le TIMESTAMP DEFAULT NOW())')
         cur.execute('CREATE TABLE IF NOT EXISTS pwa_events (id SERIAL PRIMARY KEY, type TEXT, plateforme TEXT, created_at TIMESTAMP DEFAULT NOW())')
+        cur.execute('CREATE TABLE IF NOT EXISTS feedbacks (id SERIAL PRIMARY KEY, email TEXT, note INTEGER, commentaire TEXT, created_at TIMESTAMP DEFAULT NOW())')
         conn.commit()
         cur.close()
         conn.close()
@@ -1407,6 +1408,47 @@ def pwa_evenement():
     return ('', 204)
 
 
+_FEEDBACK_IP = {}
+
+
+@app.route('/feedback', methods=['POST'])
+def recevoir_feedback():
+    import time
+    data = request.get_json(silent=True) or {}
+    if str(data.get('site') or '').strip():
+        return jsonify({'ok': True})  # champ piege : un robot l'a rempli
+    try:
+        note = int(data.get('note'))
+    except (TypeError, ValueError):
+        note = 0
+    if note < 1 or note > 10:
+        return jsonify({'error': 'Choisis une note de 1 a 10.'}), 400
+    commentaire = str(data.get('commentaire') or '').strip()[:2000]
+    email = str(data.get('email') or '').strip().lower()[:200]
+    if email and not re.match(r'^[^@\s]+@[^@\s]+\.[^@\s]+$', email):
+        email = ''
+    ip = (request.headers.get('X-Forwarded-For') or request.remote_addr or '').split(',')[0].strip()
+    maintenant = time.time()
+    recents = [t for t in _FEEDBACK_IP.get(ip, []) if maintenant - t < 3600]
+    if len(recents) >= 5:
+        return jsonify({'error': 'Trop d\'envois depuis cette connexion, reessaie plus tard.'}), 429
+    recents.append(maintenant)
+    _FEEDBACK_IP[ip] = recents
+    if not DATABASE_URL:
+        return jsonify({'error': 'Service indisponible'}), 500
+    try:
+        conn = get_db()
+        cur = conn.cursor()
+        cur.execute('INSERT INTO feedbacks (email, note, commentaire) VALUES (%s, %s, %s)', (email or None, note, commentaire))
+        conn.commit()
+        cur.close()
+        conn.close()
+        return jsonify({'ok': True})
+    except Exception as ex:
+        print('ERREUR recevoir_feedback:', str(ex))
+        return jsonify({'error': 'Enregistrement impossible, reessaie dans un instant.'}), 500
+
+
 @app.route('/config', methods=['GET'])
 def config_publique():
     return jsonify({'gratuitAnalysesMois': GRATUIT_ANALYSES_MOIS, 'gratuitRelevesMax': GRATUIT_RELEVES_MAX,
@@ -1723,6 +1765,13 @@ def tableau_de_bord():
         cur_b = conn_b.cursor()
         cur_b.execute('SELECT email, note, ajoute_le FROM emails_illimites ORDER BY ajoute_le DESC')
         betas = cur_b.fetchall()
+        try:
+            cur_b.execute('SELECT email, note, commentaire, created_at FROM feedbacks ORDER BY created_at DESC')
+            avis = cur_b.fetchall()
+        except Exception as ex_av:
+            print('ERREUR lecture feedbacks:', str(ex_av))
+            conn_b.rollback()
+            avis = []
         cur_b.execute('SELECT type, plateforme, created_at FROM pwa_events')
         evts_pwa = [x for x in cur_b.fetchall() if p == 'tout' or dans_periode(x['created_at'])]
         nb_pwa_vues = sum(1 for x in evts_pwa if x['type'] == 'banniere_vue')
@@ -1732,6 +1781,30 @@ def tableau_de_bord():
         cur_b.close()
         conn_b.close()
         cle_brute = e(request.args.get('key', ''))
+        kpi_avis_html = ''
+        avis_html = ''
+        if avis:
+            nb_av = len(avis)
+            moyenne = sum(a['note'] for a in avis) / nb_av
+            nb_prom = sum(1 for a in avis if a['note'] >= 9)
+            nb_det = sum(1 for a in avis if a['note'] <= 6)
+            nps = round((nb_prom - nb_det) * 100 / nb_av)
+            kpi_avis_html = (
+                '<div class="kpi"><div>💬 Note moyenne</div><b>' + ('%.1f' % moyenne).replace('.', ',') + '</b> / 10</div>'
+                '<div class="kpi"><div>💬 Avis reçus</div><b>' + str(nb_av) + '</b></div>'
+                '<div class="kpi"><div>💬 NPS</div><b>' + (('+' if nps > 0 else '') + str(nps)) + '</b></div>')
+
+            def _puce_note(n):
+                fond, texte = ('#e3f6ec', '#0f7a52') if n >= 9 else (('#e6f1fd', '#0058b0') if n >= 7 else ('#fdecec', '#b42318'))
+                return '<span style="display:inline-block;min-width:34px;text-align:center;font-weight:700;padding:3px 9px;border-radius:8px;background:' + fond + ';color:' + texte + '">' + str(n) + '</span>'
+            lignes_avis = ''.join(
+                '<tr><td style="white-space:nowrap">' + e(_fmt_date(a['created_at'])) + '</td><td>' + e(a['email'] or '—') + '</td>'
+                '<td>' + _puce_note(a['note']) + '</td><td style="white-space:pre-wrap;min-width:260px;max-width:560px;overflow-wrap:anywhere">' + e(a['commentaire'] or '') + '</td></tr>'
+                for a in avis[:100])
+            avis_html = ('<h2 id="avis">💬 Avis des utilisateurs · ' + str(nb_av) + '</h2>'
+                         '<div class="boite"><table><tr><th>Date</th><th>Email</th><th>Note</th><th>Commentaire</th></tr>' + lignes_avis + '</table></div>')
+        else:
+            avis_html = '<h2 id="avis">💬 Avis des utilisateurs</h2><div class="boite"><table><tr><td class="vide">Aucun avis pour l\'instant. Page de collecte : bankanalyzer.fr/avis.html</td></tr></table></div>'
         lignes_beta = ''.join(
             '<div class="beta-ligne"><span><b>' + e(x) + '</b> <span class="vide">· réglage Railway, permanent</span></span></div>'
             for x in sorted(EMAILS_ILLIMITES)) + ''.join(
@@ -1830,11 +1903,12 @@ td.n{text-align:right;white-space:nowrap}td.err{color:#b42318;max-width:260px}
 <div class="kpi"><div>📲 Installations (Android/ordi)</div><b>""" + str(nb_pwa_installs) + """</b></div>
 <div class="kpi"><div>📲 Ouvertures en mode appli</div><b>""" + str(nb_pwa_ouvertures) + """</b><div>dont iPhone : """ + str(nb_pwa_ouv_ios) + """</div></div>
 <div class="kpi"><div>Acceptent les emails</div><b>""" + str(nb_consentements) + """</b></div>
+""" + kpi_avis_html + """
 <div class="kpi"><div>Pro + essai (aujourd'hui)</div><b>""" + str(nb_payants) + """</b></div>
 </div>
 <h2>🏦 Banques détectées</h2><div>""" + cartes(cpt_banques) + """</div>
 <h2>📄 Formats déposés</h2><div>""" + cartes(cpt_formats) + """</div>
-""" + beta_html + """
+""" + beta_html + avis_html + """
 <h2>👥 Utilisateurs</h2>
 <div class="liens"><a href="/admin/export-users?key=""" + cle + """">⬇️ Export CSV utilisateurs</a><a href="/admin/export-analyses?key=""" + cle + """">⬇️ Export CSV analyses</a></div>
 <div class="boite"><table><tr><th>Email</th><th>Offre</th><th>Inscrit le</th><th>Analyses réussies / total</th><th>Relevés</th><th>Banques</th><th>Formats</th><th>Dernière analyse</th><th>Dernier résultat</th><th>Emails OK</th></tr>""" + lignes_users + """</table></div>
