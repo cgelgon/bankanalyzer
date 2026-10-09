@@ -100,7 +100,7 @@ def est_pro(email):
         return False
 
 
-QUOTA_ANALYSES_PRO_PAR_MOIS = 5
+QUOTA_ANALYSES_PRO_PAR_MOIS = 10  # valeur de repli ; le vrai reglage est PRO_ANALYSES_MOIS
 
 
 def _reglage_entier(nom, defaut):
@@ -1304,7 +1304,7 @@ def create_checkout_session():
         else:
             # Deja un abonnement actif a ce prix ? On evite d'en creer un deuxieme (double facturation)
             abonnements_existants = stripe.Subscription.list(customer=customer_id, status='active', limit=10)
-            # (quel que soit le prix : un ancien abonne a 9 EUR compte aussi)
+            # (quel que soit le prix : un ancien abonne a un autre tarif compte aussi)
             if abonnements_existants.data:
                 return jsonify({'error': 'Vous etes deja abonne a BankAnalyzer Pro.', 'alreadySubscribed': True}), 409
 
