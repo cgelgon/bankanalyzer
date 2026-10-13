@@ -18,7 +18,10 @@
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;background:var(--bg);color:var(--text);line-height:1.5;min-height:100vh}
 a{color:inherit}
-header{padding:1.5rem;display:flex;justify-content:center}
+header{padding:1.5rem;display:flex;justify-content:center;align-items:center;position:relative}
+.site-lang-select{position:absolute;right:1.25rem;top:50%;transform:translateY(-50%);color:var(--text2);padding:7px 10px;border-radius:100px;background:#fff;border:1px solid var(--border);font-size:12.5px;font-weight:600;font-family:inherit;cursor:pointer}
+@media(max-width:600px){header{flex-direction:column;gap:10px}.site-lang-select{position:static;transform:none}}
+[dir=rtl] .q small,[dir=rtl] textarea,[dir=rtl] input[type=email]{text-align:right}
 .logo{display:flex;align-items:center;gap:10px;text-decoration:none}
 .logo-icon{width:30px;height:30px;background:linear-gradient(135deg,var(--blue),var(--blue2));border-radius:9px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:14px}
 .logo span{font-size:17px;font-weight:600;letter-spacing:-.2px}
@@ -60,54 +63,74 @@ textarea:focus,input[type=email]:focus{border-color:var(--blue);box-shadow:0 0 0
 </style>
 </head>
 <body>
-<header><a class="logo" href="/"><div class="logo-icon">B</div><span>BankAnalyzer</span></a></header>
+<header><a class="logo" href="/"><div class="logo-icon">B</div><span>BankAnalyzer</span></a>
+  <select id="siteLangue" class="site-lang-select" aria-label="Language">
+    <option value="francais">🇫🇷 FR</option><option value="english">🇬🇧 EN</option><option value="espanol">🇪🇸 ES</option><option value="deutsch">🇩🇪 DE</option><option value="italiano">🇮🇹 IT</option><option value="portugues">🇧🇷 PT</option><option value="chinese">🇨🇳 中文</option><option value="arabic">🇸🇦 عربي</option>
+  </select></header>
 <main>
   <section class="hero">
-    <div class="eyebrow"><span class="dot">●</span><span>Programme Membres Fondateurs</span></div>
+    <div class="eyebrow"><span class="dot">●</span><span data-i18n="eyebrow">Programme Membres Fondateurs</span></div>
     <img src="/email/banky-merci.png" alt="Banky" width="104">
-    <h1>Ton avis compte énormément</h1>
-    <p class="lead">Tu fais partie des <b>premiers à avoir testé Banky</b>. Deux minutes pour nous dire ce que tu en penses&nbsp;: on lit et on répond à tous les retours.</p>
+    <h1 data-i18n="h1">Ton avis compte énormément</h1>
+    <p class="lead" data-i18n="lead">Tu fais partie des <b>premiers à avoir testé Banky</b>. Deux minutes pour nous dire ce que tu en penses&nbsp;: on lit et on répond à tous les retours.</p>
   </section>
 
   <section class="card" id="formCard">
     <form id="form" novalidate>
       <div class="field">
-        <span class="q" id="qNote">Ta note globale <small>(1 = pas du tout satisfait · 10 = enthousiaste)</small></span>
+        <span class="q" id="qNote" data-i18n="qNote">Ta note globale <small>(1 = pas du tout satisfait · 10 = enthousiaste)</small></span>
         <div class="notes" id="notes" role="group" aria-labelledby="qNote"></div>
-        <div class="legend"><span>Pas convaincu</span><span>Je recommande&nbsp;!</span></div>
+        <div class="legend"><span data-i18n="legLo">Pas convaincu</span><span data-i18n="legHi">Je recommande&nbsp;!</span></div>
       </div>
       <div class="sep"></div>
       <div class="field">
-        <label class="q" for="commentaire">Une phrase pour nous aider <small>(ce qui t'a plu, agacé, ou ce qui manque)</small></label>
-        <textarea id="commentaire" maxlength="2000" placeholder="Ex : j'ai adoré voir mes charges fixes d'un coup, mais j'aurais aimé …"></textarea>
+        <label class="q" for="commentaire" data-i18n="qComment">Une phrase pour nous aider <small>(ce qui t'a plu, agacé, ou ce qui manque)</small></label>
+        <textarea id="commentaire" maxlength="2000" data-ph="phComment" placeholder="Ex : j'ai adoré voir mes charges fixes d'un coup, mais j'aurais aimé …"></textarea>
       </div>
       <div class="field">
-        <label class="q" for="email">Ton email <small>(facultatif, pour qu'on puisse te répondre)</small></label>
+        <label class="q" for="email" data-i18n="qEmail">Ton email <small>(facultatif, pour qu'on puisse te répondre)</small></label>
         <input type="email" id="email" autocomplete="email" placeholder="toi@exemple.fr">
-        <p class="hint">Utilisé uniquement pour te répondre. Jamais revendu.</p>
+        <p class="hint" data-i18n="hint">Utilisé uniquement pour te répondre. Jamais revendu.</p>
       </div>
       <div class="hp" aria-hidden="true"><label>Ne pas remplir <input type="text" id="site" tabindex="-1" autocomplete="off"></label></div>
-      <button type="submit" class="cta" id="envoyer" disabled>Envoyer mon avis</button>
+      <button type="submit" class="cta" id="envoyer" disabled data-i18n="send">Envoyer mon avis</button>
       <div class="err" id="err" role="alert"></div>
     </form>
     <div class="merci" id="merci">
       <img src="/email/banky-merci.png" alt="Banky" width="130">
-      <h2>Merci, vraiment&nbsp;!</h2>
-      <p>Ton retour est bien arrivé. Il nous aide directement à améliorer BankAnalyzer.</p>
-      <a class="cta" href="/analyser-releve-bancaire.html">Retourner sur BankAnalyzer</a>
+      <h2 data-i18n="thanksH">Merci, vraiment&nbsp;!</h2>
+      <p data-i18n="thanksP">Ton retour est bien arrivé. Il nous aide directement à améliorer BankAnalyzer.</p>
+      <a class="cta" href="/analyser-releve-bancaire.html" data-i18n="back">Retourner sur BankAnalyzer</a>
     </div>
   </section>
-  <p class="foot">BankAnalyzer · <a href="/politique-confidentialite.html">Confidentialité</a></p>
+  <p class="foot">BankAnalyzer · <a href="/politique-confidentialite.html" data-i18n="foot">Confidentialité</a></p>
 </main>
 <script>
 (function(){
   var API='https://bankanalyzer-production.up.railway.app/feedback';
-  var note=0;
-  var box=document.getElementById('notes'),btn=document.getElementById('envoyer'),err=document.getElementById('err');
+  var TR_AVIS = {"francais": {"eyebrow": "Programme Membres Fondateurs", "h1": "Ton avis compte énormément", "lead": "Tu fais partie des <b>premiers à avoir testé Banky</b>. Deux minutes pour nous dire ce que tu en penses&nbsp;: on lit et on répond à tous les retours.", "qNote": "Ta note globale <small>(1 = pas du tout satisfait · 10 = enthousiaste)</small>", "legLo": "Pas convaincu", "legHi": "Je recommande&nbsp;!", "qComment": "Une phrase pour nous aider <small>(ce qui t'a plu, agacé, ou ce qui manque)</small>", "phComment": "Ex : j'ai adoré voir mes charges fixes d'un coup, mais j'aurais aimé …", "qEmail": "Ton email <small>(facultatif, pour qu'on puisse te répondre)</small>", "hint": "Utilisé uniquement pour te répondre. Jamais revendu.", "send": "Envoyer mon avis", "sending": "Envoi…", "thanksH": "Merci, vraiment&nbsp;!", "thanksP": "Ton retour est bien arrivé. Il nous aide directement à améliorer BankAnalyzer.", "back": "Retourner sur BankAnalyzer", "foot": "Confidentialité", "errGen": "Oups, l'envoi n'a pas marché. Réessaie dans un instant.", "errTrop": "Trop d'envois depuis cette connexion, réessaie plus tard.", "noteAria": "Note {n} sur 10", "title": "Ton avis sur BankAnalyzer"}, "english": {"eyebrow": "Founding Members program", "h1": "Your feedback matters a lot", "lead": "You're one of the <b>first people to try Banky</b>. Take two minutes to tell us what you think: we read and answer every reply.", "qNote": "Your overall rating <small>(1 = not satisfied at all · 10 = thrilled)</small>", "legLo": "Not convinced", "legHi": "I recommend it!", "qComment": "One sentence to help us <small>(what you liked, what annoyed you, or what is missing)</small>", "phComment": "E.g. I loved seeing my fixed costs at a glance, but I would have liked …", "qEmail": "Your email <small>(optional, so we can reply)</small>", "hint": "Only used to reply to you. Never sold.", "send": "Send my feedback", "sending": "Sending…", "thanksH": "Thank you, truly!", "thanksP": "Your feedback arrived safely. It directly helps us improve BankAnalyzer.", "back": "Back to BankAnalyzer", "foot": "Privacy", "errGen": "Oops, sending failed. Please try again in a moment.", "errTrop": "Too many submissions from this connection, please try again later.", "noteAria": "Rating {n} out of 10", "title": "Your feedback on BankAnalyzer"}, "espanol": {"eyebrow": "Programa de Miembros Fundadores", "h1": "Tu opinión cuenta muchísimo", "lead": "Eres de los <b>primeros en probar Banky</b>. Dedica dos minutos a contarnos qué te parece: leemos y respondemos todos los comentarios.", "qNote": "Tu nota global <small>(1 = nada satisfecho · 10 = entusiasmado)</small>", "legLo": "No me convence", "legHi": "¡Lo recomiendo!", "qComment": "Una frase para ayudarnos <small>(lo que te gustó, lo que te molestó o lo que falta)</small>", "phComment": "Ej.: me encantó ver mis gastos fijos de un vistazo, pero me habría gustado …", "qEmail": "Tu email <small>(opcional, para poder responderte)</small>", "hint": "Solo se usa para responderte. Nunca se vende.", "send": "Enviar mi opinión", "sending": "Enviando…", "thanksH": "¡Gracias, de verdad!", "thanksP": "Tu comentario ha llegado. Nos ayuda directamente a mejorar BankAnalyzer.", "back": "Volver a BankAnalyzer", "foot": "Privacidad", "errGen": "Vaya, el envío no ha funcionado. Inténtalo de nuevo en un momento.", "errTrop": "Demasiados envíos desde esta conexión, inténtalo más tarde.", "noteAria": "Nota {n} sobre 10", "title": "Tu opinión sobre BankAnalyzer"}, "deutsch": {"eyebrow": "Gründungsmitglieder-Programm", "h1": "Dein Feedback ist uns sehr wichtig", "lead": "Du gehörst zu den <b>Ersten, die Banky getestet haben</b>. Nimm dir zwei Minuten und sag uns, was du denkst: Wir lesen und beantworten jedes Feedback.", "qNote": "Deine Gesamtnote <small>(1 = überhaupt nicht zufrieden · 10 = begeistert)</small>", "legLo": "Nicht überzeugt", "legHi": "Ich empfehle es!", "qComment": "Ein Satz, der uns hilft <small>(was dir gefallen hat, was dich gestört hat oder was fehlt)</small>", "phComment": "Z. B.: Ich fand es toll, meine Fixkosten auf einen Blick zu sehen, aber ich hätte gern …", "qEmail": "Deine E-Mail <small>(optional, damit wir dir antworten können)</small>", "hint": "Wird nur für die Antwort an dich genutzt. Nie weiterverkauft.", "send": "Feedback senden", "sending": "Wird gesendet…", "thanksH": "Vielen Dank!", "thanksP": "Dein Feedback ist angekommen. Es hilft uns direkt, BankAnalyzer zu verbessern.", "back": "Zurück zu BankAnalyzer", "foot": "Datenschutz", "errGen": "Hoppla, das Senden hat nicht geklappt. Versuche es gleich noch einmal.", "errTrop": "Zu viele Sendungen von dieser Verbindung, bitte später erneut versuchen.", "noteAria": "Note {n} von 10", "title": "Dein Feedback zu BankAnalyzer"}, "italiano": {"eyebrow": "Programma Membri Fondatori", "h1": "Il tuo parere conta moltissimo", "lead": "Sei tra i <b>primi ad aver provato Banky</b>. Bastano due minuti per dirci cosa ne pensi: leggiamo e rispondiamo a ogni commento.", "qNote": "Il tuo voto complessivo <small>(1 = per niente soddisfatto · 10 = entusiasta)</small>", "legLo": "Non mi ha convinto", "legHi": "Lo consiglio!", "qComment": "Una frase per aiutarci <small>(cosa ti è piaciuto, cosa ti ha infastidito o cosa manca)</small>", "phComment": "Es.: mi è piaciuto vedere le spese fisse a colpo d'occhio, ma avrei voluto …", "qEmail": "La tua email <small>(facoltativa, per poterti rispondere)</small>", "hint": "Usata solo per risponderti. Mai venduta.", "send": "Invia il mio parere", "sending": "Invio…", "thanksH": "Grazie, davvero!", "thanksP": "Il tuo parere è arrivato. Ci aiuta direttamente a migliorare BankAnalyzer.", "back": "Torna a BankAnalyzer", "foot": "Privacy", "errGen": "Ops, l'invio non è riuscito. Riprova tra un istante.", "errTrop": "Troppi invii da questa connessione, riprova più tardi.", "noteAria": "Voto {n} su 10", "title": "Il tuo parere su BankAnalyzer"}, "portugues": {"eyebrow": "Programa de Membros Fundadores", "h1": "A sua opinião conta muito", "lead": "Você está entre os <b>primeiros a testar o Banky</b>. Dedique dois minutos para nos dizer o que achou: lemos e respondemos a todos os comentários.", "qNote": "Sua nota geral <small>(1 = nada satisfeito · 10 = empolgado)</small>", "legLo": "Não me convenceu", "legHi": "Eu recomendo!", "qComment": "Uma frase para nos ajudar <small>(o que você gostou, o que incomodou ou o que falta)</small>", "phComment": "Ex.: adorei ver meus gastos fixos de uma vez, mas eu gostaria de …", "qEmail": "Seu email <small>(opcional, para podermos responder)</small>", "hint": "Usado apenas para responder a você. Nunca vendido.", "send": "Enviar minha opinião", "sending": "Enviando…", "thanksH": "Obrigado, de verdade!", "thanksP": "Seu retorno chegou. Ele nos ajuda diretamente a melhorar o BankAnalyzer.", "back": "Voltar ao BankAnalyzer", "foot": "Privacidade", "errGen": "Ops, o envio não funcionou. Tente de novo em instantes.", "errTrop": "Muitos envios desta conexão, tente novamente mais tarde.", "noteAria": "Nota {n} de 10", "title": "Sua opinião sobre o BankAnalyzer"}, "chinese": {"eyebrow": "创始会员计划", "h1": "你的反馈对我们非常重要", "lead": "你是<b>最早试用 Banky 的用户之一</b>。花两分钟告诉我们你的想法：每条反馈我们都会阅读并回复。", "qNote": "你的总体评分 <small>（1 = 完全不满意 · 10 = 非常喜欢）</small>", "legLo": "不太满意", "legHi": "强烈推荐！", "qComment": "用一句话帮助我们 <small>（喜欢什么、哪里不满意，或缺少什么）</small>", "phComment": "例如：我很喜欢一眼就能看到固定支出，但我希望……", "qEmail": "你的邮箱 <small>（选填，方便我们回复你）</small>", "hint": "仅用于回复你，绝不出售。", "send": "提交我的反馈", "sending": "发送中…", "thanksH": "真的非常感谢！", "thanksP": "你的反馈已收到，它直接帮助我们改进 BankAnalyzer。", "back": "返回 BankAnalyzer", "foot": "隐私政策", "errGen": "抱歉，发送失败。请稍后再试。", "errTrop": "此网络发送次数过多，请稍后再试。", "noteAria": "评分 {n} 分（满分 10 分）", "title": "你对 BankAnalyzer 的反馈"}, "arabic": {"eyebrow": "برنامج الأعضاء المؤسسين", "h1": "رأيك يهمّنا كثيرًا", "lead": "أنت من <b>أوائل من جرّبوا بانكي</b>. خصّص دقيقتين لتخبرنا برأيك: نقرأ كل الملاحظات ونردّ عليها.", "qNote": "تقييمك العام <small>(1 = غير راضٍ إطلاقًا · 10 = متحمّس)</small>", "legLo": "لم يقنعني", "legHi": "أنصح به!", "qComment": "جملة واحدة تساعدنا <small>(ما أعجبك أو أزعجك أو ما ينقص)</small>", "phComment": "مثال: أعجبني أن أرى نفقاتي الثابتة دفعة واحدة، لكنني كنت أتمنى …", "qEmail": "بريدك الإلكتروني <small>(اختياري، لنتمكن من الرد عليك)</small>", "hint": "يُستخدم فقط للرد عليك. لا يُباع أبدًا.", "send": "إرسال رأيي", "sending": "جارٍ الإرسال…", "thanksH": "شكرًا لك، حقًا!", "thanksP": "وصلتنا ملاحظتك، وهي تساعدنا مباشرة على تحسين BankAnalyzer.", "back": "العودة إلى BankAnalyzer", "foot": "الخصوصية", "errGen": "عذرًا، تعذّر الإرسال. حاول مرة أخرى بعد قليل.", "errTrop": "عدد كبير من الإرسالات من هذا الاتصال، حاول لاحقًا.", "noteAria": "التقييم {n} من 10", "title": "رأيك في BankAnalyzer"}};
+  var note=0,lang='francais';
+  var box=document.getElementById('notes'),btn=document.getElementById('envoyer'),err=document.getElementById('err'),sel=document.getElementById('siteLangue');
+  function T(){return TR_AVIS[lang]||TR_AVIS.francais}
+  function lire(){try{return localStorage.getItem('bankanalyzer_langue')||'francais'}catch(e){return 'francais'}}
+  function ecrire(v){try{localStorage.setItem('bankanalyzer_langue',v)}catch(e){}}
+  function appliquer(){
+    var t=T();
+    document.documentElement.lang={francais:'fr',english:'en',espanol:'es',deutsch:'de',italiano:'it',portugues:'pt',chinese:'zh',arabic:'ar'}[lang]||'fr';
+    document.documentElement.dir=lang==='arabic'?'rtl':'ltr';
+    document.title=t.title;
+    var els=document.querySelectorAll('[data-i18n]');
+    for(var i=0;i<els.length;i++){var k=els[i].getAttribute('data-i18n');if(t[k]!==undefined)els[i].innerHTML=t[k];}
+    var ph=document.querySelectorAll('[data-ph]');
+    for(var j=0;j<ph.length;j++){var kp=ph[j].getAttribute('data-ph');if(t[kp])ph[j].placeholder=t[kp];}
+    var bs=box.children;
+    for(var n=0;n<bs.length;n++)bs[n].setAttribute('aria-label',t.noteAria.replace('{n}',n+1));
+    sel.value=lang;
+  }
   for(var i=1;i<=10;i++){
     (function(n){
       var b=document.createElement('button');
-      b.type='button';b.textContent=n;b.setAttribute('aria-pressed','false');b.setAttribute('aria-label','Note '+n+' sur 10');
+      b.type='button';b.textContent=n;b.setAttribute('aria-pressed','false');
       b.onclick=function(){choisir(n)};
       box.appendChild(b);
     })(i);
@@ -118,6 +141,7 @@ textarea:focus,input[type=email]:focus{border-color:var(--blue);box-shadow:0 0 0
     for(var i=0;i<bs.length;i++)bs[i].setAttribute('aria-pressed',String(i+1===n));
     btn.disabled=false;
   }
+  lang=lire();if(!TR_AVIS[lang])lang='francais';
   try{
     var p=new URLSearchParams(location.search);
     var n=parseInt(p.get('note'),10);
@@ -125,11 +149,13 @@ textarea:focus,input[type=email]:focus{border-color:var(--blue);box-shadow:0 0 0
     var e=p.get('e');
     if(e&&/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e))document.getElementById('email').value=e;
   }catch(x){}
+  appliquer();
+  sel.addEventListener('change',function(){lang=sel.value;ecrire(lang);appliquer();});
   document.getElementById('form').addEventListener('submit',async function(ev){
     ev.preventDefault();
     if(!note)return;
     err.style.display='none';
-    btn.disabled=true;btn.textContent='Envoi…';
+    btn.disabled=true;btn.textContent=T().sending;
     try{
       var r=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
         note:note,
@@ -137,15 +163,14 @@ textarea:focus,input[type=email]:focus{border-color:var(--blue);box-shadow:0 0 0
         email:document.getElementById('email').value,
         site:document.getElementById('site').value
       })});
-      var d={};try{d=await r.json()}catch(x){}
-      if(!r.ok)throw new Error(d.error||'Envoi impossible');
+      if(!r.ok){var er=new Error('http');er.status=r.status;throw er;}
       document.getElementById('form').style.display='none';
       document.getElementById('merci').style.display='block';
       window.scrollTo({top:0,behavior:'smooth'});
     }catch(x){
-      err.textContent=(x&&x.message&&x.message!=='Failed to fetch')?x.message:"Oups, l'envoi n'a pas marché. Réessaie dans un instant.";
+      err.textContent=(x&&x.status===429)?T().errTrop:T().errGen;
       err.style.display='block';
-      btn.disabled=false;btn.textContent='Envoyer mon avis';
+      btn.disabled=false;btn.textContent=T().send;
     }
   });
 })();
