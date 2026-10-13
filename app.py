@@ -1567,6 +1567,23 @@ def _type_abonnement(u):
     return 'PRO'
 
 
+# Adresses internes / de test masquees des statistiques (tableau de bord + exports CSV).
+# Une entree avec "@" = adresse exacte ; sans "@" = tout email qui contient ce mot.
+# Modifiable sans toucher au code : variable Railway STATS_EXCLUS (liste separee par des virgules).
+_STATS_EXCLUS = [x.strip().lower() for x in os.environ.get(
+    'STATS_EXCLUS', 'gelgon,flashfinance,aitoumghar,margigel@gmail.com,ait.f@gmail.com').split(',') if x.strip()]
+
+
+def _est_exclu_stats(email):
+    e = str(email or '').strip().lower()
+    if not e:
+        return False
+    for regle in _STATS_EXCLUS:
+        if ('@' in regle and e == regle) or ('@' not in regle and regle in e):
+            return True
+    return False
+
+
 def _donnees_admin(filtre=None):
     # Utilisateurs + resume de leurs analyses, et liste brute des analyses
     conn = get_db()
@@ -1582,6 +1599,17 @@ def _donnees_admin(filtre=None):
     illimites = {r['email'] for r in cur.fetchall()} | set(EMAILS_ILLIMITES)
     cur.close()
     conn.close()
+    users = [u for u in users if not _est_exclu_stats(u['email'])]
+    analyses = [a for a in analyses if not _est_exclu_stats(a['email'])]
+    # la table des banques detectees ne contient pas l'email : on la reconstruit depuis les analyses filtrees
+    banques_hist = []
+    for a in analyses:
+        for b in (a.get('banques') or '').split(', '):
+            if b.strip():
+                banques_hist.append({'nom_banque': b.strip(), 'format': None, 'created_at': a['created_at']})
+        for fo in (a.get('formats') or '').split(', '):
+            if fo.strip():
+                banques_hist.append({'nom_banque': None, 'format': fo.strip(), 'created_at': a['created_at']})
     if filtre is not None:
         analyses = [a for a in analyses if filtre(a['created_at'])]
         banques_hist = [b for b in banques_hist if filtre(b['created_at'])]
@@ -1767,7 +1795,7 @@ def tableau_de_bord():
         betas = cur_b.fetchall()
         try:
             cur_b.execute('SELECT email, note, commentaire, created_at FROM feedbacks ORDER BY created_at DESC')
-            avis = cur_b.fetchall()
+            avis = [a for a in cur_b.fetchall() if not _est_exclu_stats(a['email'])]
         except Exception as ex_av:
             print('ERREUR lecture feedbacks:', str(ex_av))
             conn_b.rollback()
@@ -1892,7 +1920,7 @@ td.n{text-align:right;white-space:nowrap}td.err{color:#b42318;max-width:260px}
 @media(max-width:700px){.filtre{align-items:flex-start}}
 </style></head><body>
 <div class="entete"><div><h1>📊 BankAnalyzer — Tableau de bord</h1>
-<div class="sous">Période : <b>""" + e(libelle_periode) + """</b> · heures en UTC · suivi détaillé des analyses depuis l'installation du tableau de bord</div></div>
+<div class="sous">Période : <b>""" + e(libelle_periode) + """</b> · heures en UTC · suivi détaillé des analyses depuis l'installation du tableau de bord · adresses internes exclues (réglage STATS_EXCLUS)</div></div>
 """ + filtre_html + """</div>
 <div class="kpis">
 <div class="kpi"><div>""" + ('Emails inscrits' if p == 'tout' else 'Inscrits sur la période') + """</div><b>""" + str(nb_inscrits) + """</b></div>
