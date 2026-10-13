@@ -1312,6 +1312,7 @@ applyPatrimoineLang();
 document.getElementById('emailInput').addEventListener('change',sauvegarderEmail);
 document.getElementById('emailInput').addEventListener('blur',sauvegarderEmail);
 chargerEmailSauvegarde();
+document.addEventListener('DOMContentLoaded',function(){const T=TR[document.getElementById('langue').value]||TR.francais;const fa=document.getElementById('footerAvis');if(fa&&T.footerAvis)fa.textContent=T.footerAvis;});
 
 async function chargerConfig(){
   try{
@@ -1332,6 +1333,7 @@ dz.addEventListener('dragleave',()=>dz.classList.remove('drag-over'));
 dz.addEventListener('drop',e=>{e.preventDefault();dz.classList.remove('drag-over');if(e.dataTransfer.files.length>0)selectionnerFichiers(e.dataTransfer.files)});
 </script>
 <footer style="text-align:center;padding:32px 16px;font-size:13px;color:#86868b;">
+  <div style="margin-bottom:18px"><a href="/avis.html" id="footerAvis" class="avis-pill" style="display:inline-block;padding:11px 22px;margin:0;border-radius:100px;background:#fff;border:1.5px solid #0071e3;color:#0071e3;font-size:14.5px;font-weight:700;text-decoration:none;box-shadow:0 2px 12px rgba(0,113,227,.12)">Donner mon avis</a></div>
   <div style="margin-bottom:14px;">
     <a href="https://bankanalyzer.fr/" style="color:#86868b;text-decoration:none;margin:0 8px;">Accueil</a>
     ·
@@ -1343,8 +1345,6 @@ dz.addEventListener('drop',e=>{e.preventDefault();dz.classList.remove('drag-over
     ·
     <a href="/bilan-financier-gratuit-en-ligne.html" style="color:#86868b;text-decoration:none;margin:0 8px;">Bilan financier gratuit</a>
   </div>
-  <a href="/avis.html" id="footerAvis" style="color:#86868b;text-decoration:none;margin:0 8px;">Donner mon avis</a>
-  ·
   <a href="/mentions-legales.html" style="color:#86868b;text-decoration:none;margin:0 8px;">Mentions légales</a>
   ·
   <a href="/politique-confidentialite.html" style="color:#86868b;text-decoration:none;margin:0 8px;">Politique de confidentialité</a>
